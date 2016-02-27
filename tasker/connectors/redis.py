@@ -9,9 +9,6 @@ class Connector:
         self.port = port
         self.database = database
 
-    def connect(self):
-        '''
-        '''
         self.connection = redis.StrictRedis(
             host=self.host,
             port=self.port,
@@ -22,15 +19,10 @@ class Connector:
             socket_timeout=60,
         )
 
-    def disconnect(self):
-        '''
-        '''
-        pass
-
     def pop(self, key, timeout=0):
         '''
         '''
-        value = self.connection.blpop(
+        key, value = self.connection.blpop(
             keys=[key],
             timeout=timeout,
         )
@@ -48,6 +40,11 @@ class Connector:
         return self.connection.llen(
             name=key,
         )
+
+    def delete(self, key):
+        '''
+        '''
+        return self.connection.delete(key)
 
     def __getstate__(self):
         '''

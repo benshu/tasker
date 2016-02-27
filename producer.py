@@ -1,5 +1,6 @@
 import tasker
 import worker
+import datetime
 import time
 
 
@@ -13,9 +14,22 @@ task = worker.Task(
     connector=connector,
 )
 
-before = time.time()
-for i in range(10000):
-    task.run(num=5)
-after = time.time()
+scheduler = tasker.scheduler.Scheduler(
+    task=task,
+)
+scheduler.start()
+scheduler.run_within(
+    time_delta=datetime.timedelta(seconds=10),
+    args=[],
+    kwargs={
+        'num': 5,
+    },
+)
 
-print(after-before)
+
+# before = time.time()
+# for i in range(10000):
+#     task.run(num=5)
+# after = time.time()
+#
+# print(after-before)

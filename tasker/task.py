@@ -3,7 +3,6 @@ import multiprocessing.pool
 import datetime
 
 from . import queue
-from . import connectors
 
 
 class Task:
@@ -11,7 +10,7 @@ class Task:
     '''
     name = 'task_name'
 
-    compression = False
+    compression = 'none'
     timeout = 30.0
     max_tasks_per_run = 10
     max_retries = 3
@@ -22,7 +21,7 @@ class Task:
         self.queue = queue.Queue(
             connector=self.connector,
             queue_name=self.name,
-            compress=self.compression,
+            compression=self.compression,
         )
 
         self.pool = multiprocessing.pool.ThreadPool(
@@ -42,7 +41,7 @@ class Task:
         }
 
         self.queue.enqueue(
-            task=task,
+            value=task,
         )
 
     def work_loop(self):
