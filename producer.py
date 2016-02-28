@@ -1,7 +1,6 @@
 import tasker
 import worker
 import datetime
-import time
 
 
 connector = tasker.connectors.redis.Connector(
@@ -14,11 +13,10 @@ task = worker.Task(
     connector=connector,
 )
 
-scheduler = tasker.scheduler.Scheduler(
-    task=task,
-)
+scheduler = tasker.scheduler.Scheduler()
 scheduler.start()
 scheduler.run_within(
+    task=task,
     time_delta=datetime.timedelta(seconds=10),
     args=[],
     kwargs={

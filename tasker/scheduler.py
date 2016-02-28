@@ -7,12 +7,11 @@ import threading
 class Scheduler:
     '''
     '''
-    sleeping_interval = 1
+    sleeping_interval = 1.0
 
-    def __init__(self, task):
+    def __init__(self):
         '''
         '''
-        self.task = task
         self.queue = queue.Queue()
 
         self.run_lock = threading.Lock()
@@ -28,10 +27,11 @@ class Scheduler:
         '''
         while self.run_lock.acquire():
             try:
-                task = self.queue.get_nowait()
-                self.task.run(
-                    *task['args'],
-                    **task['kwargs'],
+                queued_task = self.queue.get_nowait()
+
+                queued_task['task'].run(
+                    *queued_task['args'],
+                    **queued_task['kwargs']
                 )
             except queue.Empty:
                 continue
@@ -48,42 +48,62 @@ class Scheduler:
         '''
         self.run_lock.acquire()
 
-    def _run_at(self, time_to_run, args, kwargs):
+    def _run_at(self, task, date_to_run_at, args, kwargs):
         '''
         '''
-        while datetime.datetime.utcnow() < time_to_run:
+        while datetime.datetime.utcnow() < date_to_run_at:
             time.sleep(self.sleeping_interval)
 
         self.queue.put(
             {
+                'task': task,
                 'args': args,
                 'kwargs': kwargs,
             }
         )
 
-    def run_at(self, time_to_run_at, args, kwargs):
+    def run_at(self, task, date_to_run_at, args, kwargs):
         '''
         '''
         self.run_at_thread = threading.Thread(
             target=self._run_at,
             kwargs={
-                'time_to_run': time_to_run_at,
+                'task': task,
+                'date_to_run_at': date_to_run_at,
                 'args': args,
                 'kwargs': kwargs,
             },
         )
         self.run_at_thread.start()
 
-    def run_within(self, time_delta, args, kwargs):
+    def run_within(self, task, time_delta, args, kwargs):
         '''
         '''
         now = datetime.datetime.utcnow()
-        time_to_run_at = now + time_delta
+        date_to_run_at = now + time_delta
 
         self.run_at_thread = threading.Thread(
             target=self._run_at,
             kwargs={
-                'time_to_run': time_to_run_at,
+                'task': task,
+                'date_to_run_at': date_to_run_at,
+                'args': args,
+                'kwargs': kwargs,
+            },
+        )
+        self.run_at_thread.start()
+
+    def run_every(self, task, time_delta, args, kwargs):
+        '''
+        '''
+        now = datetime.datetime.utcnow()
+        date_to_run_at = now + time_delta
+
+        self.run_at_thread = threading.Thread(
+            target=self._run_at,
+            kwargs={
+                'task': task,
+                'date_to_run_at': date_to_run_at,
                 'args': args,
                 'kwargs': kwargs,
             },
