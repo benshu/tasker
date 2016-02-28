@@ -22,12 +22,15 @@ class Connector:
     def pop(self, key, timeout=0):
         '''
         '''
-        key, value = self.connection.blpop(
+        value = self.connection.blpop(
             keys=[key],
             timeout=timeout,
         )
 
-        return value
+        if value is None:
+            return None
+        else:
+            return value[1]
 
     def push(self, key, value):
         '''

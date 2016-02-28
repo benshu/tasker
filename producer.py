@@ -15,9 +15,9 @@ task = worker.Task(
 
 scheduler = tasker.scheduler.Scheduler()
 scheduler.start()
-scheduler.run_within(
+scheduler.run_every(
+    time_delta=datetime.timedelta(seconds=5),
     task=task,
-    time_delta=datetime.timedelta(seconds=10),
     args=[],
     kwargs={
         'num': 5,

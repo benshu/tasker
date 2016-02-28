@@ -1,6 +1,7 @@
 import multiprocessing
 import multiprocessing.pool
 import datetime
+import logging
 
 from . import queue
 
@@ -16,6 +17,8 @@ class Task:
     max_retries = 3
 
     def __init__(self, connector):
+        self.logger = self._create_logger()
+
         self.connector = connector
 
         self.queue = queue.Queue(
@@ -29,6 +32,30 @@ class Task:
             initializer=self.init,
             initargs=(),
         )
+
+        self.logger.debug('initialized')
+
+    def _create_logger(self):
+        '''
+        '''
+        logger = logging.getLogger(
+            name='Task',
+        )
+
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            fmt='%(asctime)s %(name)-12s %(levelname)-8s %(funcName)-16s -> %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+        )
+        handler.setFormatter(formatter)
+
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+
+        return logger
 
     def run(self, *args, **kwargs):
         '''
@@ -44,6 +71,8 @@ class Task:
             value=task,
         )
 
+        self.logger.debug('enqueued a task')
+
     def work_loop(self):
         '''
         '''
@@ -53,12 +82,17 @@ class Task:
             task = self.queue.dequeue(
                 timeout=1,
             )
+
             if task is None:
                 continue
+
+            self.logger.debug('dequeued a task')
 
             self.execute_task(
                 task=task,
             )
+
+            self.logger.debug('task execution finished')
 
             num_of_finished_tasks += 1
 
@@ -79,9 +113,13 @@ class Task:
                 kwds=kwargs,
             )
 
+            self.logger.debug('task applied')
+
             returned_value = async_result.get(
                 timeout=self.timeout,
             )
+
+            self.logger.debug('task succeeded')
 
             self.on_success(
                 returned_value=returned_value,
@@ -89,12 +127,16 @@ class Task:
                 kwargs=kwargs,
             )
         except multiprocessing.TimeoutError as exc:
+            self.logger.debug('task execution timed out')
+
             self.on_timeout(
                 exception=exc,
                 args=args,
                 kwargs=kwargs,
             )
         except Exception as exc:
+            self.logger.debug('task execution failed')
+
             self.on_failure(
                 exception=exc,
                 args=args,
@@ -123,6 +165,8 @@ class Task:
             task=task,
         )
 
+        self.logger.debug('task retry enqueued')
+
     def init(self):
         '''
         '''
@@ -136,7 +180,7 @@ class Task:
     def on_success(self, returned_value, args, kwargs):
         '''
         '''
-        print(
+        self.logger.info(
             'task {task_name} reported a success:\n\tvalue: {value}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
                 value=returned_value,
@@ -148,7 +192,7 @@ class Task:
     def on_failure(self, exception, args, kwargs):
         '''
         '''
-        print(
+        self.logger.info(
             'task {task_name} reported a failure:\n\texception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
                 exception=exception,
@@ -160,7 +204,7 @@ class Task:
     def on_retry(self, args, kwargs):
         '''
         '''
-        print(
+        self.logger.info(
             'task {task_name} asked for a retry:\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
                 args=args,
@@ -171,7 +215,7 @@ class Task:
     def on_timeout(self, exception, args, kwargs):
         '''
         '''
-        print(
+        self.logger.info(
             'task {task_name} raised a timeout exception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
                 exception=str(exception),
@@ -183,7 +227,11 @@ class Task:
     def __getstate__(self):
         '''
         '''
-        return self.connector
+        connector = self.connector
+
+        self.logger.debug('getstate')
+
+        return connector
 
     def __setstate__(self, value):
         '''
@@ -191,3 +239,5 @@ class Task:
         self.__init__(
             connector=value,
         )
+
+        self.logger.debug('setstate')
