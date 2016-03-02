@@ -1,22 +1,27 @@
 import logging
+import time
+import threading
 import multiprocessing
 import multiprocessing.pool
 
 
 class Worker:
-    min_num_of_workers = 0
-    max_num_of_workers = 4
-
-    def __init__(self, task, concurrency):
+    '''
+    '''
+    def __init__(self, task, concurrent_workers, autoscale):
         self.logger = self._create_logger()
 
         self.task = task
-        self.concurrency = concurrency
+        self.concurrent_workers = concurrent_workers
+        self.autoscale = autoscale
 
         self.pool_context = multiprocessing.get_context('spawn')
         self.pool = multiprocessing.pool.Pool(
-            processes=concurrency,
+            processes=concurrent_workers,
             context=self.pool_context,
+        )
+        self.workers_semaphore = threading.Semaphore(
+            value=concurrent_workers,
         )
 
         self.logger.debug('initialized')
@@ -39,58 +44,99 @@ class Worker:
         handler.setFormatter(formatter)
 
         logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)
 
         return logger
+
+    def worker_watchdog(self, function):
+        '''
+        '''
+        self.logger.debug('started')
+
+        while self.workers_semaphore.acquire():
+            self.logger.debug('task applied')
+
+            async_result = self.pool.apply_async(
+                func=function,
+            )
+
+            async_result.wait()
+
+            self.logger.debug('task finished')
+
+            try:
+                async_result.get()
+            except Exception as exc:
+                self.logger.error(
+                    'task execution raised an exception: {exc}'.format(
+                        exc=exc,
+                    )
+                )
+
+            self.workers_semaphore.release()
 
     def add_worker(self):
         '''
         '''
-        pass
+        self.logger.debug('ADDING')
+        if self.workers_semaphore._value < self.concurrent_workers:
+            self.workers_semaphore.release()
+
+            self.logger.debug('one worker added')
 
     def remove_worker(self):
         '''
         '''
-        pass
+        self.logger.debug('REMOVING')
+        if self.workers_semaphore._value > 0:
+            self.workers_semaphore.acquire()
+
+            self.logger.debug('one worker removed')
+
+    def autoscaler(self):
+        '''
+        '''
+        empty_queue_counter = 0
+
+        while True:
+            pending_tasks = self.task.queue.len()
+
+            if pending_tasks == 0:
+                empty_queue_counter += 1
+            else:
+                empty_queue_counter = 0
+                self.add_worker()
+
+            if empty_queue_counter > 5:
+                self.remove_worker()
+
+            time.sleep(1)
 
     def start(self):
         '''
         '''
-        async_results = []
+        watchdog_threads = []
 
         self.logger.debug('started')
 
-        for i in range(self.concurrency):
-            async_result = self.pool.apply_async(
-                func=self.task.work_loop,
+        if self.autoscale:
+            autoscaler_thread = threading.Thread(
+                target=self.autoscaler,
             )
-            async_results.append(async_result)
+            autoscaler_thread.start()
 
-            self.logger.debug('task applied async')
+        for i in range(self.concurrent_workers):
+            watchdog_thread = threading.Thread(
+                target=self.worker_watchdog,
+                kwargs={
+                    'function': self.task.work_loop,
+                }
+            )
+            watchdog_thread.start()
 
-        while True:
-            for async_result in async_results:
-                async_result.wait(
-                    timeout=0.1,
-                )
+            watchdog_threads.append(watchdog_thread)
 
-                if async_result.ready():
-                    try:
-                        async_result.get()
-                    except Exception as exc:
-                        self.logger.error(
-                            'task execution raised an exception: {exc}'.format(
-                                exc=exc,
-                            )
-                        )
+        map(lambda thread: thread.join(), watchdog_threads)
+        autoscaler_thread.join()
 
-                    async_results.remove(async_result)
-
-                    self.logger.debug('task removed')
-
-                    async_result = self.pool.apply_async(
-                        func=self.task.work_loop,
-                    )
-                    async_results.append(async_result)
-
-                    self.logger.debug('task reapplied')
+        self.logger.debug('finished')

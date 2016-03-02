@@ -4,7 +4,7 @@ import tasker
 class Task(tasker.task.Task):
     name = 'test_task'
 
-    compression = False
+    compression = 'none'
     timeout = 30.0
     max_tasks_per_run = 100
     max_retries = 3
@@ -29,7 +29,7 @@ def main():
         connector=connector,
     )
 
-    worker = tasker.worker.Worker(task, 4)
+    worker = tasker.worker.Worker(task, 4, True)
     worker.start()
 
 if __name__ == '__main__':

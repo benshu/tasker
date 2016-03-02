@@ -16,7 +16,7 @@ task = worker.Task(
 scheduler = tasker.scheduler.Scheduler()
 scheduler.start()
 scheduler.run_every(
-    time_delta=datetime.timedelta(seconds=5),
+    time_delta=datetime.timedelta(seconds=3),
     task=task,
     args=[],
     kwargs={
