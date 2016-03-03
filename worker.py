@@ -6,7 +6,7 @@ class Task(tasker.task.Task):
 
     compression = 'none'
     timeout = 30.0
-    max_tasks_per_run = 100
+    max_tasks_per_run = 10
     max_retries = 3
 
     def init(self):
@@ -29,7 +29,7 @@ def main():
         connector=connector,
     )
 
-    worker = tasker.worker.Worker(task, 4, True)
+    worker = tasker.worker.Worker(task, 4, False)
     worker.start()
 
 if __name__ == '__main__':

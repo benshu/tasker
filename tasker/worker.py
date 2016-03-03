@@ -1,5 +1,4 @@
 import logging
-import time
 import threading
 import multiprocessing
 import multiprocessing.pool
@@ -19,9 +18,6 @@ class Worker:
         self.pool = multiprocessing.pool.Pool(
             processes=concurrent_workers,
             context=self.pool_context,
-        )
-        self.workers_semaphore = threading.Semaphore(
-            value=concurrent_workers,
         )
 
         self.logger.debug('initialized')
@@ -53,7 +49,7 @@ class Worker:
         '''
         self.logger.debug('started')
 
-        while self.workers_semaphore.acquire():
+        while True:
             self.logger.debug('task applied')
 
             async_result = self.pool.apply_async(
@@ -73,57 +69,12 @@ class Worker:
                     )
                 )
 
-            self.workers_semaphore.release()
-
-    def add_worker(self):
-        '''
-        '''
-        self.logger.debug('ADDING')
-        if self.workers_semaphore._value < self.concurrent_workers:
-            self.workers_semaphore.release()
-
-            self.logger.debug('one worker added')
-
-    def remove_worker(self):
-        '''
-        '''
-        self.logger.debug('REMOVING')
-        if self.workers_semaphore._value > 0:
-            self.workers_semaphore.acquire()
-
-            self.logger.debug('one worker removed')
-
-    def autoscaler(self):
-        '''
-        '''
-        empty_queue_counter = 0
-
-        while True:
-            pending_tasks = self.task.queue.len()
-
-            if pending_tasks == 0:
-                empty_queue_counter += 1
-            else:
-                empty_queue_counter = 0
-                self.add_worker()
-
-            if empty_queue_counter > 5:
-                self.remove_worker()
-
-            time.sleep(1)
-
     def start(self):
         '''
         '''
         watchdog_threads = []
 
         self.logger.debug('started')
-
-        if self.autoscale:
-            autoscaler_thread = threading.Thread(
-                target=self.autoscaler,
-            )
-            autoscaler_thread.start()
 
         for i in range(self.concurrent_workers):
             watchdog_thread = threading.Thread(
@@ -137,6 +88,5 @@ class Worker:
             watchdog_threads.append(watchdog_thread)
 
         map(lambda thread: thread.join(), watchdog_threads)
-        autoscaler_thread.join()
 
         self.logger.debug('finished')

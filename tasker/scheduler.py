@@ -131,6 +131,17 @@ class Scheduler:
 
             self.logger.debug('repeated timer started')
 
+    def run_now(self, task, args, kwargs):
+        '''
+        '''
+        self._enqueue_task(
+            task=task,
+            args=args,
+            kwargs=kwargs,
+        )
+
+        self.logger.debug('scheduled')
+
     def run_at(self, date_to_run_at, task, args, kwargs):
         '''
         '''
