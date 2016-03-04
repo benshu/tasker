@@ -29,7 +29,7 @@ def main():
         connector=connector,
     )
 
-    worker = tasker.worker.Worker(task, 4, False)
+    worker = tasker.worker.Worker(task, 1, False)
     worker.start()
 
 if __name__ == '__main__':

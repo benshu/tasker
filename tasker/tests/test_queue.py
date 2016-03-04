@@ -6,7 +6,7 @@ from .. import connectors
 from .. import queue
 
 
-class RedisConnectorTestCase(unittest.TestCase):
+class QueueTestCase(unittest.TestCase):
     def setUp(self):
         self.redis_connector = connectors.redis.Connector(
             host='127.0.0.1',

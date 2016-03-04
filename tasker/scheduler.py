@@ -1,6 +1,8 @@
-import queue
+import functools
 import datetime
+import time
 import threading
+import asyncio
 import logging
 
 
@@ -12,17 +14,22 @@ class Scheduler:
         '''
         self.logger = self._create_logger()
 
-        self.queue = queue.Queue()
-
-        self.run_lock = threading.Lock()
-        self.run_lock.acquire()
+        self.should_run = threading.Event()
+        self.should_run.clear()
+        self.should_terminate = threading.Event()
+        self.should_run.clear()
 
         self.work_thread = threading.Thread(
-            target=self.schedule_loop,
+            target=self._loop_main,
         )
         self.work_thread.start()
 
+        self.event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.event_loop)
+
         self.logger.debug('initialized')
+
+        self.schedulers_threads = []
 
     def _create_logger(self):
         '''
@@ -46,138 +53,164 @@ class Scheduler:
 
         return logger
 
-    def schedule_loop(self):
+    def _loop_main(self):
         '''
         '''
         self.logger.debug('started')
 
-        while self.run_lock.acquire():
-            try:
-                queued_task = self.queue.get_nowait()
+        while self.should_run.wait():
+            if self.should_terminate.isSet():
+                break
 
-                self.logger.debug('new task received')
+            self.logger.debug('run_forever')
 
-                queued_task['task'].run(
-                    *queued_task['args'],
-                    **queued_task['kwargs']
-                )
-
-                self.logger.debug('new task enqueued')
-            except queue.Empty:
-                continue
-            finally:
-                self.run_lock.release()
+            self.event_loop.run_forever()
 
         self.logger.debug('finished')
+
+    def clear(self):
+        '''
+        '''
+        self.stop()
+        self.event_loop.close()
+
+        self.event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.event_loop)
 
     def start(self):
         '''
         '''
-        self.run_lock.release()
+        self.should_run.set()
+        while not self.event_loop.is_running():
+            time.sleep(0)
 
         self.logger.debug('started')
 
     def stop(self):
         '''
         '''
-        self.run_lock.acquire()
+        self.should_run.clear()
+        if self.event_loop.is_running():
+            self.event_loop.call_soon_threadsafe(
+                callback=self.event_loop.stop,
+            )
+
+        while self.event_loop.is_running():
+            time.sleep(0)
 
         self.logger.debug('stopped')
 
-    def _enqueue_task(self, task, args, kwargs):
+    def terminate(self):
         '''
         '''
-        self.queue.put(
-            {
-                'task': task,
-                'args': args,
-                'kwargs': kwargs,
-            }
+        self.logger.debug('terminating')
+
+        self.stop()
+        self.clear()
+
+        self.should_terminate.set()
+        self.should_run.set()
+        self.work_thread.join()
+        self.should_run.clear()
+
+        self.logger.debug('terminated')
+
+    def _enqueue_task(self, task, args, kwargs, time_delta, repeatedly):
+        '''
+        '''
+        task.run(
+            *args,
+            **kwargs,
         )
 
-        self.logger.debug('task enqueued to the self.queue')
+        self.logger.debug('task enqueued')
 
-    def _run_in(self, time_delta, task, args, kwargs, repeatedly):
+        if repeatedly:
+            self._run_in(
+                task=task,
+                args=args,
+                kwargs=kwargs,
+                time_delta=time_delta,
+                repeatedly=repeatedly,
+            )
+
+            self.logger.debug('repeated task enqueued')
+
+    def _run_in(self, task, args, kwargs, time_delta, repeatedly):
         '''
         '''
         self.logger.debug('started')
 
-        timer = threading.Timer(
-            interval=time_delta.total_seconds(),
-            function=self._enqueue_task,
-            kwargs={
-                'task': task,
-                'args': args,
-                'kwargs': kwargs,
-            },
-        )
-        timer.start()
-
-        self.logger.debug('timer started')
-
-        if repeatedly:
-            timer = threading.Timer(
-                interval=time_delta.total_seconds(),
-                function=self._run_in,
-                kwargs={
-                    'time_delta': time_delta,
-                    'task': task,
-                    'args': args,
-                    'kwargs': kwargs,
-                    'repeatedly': repeatedly,
-                },
+        self.event_loop.call_soon_threadsafe(
+            callback=functools.partial(
+                self.event_loop.call_later,
+                **{
+                    'delay': time_delta.total_seconds(),
+                    'callback': functools.partial(
+                        self._enqueue_task,
+                        **{
+                            'task': task,
+                            'args': args,
+                            'kwargs': kwargs,
+                            'time_delta': time_delta,
+                            'repeatedly': repeatedly,
+                        }
+                    )
+                }
             )
-            timer.start()
-
-            self.logger.debug('repeated timer started')
+        )
 
     def run_now(self, task, args, kwargs):
         '''
         '''
-        self._enqueue_task(
+        self._run_in(
             task=task,
             args=args,
             kwargs=kwargs,
+            time_delta=datetime.timedelta(
+                seconds=0,
+            ),
+            repeatedly=False,
         )
 
         self.logger.debug('scheduled')
 
-    def run_at(self, date_to_run_at, task, args, kwargs):
+    def run_at(self, task, args, kwargs, date_to_run_at):
         '''
         '''
         time_delta = date_to_run_at - datetime.datetime.utcnow()
 
         self._run_in(
-            time_delta=time_delta,
             task=task,
             args=args,
             kwargs=kwargs,
+            time_delta=time_delta,
             repeatedly=False,
         )
 
         self.logger.debug('scheduled')
 
-    def run_in(self, time_delta, task, args, kwargs):
+    def run_in(self, task, args, kwargs, time_delta):
         '''
         '''
         self._run_in(
-            time_delta=time_delta,
             task=task,
             args=args,
             kwargs=kwargs,
+            time_delta=time_delta,
             repeatedly=False,
         )
 
         self.logger.debug('scheduled')
 
-    def run_every(self, time_delta, task, args, kwargs):
+    def run_every(self, task, args, kwargs, time_delta):
         '''
         '''
         self._run_in(
-            time_delta=time_delta,
             task=task,
             args=args,
             kwargs=kwargs,
+            time_delta=time_delta,
             repeatedly=True,
         )
 

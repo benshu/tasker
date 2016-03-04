@@ -17,18 +17,18 @@ task = worker.Task(
 scheduler = tasker.scheduler.Scheduler()
 scheduler.start()
 # scheduler.run_every(
-#     time_delta=datetime.timedelta(seconds=3),
 #     task=task,
 #     args=[],
 #     kwargs={
 #         'num': 5,
 #     },
+#     time_delta=datetime.timedelta(seconds=3),
 # )
 
 
 before = time.time()
-for i in range(100000000):
-    scheduler.run_now(task, args=[], kwargs={'num':5})
+for i in range(500):
+    scheduler.run_now(task, args=[], kwargs={'num': 5})
 after = time.time()
 
 print(after-before)

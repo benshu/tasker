@@ -27,12 +27,6 @@ class Task:
             compression=self.compression,
         )
 
-        self.pool = multiprocessing.pool.ThreadPool(
-            processes=1,
-            initializer=self.init,
-            initargs=(),
-        )
-
         self.logger.debug('initialized')
 
     def _create_logger(self):
@@ -53,7 +47,7 @@ class Task:
         handler.setFormatter(formatter)
 
         logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)
 
         return logger
 
@@ -77,6 +71,11 @@ class Task:
         '''
         '''
         num_of_finished_tasks = 0
+        self.pool = multiprocessing.pool.ThreadPool(
+            processes=1,
+            initializer=self.init,
+            initargs=(),
+        )
 
         while num_of_finished_tasks <= self.max_tasks_per_run:
             task = self.queue.dequeue(
@@ -95,6 +94,8 @@ class Task:
             self.logger.debug('task execution finished')
 
             num_of_finished_tasks += 1
+
+        self.pool.terminate()
 
         return True
 

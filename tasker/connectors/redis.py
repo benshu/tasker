@@ -14,7 +14,7 @@ class Connector:
             port=self.port,
             db=self.database,
             retry_on_timeout=True,
-            socket_keepalive=True,
+            socket_keepalive=False,
             socket_connect_timeout=10,
             socket_timeout=60,
         )
