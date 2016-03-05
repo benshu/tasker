@@ -6,6 +6,18 @@ import logging
 from . import queue
 
 
+class TaskException(Exception):
+    pass
+
+
+class TaskMaxRetriesException(TaskException):
+    pass
+
+
+class TaskRetryException(TaskException):
+    pass
+
+
 class Task:
     '''
     '''
@@ -15,6 +27,7 @@ class Task:
     timeout = 30.0
     max_tasks_per_run = 10
     max_retries = 3
+    log_level = logging.INFO
 
     def __init__(self, connector):
         self.logger = self._create_logger()
@@ -47,7 +60,7 @@ class Task:
         handler.setFormatter(formatter)
 
         logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        logger.setLevel(self.log_level)
 
         return logger
 
@@ -70,20 +83,16 @@ class Task:
     def work_loop(self):
         '''
         '''
-        num_of_finished_tasks = 0
         self.pool = multiprocessing.pool.ThreadPool(
             processes=1,
             initializer=self.init,
             initargs=(),
         )
 
-        while num_of_finished_tasks <= self.max_tasks_per_run:
+        for i in range(self.max_tasks_per_run):
             task = self.queue.dequeue(
-                timeout=1,
+                timeout=0,
             )
-
-            if task is None:
-                continue
 
             self.logger.debug('dequeued a task')
 
@@ -93,8 +102,6 @@ class Task:
 
             self.logger.debug('task execution finished')
 
-            num_of_finished_tasks += 1
-
         self.pool.terminate()
         logging.shutdown()
 
@@ -103,14 +110,11 @@ class Task:
         '''
         self.last_task = task
 
-        args = task['args']
-        kwargs = task['kwargs']
-
         try:
             async_result = self.pool.apply_async(
                 func=self.work,
-                args=args,
-                kwds=kwargs,
+                args=task['args'],
+                kwds=task['kwargs'],
             )
 
             self.logger.debug('task applied')
@@ -121,38 +125,51 @@ class Task:
 
             self.logger.debug('task succeeded')
 
-            self.on_success(
+            self._on_success(
                 returned_value=returned_value,
-                args=args,
-                kwargs=kwargs,
+                args=task['args'],
+                kwargs=task['kwargs'],
             )
-        except multiprocessing.TimeoutError as exc:
+        except multiprocessing.TimeoutError as exception:
             self.logger.debug('task execution timed out')
 
-            self.on_timeout(
-                exception=exc,
-                args=args,
-                kwargs=kwargs,
+            self._on_timeout(
+                exception=exception,
+                args=task['args'],
+                kwargs=task['kwargs'],
             )
-        except Exception as exc:
+        except TaskRetryException as exception:
+            self.logger.debug('task retry has called')
+
+            self._on_retry(
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+        except TaskMaxRetriesException as exception:
+            self.logger.debug('max retries exceeded')
+
+            self._on_max_retries(
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+        except Exception as exception:
             self.logger.debug('task execution failed')
 
-            self.on_failure(
-                exception=exc,
-                args=args,
-                kwargs=kwargs,
+            self._on_failure(
+                exception=exception,
+                args=task['args'],
+                kwargs=task['kwargs'],
             )
 
     def retry(self):
         '''
         '''
         if self.max_retries <= self.last_task['run_count']:
-            raise Exception('max retries exceeded')
-
-        self.on_retry(
-            args=self.last_task['args'],
-            kwargs=self.last_task['kwargs'],
-        )
+            raise TaskMaxRetriesException(
+                'max retries of: {max_retries}, exceeded'.format(
+                    max_retries=self.max_retries,
+                )
+            )
 
         task = {
             'insertion_date': datetime.datetime.utcnow(),
@@ -162,10 +179,98 @@ class Task:
         }
 
         self.queue.enqueue(
-            task=task,
+            value=task,
         )
 
         self.logger.debug('task retry enqueued')
+
+        raise TaskRetryException
+
+    def _on_success(self, returned_value, args, kwargs):
+        '''
+        '''
+        self.logger.info(
+            'task {task_name} reported a success:\n\tvalue: {value}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
+                task_name=self.name,
+                value=returned_value,
+                args=args,
+                kwargs=kwargs,
+            )
+        )
+
+        self.on_success(
+            returned_value=returned_value,
+            args=args,
+            kwargs=kwargs,
+        )
+
+    def _on_failure(self, exception, args, kwargs):
+        '''
+        '''
+        self.logger.error(
+            'task {task_name} reported a failure:\n\texception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
+                task_name=self.name,
+                exception=exception,
+                args=args,
+                kwargs=kwargs,
+            )
+        )
+
+        self.on_failure(
+            exception=exception,
+            args=args,
+            kwargs=kwargs,
+        )
+
+    def _on_retry(self, args, kwargs):
+        '''
+        '''
+        self.logger.warning(
+            'task {task_name} asked for a retry:\n\targs: {args}\n\tkwargs: {kwargs}'.format(
+                task_name=self.name,
+                args=args,
+                kwargs=kwargs,
+            )
+        )
+
+        self.on_retry(
+            args=args,
+            kwargs=kwargs,
+        )
+
+    def _on_timeout(self, exception, args, kwargs):
+        '''
+        '''
+        self.logger.error(
+            'task {task_name} raised a timeout exception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
+                task_name=self.name,
+                exception=str(exception),
+                args=args,
+                kwargs=kwargs,
+            )
+        )
+
+        self.on_timeout(
+            exception=exception,
+            args=args,
+            kwargs=kwargs,
+        )
+
+    def _on_max_retries(self, args, kwargs):
+        '''
+        '''
+        self.logger.error(
+            'task {task_name} has reached the max retries:\n\targs: {args}\n\tkwargs: {kwargs}'.format(
+                task_name=self.name,
+                args=args,
+                kwargs=kwargs,
+            )
+        )
+
+        self.on_max_retries(
+            args=args,
+            kwargs=kwargs,
+        )
 
     def init(self):
         '''
@@ -180,49 +285,27 @@ class Task:
     def on_success(self, returned_value, args, kwargs):
         '''
         '''
-        self.logger.info(
-            'task {task_name} reported a success:\n\tvalue: {value}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
-                task_name=self.name,
-                value=returned_value,
-                args=args,
-                kwargs=kwargs,
-            )
-        )
+        pass
 
     def on_failure(self, exception, args, kwargs):
         '''
         '''
-        self.logger.info(
-            'task {task_name} reported a failure:\n\texception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
-                task_name=self.name,
-                exception=exception,
-                args=args,
-                kwargs=kwargs,
-            )
-        )
+        pass
 
     def on_retry(self, args, kwargs):
         '''
         '''
-        self.logger.info(
-            'task {task_name} asked for a retry:\n\targs: {args}\n\tkwargs: {kwargs}'.format(
-                task_name=self.name,
-                args=args,
-                kwargs=kwargs,
-            )
-        )
+        pass
+
+    def on_max_retries(self, args, kwargs):
+        '''
+        '''
+        pass
 
     def on_timeout(self, exception, args, kwargs):
         '''
         '''
-        self.logger.info(
-            'task {task_name} raised a timeout exception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
-                task_name=self.name,
-                exception=str(exception),
-                args=args,
-                kwargs=kwargs,
-            )
-        )
+        pass
 
     def __getstate__(self):
         '''

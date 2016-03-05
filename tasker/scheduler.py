@@ -9,6 +9,8 @@ import logging
 class Scheduler:
     '''
     '''
+    log_level = logging.INFO
+
     def __init__(self):
         '''
         '''
@@ -49,7 +51,7 @@ class Scheduler:
         handler.setFormatter(formatter)
 
         logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        logger.setLevel(self.log_level)
 
         return logger
 

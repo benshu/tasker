@@ -7,6 +7,8 @@ import multiprocessing.pool
 class Worker:
     '''
     '''
+    log_level = logging.INFO
+
     def __init__(self, task, concurrent_workers, autoscale):
         self.logger = self._create_logger()
 
@@ -34,7 +36,7 @@ class Worker:
         handler.setFormatter(formatter)
 
         logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        logger.setLevel(self.log_level)
 
         return logger
 

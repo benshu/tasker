@@ -8,6 +8,8 @@ import logging
 class Queue:
     '''
     '''
+    log_level = logging.INFO
+
     def __init__(self, connector, queue_name, compression):
         '''
         '''
@@ -37,7 +39,7 @@ class Queue:
         handler.setFormatter(formatter)
 
         logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        logger.setLevel(self.log_level)
 
         return logger
 
