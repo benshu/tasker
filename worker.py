@@ -1,4 +1,5 @@
 import tasker
+import logging
 
 
 class Task(tasker.task.Task):
@@ -8,6 +9,7 @@ class Task(tasker.task.Task):
     timeout = 30.0
     max_tasks_per_run = 1000
     max_retries = 3
+    log_level = logging.INFO
 
     def init(self):
         self.a = 0
