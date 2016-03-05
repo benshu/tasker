@@ -14,12 +14,6 @@ class Worker:
         self.concurrent_workers = concurrent_workers
         self.autoscale = autoscale
 
-        self.pool_context = multiprocessing.get_context('spawn')
-        self.pool = multiprocessing.pool.Pool(
-            processes=concurrent_workers,
-            context=self.pool_context,
-        )
-
         self.logger.debug('initialized')
 
     def _create_logger(self):
@@ -40,7 +34,7 @@ class Worker:
         handler.setFormatter(formatter)
 
         logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.INFO)
 
         return logger
 
@@ -50,17 +44,23 @@ class Worker:
         self.logger.debug('started')
 
         while True:
-            self.logger.debug('task applied')
-
-            async_result = self.pool.apply_async(
-                func=function,
-            )
-
-            async_result.wait()
-
-            self.logger.debug('task finished')
-
             try:
+                process_pool_context = multiprocessing.get_context('spawn')
+                process_pool = multiprocessing.pool.Pool(
+                    processes=1,
+                    context=process_pool_context,
+                )
+
+                self.logger.debug('task applied')
+
+                async_result = process_pool.apply_async(
+                    func=function,
+                )
+
+                async_result.wait()
+
+                self.logger.debug('task finished')
+
                 async_result.get()
             except Exception as exc:
                 self.logger.error(
@@ -68,25 +68,32 @@ class Worker:
                         exc=exc,
                     )
                 )
+            finally:
+                process_pool.terminate()
 
     def start(self):
         '''
         '''
-        watchdog_threads = []
+        watchdog_async_results = []
 
         self.logger.debug('started')
 
+        thread_pool = multiprocessing.pool.ThreadPool(
+            processes=self.concurrent_workers,
+        )
+
         for i in range(self.concurrent_workers):
-            watchdog_thread = threading.Thread(
-                target=self.worker_watchdog,
-                kwargs={
+            async_result = thread_pool.apply_async(
+                func=self.worker_watchdog,
+                kwds={
                     'function': self.task.work_loop,
                 }
             )
-            watchdog_thread.start()
+            watchdog_async_results.append(async_result)
 
-            watchdog_threads.append(watchdog_thread)
+        for async_result in watchdog_async_results:
+            async_result.wait()
 
-        map(lambda thread: thread.join(), watchdog_threads)
+        thread_pool.terminate()
 
         self.logger.debug('finished')

@@ -39,7 +39,7 @@ class QueueTestCase(unittest.TestCase):
     def test_gzip_queue(self):
         test_queue = queue.Queue(
             connector=self.redis_connector,
-            queue_name='no_compression_queue',
+            queue_name='gzip_compression_queue',
             compression='gzip',
         )
 
@@ -55,7 +55,7 @@ class QueueTestCase(unittest.TestCase):
     def test_bzip2_queue(self):
         test_queue = queue.Queue(
             connector=self.redis_connector,
-            queue_name='no_compression_queue',
+            queue_name='bzip2_compression_queue',
             compression='bzip2',
         )
 
@@ -71,7 +71,7 @@ class QueueTestCase(unittest.TestCase):
     def test_lzma_queue(self):
         test_queue = queue.Queue(
             connector=self.redis_connector,
-            queue_name='no_compression_queue',
+            queue_name='lzma_compression_queue',
             compression='lzma',
         )
 

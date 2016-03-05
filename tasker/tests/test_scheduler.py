@@ -8,7 +8,7 @@ from .. import scheduler
 
 
 class DummyTask(task.Task):
-    name = 'test_task'
+    name = 'dummy_test_task'
 
 
 class SchedulerTestCase(unittest.TestCase):

@@ -6,7 +6,7 @@ class Task(tasker.task.Task):
 
     compression = 'none'
     timeout = 30.0
-    max_tasks_per_run = 10
+    max_tasks_per_run = 1000
     max_retries = 3
 
     def init(self):
@@ -33,4 +33,7 @@ def main():
     worker.start()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except:
+        print('killed')

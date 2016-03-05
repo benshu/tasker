@@ -47,7 +47,7 @@ class Task:
         handler.setFormatter(formatter)
 
         logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.INFO)
 
         return logger
 
@@ -96,8 +96,7 @@ class Task:
             num_of_finished_tasks += 1
 
         self.pool.terminate()
-
-        return True
+        logging.shutdown()
 
     def execute_task(self, task):
         '''

@@ -32,3 +32,5 @@ for i in range(500):
 after = time.time()
 
 print(after-before)
+time.sleep(10)
+scheduler.terminate()
