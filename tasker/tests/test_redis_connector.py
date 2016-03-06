@@ -46,6 +46,18 @@ class RedisConnectorTestCase(unittest.TestCase):
         )
         self.assertEqual(self.redis_connector.len(self.test_key), 0)
 
+        self.redis_connector.push_bulk(
+            key=self.test_key,
+            values=[self.test_value] * 100,
+        )
+        self.assertEqual(self.redis_connector.len(self.test_key), 100)
+        values = self.redis_connector.pop_bulk(
+            key=self.test_key,
+            count=100,
+        )
+        self.assertEqual(values, [self.test_value] * 100)
+        self.assertEqual(self.redis_connector.len(self.test_key), 0)
+
     def test_connector_pickleability(self):
         pickled_connector = pickle.dumps(self.redis_connector)
         pickled_connector = pickle.loads(pickled_connector)
@@ -79,5 +91,19 @@ class RedisConnectorTestCase(unittest.TestCase):
         pickled_connector.delete(
             key=self.test_key,
         )
+        self.assertEqual(pickled_connector.len(self.test_key), 0)
+        self.assertEqual(self.redis_connector.len(self.test_key), 0)
+
+        pickled_connector.push_bulk(
+            key=self.test_key,
+            values=[self.test_value] * 100,
+        )
+        self.assertEqual(pickled_connector.len(self.test_key), 100)
+        self.assertEqual(self.redis_connector.len(self.test_key), 100)
+        values = pickled_connector.pop_bulk(
+            key=self.test_key,
+            count=100,
+        )
+        self.assertEqual(values, [self.test_value] * 100)
         self.assertEqual(pickled_connector.len(self.test_key), 0)
         self.assertEqual(self.redis_connector.len(self.test_key), 0)

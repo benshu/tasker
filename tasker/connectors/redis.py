@@ -32,10 +32,35 @@ class Connector:
         else:
             return value[1]
 
+    def pop_bulk(self, key, count):
+        '''
+        '''
+        pipeline = self.connection.pipeline()
+
+        pipeline.lrange(key, 0, count - 1)
+        pipeline.ltrim(key, count, -1)
+
+        value = pipeline.execute()
+
+        if len(value) == 1:
+            return []
+        else:
+            return value[0]
+
     def push(self, key, value):
         '''
         '''
         return self.connection.rpush(key, value)
+
+    def push_bulk(self, key, values):
+        '''
+        '''
+        pipeline = self.connection.pipeline()
+
+        for value in values:
+            pipeline.rpush(key, value)
+
+        return pipeline.execute()
 
     def len(self, key):
         '''

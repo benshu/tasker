@@ -107,6 +107,18 @@ class QueueTestCase(unittest.TestCase):
         test_queue.flush()
         self.assertEqual(test_queue.len(), 0)
 
+        test_queue.enqueue_bulk(
+            values=[enqueued_value] * 100,
+        )
+        self.assertEqual(test_queue.len(), 100)
+        values = test_queue.dequeue_bulk(
+            count=100,
+        )
+        self.assertEqual(test_queue.len(), 0)
+        self.assertEqual(values, [enqueued_value] * 100)
+        test_queue.flush()
+        self.assertEqual(test_queue.len(), 0)
+
     def queue_pickleability(self, test_queue, enqueued_value):
         test_queue.flush()
         pickled_queue = pickle.dumps(test_queue)
@@ -133,6 +145,21 @@ class QueueTestCase(unittest.TestCase):
             )
         self.assertEqual(pickled_queue.len(), 10)
         self.assertEqual(test_queue.len(), 10)
+        pickled_queue.flush()
+        self.assertEqual(pickled_queue.len(), 0)
+        self.assertEqual(test_queue.len(), 0)
+
+        pickled_queue.enqueue_bulk(
+            values=[enqueued_value] * 100,
+        )
+        self.assertEqual(pickled_queue.len(), 100)
+        self.assertEqual(test_queue.len(), 100)
+        values = pickled_queue.dequeue_bulk(
+            count=100,
+        )
+        self.assertEqual(pickled_queue.len(), 0)
+        self.assertEqual(test_queue.len(), 0)
+        self.assertEqual(values, [enqueued_value] * 100)
         pickled_queue.flush()
         self.assertEqual(pickled_queue.len(), 0)
         self.assertEqual(test_queue.len(), 0)

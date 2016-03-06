@@ -64,6 +64,27 @@ class Queue:
 
         return decoded_value
 
+    def dequeue_bulk(self, count):
+        '''
+        '''
+        values = self.connector.pop_bulk(
+            key=self.queue_name,
+            count=count,
+        )
+
+        self.logger.debug('popped bulk')
+
+        decoded_values = []
+        for value in values:
+            decoded_value = self._decode(
+                value=value,
+            )
+            decoded_values.append(decoded_value)
+
+        self.logger.debug('decoded bulk')
+
+        return decoded_values
+
     def enqueue(self, value):
         '''
         '''
@@ -79,6 +100,27 @@ class Queue:
         )
 
         self.logger.debug('pushed')
+
+        return pushed
+
+    def enqueue_bulk(self, values):
+        '''
+        '''
+        encoded_values = []
+        for value in values:
+            encoded_value = self._encode(
+                value=value,
+            )
+            encoded_values.append(encoded_value)
+
+        self.logger.debug('encoded bulk')
+
+        pushed = self.connector.push_bulk(
+            key=self.queue_name,
+            values=encoded_values,
+        )
+
+        self.logger.debug('pushed bulk')
 
         return pushed
 
