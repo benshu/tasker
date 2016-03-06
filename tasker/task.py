@@ -3,8 +3,6 @@ import multiprocessing.pool
 import datetime
 import logging
 
-from . import queue
-
 
 class TaskException(Exception):
     pass
@@ -29,16 +27,10 @@ class Task:
     max_retries = 3
     log_level = logging.INFO
 
-    def __init__(self, connector):
+    def __init__(self, task_queue):
         self.logger = self._create_logger()
 
-        self.connector = connector
-
-        self.queue = queue.Queue(
-            connector=self.connector,
-            queue_name=self.name,
-            compression=self.compression,
-        )
+        self.task_queue = task_queue
 
         self.logger.debug('initialized')
 
@@ -74,15 +66,17 @@ class Task:
             'run_count': 0,
         }
 
-        self.queue.enqueue(
+        self.task_queue.enqueue(
             value=task,
         )
 
         self.logger.debug('enqueued a task')
 
-    def work_loop(self):
+    def work_loop(self, task_queue):
         '''
         '''
+        self.task_queue = task_queue
+
         self.pool = multiprocessing.pool.ThreadPool(
             processes=1,
             initializer=self.init,
@@ -90,7 +84,7 @@ class Task:
         )
 
         for i in range(self.max_tasks_per_run):
-            task = self.queue.dequeue(
+            task = self.task_queue.dequeue(
                 timeout=0,
             )
 
@@ -178,7 +172,7 @@ class Task:
             'run_count': self.last_task['run_count'] + 1,
         }
 
-        self.queue.enqueue(
+        self.task_queue.enqueue(
             value=task,
         )
 
@@ -310,17 +304,19 @@ class Task:
     def __getstate__(self):
         '''
         '''
-        connector = self.connector
+        state = {
+            'task_queue': self.task_queue,
+        }
 
         self.logger.debug('getstate')
 
-        return connector
+        return state
 
     def __setstate__(self, value):
         '''
         '''
         self.__init__(
-            connector=value,
+            task_queue=value['task_queue'],
         )
 
         self.logger.debug('setstate')

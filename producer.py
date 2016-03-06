@@ -9,9 +9,13 @@ connector = tasker.connectors.redis.Connector(
     port=6379,
     database=0,
 )
-
-task = worker.Task(
+task_queue = tasker.queue.Queue(
     connector=connector,
+    queue_name='test_task',
+    compression='none',
+)
+task = worker.Task(
+    task_queue=task_queue,
 )
 
 scheduler = tasker.scheduler.Scheduler()
@@ -27,7 +31,7 @@ scheduler.start()
 
 
 before = time.time()
-for i in range(500):
+for i in range(10000):
     scheduler.run_now(task, args=[], kwargs={'num': 5})
 after = time.time()
 

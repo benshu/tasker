@@ -4,6 +4,7 @@ import logging
 
 from .. import connectors
 from .. import task
+from .. import queue
 
 
 class EventsTestTask(task.Task):
@@ -59,29 +60,35 @@ class TaskTestCase(unittest.TestCase):
             database=0,
         )
 
-        self.events_test_task = EventsTestTask(
+        self.task_queue = queue.Queue(
             connector=self.redis_connector,
+            queue_name='events_test_task',
+            compression='none',
+        )
+
+        self.events_test_task = EventsTestTask(
+            task_queue=self.task_queue,
         )
 
     @classmethod
     def tearDownClass(self):
-        self.events_test_task.queue.flush()
+        self.events_test_task.task_queue.flush()
 
     def test_success_event(self):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
-        self.events_test_task.queue.flush()
+        self.events_test_task.task_queue.flush()
         self.events_test_task.run(
             action='succeeded',
         )
         self.assertEqual(
-            self.events_test_task.queue.len(),
+            self.events_test_task.task_queue.len(),
             1,
         )
 
-        self.events_test_task.work_loop()
+        self.events_test_task.work_loop(task_queue=self.task_queue)
         self.assertEqual(
-            self.events_test_task.queue.len(),
+            self.events_test_task.task_queue.len(),
             0,
         )
         self.assertTrue(
@@ -94,18 +101,18 @@ class TaskTestCase(unittest.TestCase):
     def test_failure_event(self):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
-        self.events_test_task.queue.flush()
+        self.events_test_task.task_queue.flush()
         self.events_test_task.run(
             action='failed',
         )
         self.assertEqual(
-            self.events_test_task.queue.len(),
+            self.events_test_task.task_queue.len(),
             1,
         )
 
-        self.events_test_task.work_loop()
+        self.events_test_task.work_loop(task_queue=self.task_queue)
         self.assertEqual(
-            self.events_test_task.queue.len(),
+            self.events_test_task.task_queue.len(),
             0,
         )
         self.assertTrue(
@@ -118,18 +125,18 @@ class TaskTestCase(unittest.TestCase):
     def test_time_out_event(self):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
-        self.events_test_task.queue.flush()
+        self.events_test_task.task_queue.flush()
         self.events_test_task.run(
             action='timed_out',
         )
         self.assertEqual(
-            self.events_test_task.queue.len(),
+            self.events_test_task.task_queue.len(),
             1,
         )
 
-        self.events_test_task.work_loop()
+        self.events_test_task.work_loop(task_queue=self.task_queue)
         self.assertEqual(
-            self.events_test_task.queue.len(),
+            self.events_test_task.task_queue.len(),
             0,
         )
         self.assertTrue(
@@ -142,18 +149,18 @@ class TaskTestCase(unittest.TestCase):
     def test_retry_event(self):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
-        self.events_test_task.queue.flush()
+        self.events_test_task.task_queue.flush()
         self.events_test_task.run(
             action='retried',
         )
         self.assertEqual(
-            self.events_test_task.queue.len(),
+            self.events_test_task.task_queue.len(),
             1,
         )
 
-        self.events_test_task.work_loop()
+        self.events_test_task.work_loop(task_queue=self.task_queue)
         self.assertEqual(
-            self.events_test_task.queue.len(),
+            self.events_test_task.task_queue.len(),
             1,
         )
         self.assertTrue(
@@ -166,18 +173,18 @@ class TaskTestCase(unittest.TestCase):
     def test_max_retries_event(self):
         self.events_test_task.max_tasks_per_run = 3
         self.events_test_task.max_retries = 2
-        self.events_test_task.queue.flush()
+        self.events_test_task.task_queue.flush()
         self.events_test_task.run(
             action='max_retried',
         )
         self.assertEqual(
-            self.events_test_task.queue.len(),
+            self.events_test_task.task_queue.len(),
             1,
         )
 
-        self.events_test_task.work_loop()
+        self.events_test_task.work_loop(task_queue=self.task_queue)
         self.assertEqual(
-            self.events_test_task.queue.len(),
+            self.events_test_task.task_queue.len(),
             0,
         )
         self.assertTrue(

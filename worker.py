@@ -7,7 +7,7 @@ class Task(tasker.task.Task):
 
     compression = 'none'
     timeout = 30.0
-    max_tasks_per_run = 1000
+    max_tasks_per_run = 10000
     max_retries = 3
     log_level = logging.INFO
 
@@ -27,11 +27,17 @@ def main():
         database=0,
     )
 
-    task = Task(
+    task_queue = tasker.queue.Queue(
         connector=connector,
+        queue_name='test_task',
+        compression='none',
     )
 
-    worker = tasker.worker.Worker(task, 1, False)
+    task = Task(
+        task_queue=task_queue,
+    )
+
+    worker = tasker.worker.Worker(task, task_queue, 4, False)
     worker.start()
 
 if __name__ == '__main__':

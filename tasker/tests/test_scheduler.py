@@ -5,6 +5,7 @@ import time
 from .. import connectors
 from .. import task
 from .. import scheduler
+from .. import queue
 
 
 class DummyTask(task.Task):
@@ -20,8 +21,14 @@ class SchedulerTestCase(unittest.TestCase):
             database=0,
         )
 
-        self.task = DummyTask(
+        self.task_queue = queue.Queue(
             connector=self.redis_connector,
+            queue_name='dummy_test_task',
+            compression='none',
+        )
+
+        self.task = DummyTask(
+            task_queue=self.task_queue,
         )
 
         self.scheduler = scheduler.Scheduler()
@@ -29,10 +36,10 @@ class SchedulerTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         self.scheduler.terminate()
-        self.task.queue.flush()
+        self.task.task_queue.flush()
 
     def test_run_now(self):
-        queue = self.task.queue
+        queue = self.task.task_queue
         queue.flush()
 
         self.scheduler.start()
@@ -56,7 +63,7 @@ class SchedulerTestCase(unittest.TestCase):
         self.scheduler.clear()
 
     def test_run_in(self):
-        queue = self.task.queue
+        queue = self.task.task_queue
         queue.flush()
 
         self.scheduler.start()
@@ -90,7 +97,7 @@ class SchedulerTestCase(unittest.TestCase):
         self.scheduler.clear()
 
     def test_run_at(self):
-        queue = self.task.queue
+        queue = self.task.task_queue
         queue.flush()
 
         self.scheduler.start()
@@ -124,7 +131,7 @@ class SchedulerTestCase(unittest.TestCase):
         self.scheduler.clear()
 
     def test_run_every(self):
-        queue = self.task.queue
+        queue = self.task.task_queue
         queue.flush()
 
         self.scheduler.start()
