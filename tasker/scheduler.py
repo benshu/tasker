@@ -122,7 +122,7 @@ class Scheduler:
         '''
         task.run(
             *args,
-            **kwargs,
+            **kwargs
         )
 
         self.logger.debug('task enqueued')
