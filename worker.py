@@ -1,5 +1,6 @@
 import tasker
 import logging
+import time
 
 
 class Task(tasker.task.Task):
@@ -8,16 +9,21 @@ class Task(tasker.task.Task):
     compression = 'none'
     timeout = 30.0
     max_tasks_per_run = 10000
+    tasks_per_transaction = 10
     max_retries = 3
-    log_level = logging.INFO
+    log_level = logging.WARNING
 
     def init(self):
         self.a = 0
+        print(time.time())
 
     def work(self, num):
         self.a += num
 
-        return self.a
+        if num == 6:
+            print('finish')
+            print(time.time())
+            print(self.a)
 
 
 def main():

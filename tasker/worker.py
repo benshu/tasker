@@ -25,6 +25,21 @@ class WorkersSharedQueue:
             value=value,
         )
 
+    def qsize(self):
+        '''
+        '''
+        return self.shared_task_queue.qsize()
+
+    def len(self):
+        '''
+        '''
+        return self.task_queue.len()
+
+    def flush(self):
+        '''
+        '''
+        return self.task_queue.flush()
+
     def __getstate__(self):
         '''
         '''
@@ -47,7 +62,7 @@ class WorkersSharedQueue:
 class Worker:
     '''
     '''
-    log_level = logging.INFO
+    log_level = logging.WARNING
 
     def __init__(self, task_class, task_queue, concurrent_workers, autoscale):
         self.logger = self._create_logger()
@@ -56,7 +71,9 @@ class Worker:
         self.autoscale = autoscale
 
         multiprocessing_manager = multiprocessing.Manager()
-        multiprocessing_queue = multiprocessing_manager.Queue()
+        multiprocessing_queue = multiprocessing_manager.Queue(
+            maxsize=task_class.tasks_per_transaction * concurrent_workers,
+        )
         self.shared_task_queue = WorkersSharedQueue(
             task_queue=task_queue,
             shared_task_queue=multiprocessing_queue,
@@ -92,14 +109,23 @@ class Worker:
     def queue_manager(self):
         '''
         '''
+        max_queue_size = self.task.tasks_per_transaction * self.concurrent_workers
+
         while True:
-            time.sleep(0.1)
+            shared_queue_size = self.shared_task_queue.qsize()
+            task_queue_size = self.shared_task_queue.len()
+
+            if shared_queue_size > (max_queue_size / 2) or task_queue_size == 0:
+                time.sleep(0)
+
+                continue
+
             values = self.shared_task_queue.task_queue.dequeue_bulk(
-                count=1000,
+                count=max_queue_size,
             )
 
             if not values:
-                continue
+                time.sleep(0)
             else:
                 for value in values:
                     self.shared_task_queue.shared_task_queue.put(value)

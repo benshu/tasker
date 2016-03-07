@@ -33,6 +33,7 @@ scheduler.start()
 before = time.time()
 for i in range(10000):
     scheduler.run_now(task, args=[], kwargs={'num': 5})
+scheduler.run_now(task, args=[], kwargs={'num': 6})
 after = time.time()
 
 print(after-before)

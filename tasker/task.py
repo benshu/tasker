@@ -25,6 +25,7 @@ class Task:
     timeout = 30.0
     max_tasks_per_run = 10
     max_retries = 3
+    tasks_per_transaction = 10
     log_level = logging.INFO
 
     def __init__(self, task_queue):
