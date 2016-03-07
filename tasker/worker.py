@@ -5,6 +5,8 @@ import time
 
 
 class WorkersSharedQueue:
+    '''
+    '''
     def __init__(self, task_queue, shared_task_queue):
         super().__init__()
 
@@ -12,11 +14,33 @@ class WorkersSharedQueue:
         self.shared_task_queue = shared_task_queue
 
     def dequeue(self, timeout):
+        '''
+        '''
         return self.shared_task_queue.get()
 
     def enqueue(self, value):
+        '''
+        '''
         self.task_queue.enqueue(
             value=value,
+        )
+
+    def __getstate__(self):
+        '''
+        '''
+        state = {
+            'task_queue': self.task_queue,
+            'shared_task_queue': self.shared_task_queue,
+        }
+
+        return state
+
+    def __setstate__(self, value):
+        '''
+        '''
+        self.__init__(
+            task_queue=value['task_queue'],
+            shared_task_queue=value['shared_task_queue'],
         )
 
 
@@ -25,13 +49,21 @@ class Worker:
     '''
     log_level = logging.INFO
 
-    def __init__(self, task, task_queue, concurrent_workers, autoscale):
+    def __init__(self, task_class, task_queue, concurrent_workers, autoscale):
         self.logger = self._create_logger()
 
-        self.task = task
-        self.task_queue = task_queue
         self.concurrent_workers = concurrent_workers
         self.autoscale = autoscale
+
+        multiprocessing_manager = multiprocessing.Manager()
+        multiprocessing_queue = multiprocessing_manager.Queue()
+        self.shared_task_queue = WorkersSharedQueue(
+            task_queue=task_queue,
+            shared_task_queue=multiprocessing_queue,
+        )
+        self.task = task_class(
+            task_queue=self.shared_task_queue,
+        )
 
         self.logger.debug('initialized')
 
@@ -57,12 +89,12 @@ class Worker:
 
         return logger
 
-    def queue_manager(self, shared_queue):
+    def queue_manager(self):
         '''
         '''
         while True:
             time.sleep(0.1)
-            values = shared_queue.task_queue.dequeue_bulk(
+            values = self.shared_task_queue.task_queue.dequeue_bulk(
                 count=1000,
             )
 
@@ -70,9 +102,9 @@ class Worker:
                 continue
             else:
                 for value in values:
-                    shared_queue.shared_task_queue.put(value)
+                    self.shared_task_queue.shared_task_queue.put(value)
 
-    def worker_watchdog(self, function, shared_queue):
+    def worker_watchdog(self, function):
         '''
         '''
         self.logger.debug('started')
@@ -89,9 +121,6 @@ class Worker:
 
                 async_result = process_pool.apply_async(
                     func=function,
-                    kwds={
-                        'task_queue': shared_queue,
-                    }
                 )
 
                 async_result.wait()
@@ -112,12 +141,6 @@ class Worker:
         '''
         '''
         async_results = []
-        manager = multiprocessing.Manager()
-        shared_task_queue = manager.Queue()
-        shared_queue = WorkersSharedQueue(
-            task_queue=self.task_queue,
-            shared_task_queue=shared_task_queue,
-        )
 
         self.logger.debug('started')
 
@@ -130,16 +153,12 @@ class Worker:
                 func=self.worker_watchdog,
                 kwds={
                     'function': self.task.work_loop,
-                    'shared_queue': shared_queue,
                 }
             )
             async_results.append(async_result)
 
         async_result = thread_pool.apply_async(
             func=self.queue_manager,
-            kwds={
-                'shared_queue': shared_queue,
-            }
         )
         async_results.append(async_result)
 

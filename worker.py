@@ -33,11 +33,11 @@ def main():
         compression='none',
     )
 
-    task = Task(
-        task_queue=task_queue,
-    )
+    # task = Task(
+    #     task_queue=task_queue,
+    # )
 
-    worker = tasker.worker.Worker(task, task_queue, 4, False)
+    worker = tasker.worker.Worker(Task, task_queue, 4, False)
     worker.start()
 
 if __name__ == '__main__':

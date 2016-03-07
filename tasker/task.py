@@ -72,11 +72,9 @@ class Task:
 
         self.logger.debug('enqueued a task')
 
-    def work_loop(self, task_queue):
+    def work_loop(self):
         '''
         '''
-        self.task_queue = task_queue
-
         self.pool = multiprocessing.pool.ThreadPool(
             processes=1,
             initializer=self.init,

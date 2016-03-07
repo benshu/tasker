@@ -86,7 +86,7 @@ class TaskTestCase(unittest.TestCase):
             1,
         )
 
-        self.events_test_task.work_loop(task_queue=self.task_queue)
+        self.events_test_task.work_loop()
         self.assertEqual(
             self.events_test_task.task_queue.len(),
             0,
@@ -110,7 +110,7 @@ class TaskTestCase(unittest.TestCase):
             1,
         )
 
-        self.events_test_task.work_loop(task_queue=self.task_queue)
+        self.events_test_task.work_loop()
         self.assertEqual(
             self.events_test_task.task_queue.len(),
             0,
@@ -134,7 +134,7 @@ class TaskTestCase(unittest.TestCase):
             1,
         )
 
-        self.events_test_task.work_loop(task_queue=self.task_queue)
+        self.events_test_task.work_loop()
         self.assertEqual(
             self.events_test_task.task_queue.len(),
             0,
@@ -158,7 +158,7 @@ class TaskTestCase(unittest.TestCase):
             1,
         )
 
-        self.events_test_task.work_loop(task_queue=self.task_queue)
+        self.events_test_task.work_loop()
         self.assertEqual(
             self.events_test_task.task_queue.len(),
             1,
@@ -182,7 +182,7 @@ class TaskTestCase(unittest.TestCase):
             1,
         )
 
-        self.events_test_task.work_loop(task_queue=self.task_queue)
+        self.events_test_task.work_loop()
         self.assertEqual(
             self.events_test_task.task_queue.len(),
             0,
