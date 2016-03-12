@@ -107,4 +107,48 @@ class HostTest(unittest.TestCase):
             )
 
     def test_reports_per_second(self):
-        pass
+        for benchmark_type in (
+            ('success_per_second', 'success',),
+            ('failure_per_second', 'failure',),
+            ('retry_per_second', 'retry',),
+        ):
+            host_obj = host.Host(
+                name='test_host_name',
+            )
+            worker_obj = worker.Worker(
+                name='test_worker_one_name',
+            )
+
+            self.assertEqual(
+                first=getattr(host_obj, benchmark_type[0]),
+                second=0,
+            )
+
+            host_obj.workers.append(worker_obj)
+
+            self.assertEqual(
+                first=getattr(host_obj, benchmark_type[0]),
+                second=0,
+            )
+
+            for i in range(3):
+                worker_obj.last_reports.append(
+                    {
+                        'host_name': host_obj.name,
+                        'worker_name': worker_obj.name,
+                        'type': benchmark_type[1],
+                        'date': datetime.datetime.utcnow(),
+                    }
+                )
+
+            self.assertEqual(
+                first=getattr(host_obj, benchmark_type[0]),
+                second=3,
+            )
+
+            time.sleep(1.1)
+
+            self.assertEqual(
+                first=getattr(host_obj, benchmark_type[0]),
+                second=0,
+            )

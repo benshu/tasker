@@ -41,28 +41,25 @@ class Worker:
     def success_per_second(self):
         return self.report_type_per_second(
             report_type='success',
-            from_last_seconds=3,
         )
 
     @property
     def failure_per_second(self):
         return self.report_type_per_second(
             report_type='failure',
-            from_last_seconds=3,
         )
 
     @property
     def retry_per_second(self):
         return self.report_type_per_second(
             report_type='retry',
-            from_last_seconds=3,
         )
 
-    def report_type_per_second(self, report_type, from_last_seconds):
+    def report_type_per_second(self, report_type):
         num_of_reports = 0
 
         report_diff_time = datetime.timedelta(
-            seconds=from_last_seconds,
+            seconds=1,
         )
         now_date = datetime.datetime.utcnow()
 
