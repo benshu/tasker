@@ -6,10 +6,13 @@ from .. import connectors
 
 class RedisConnectorTestCase(unittest.TestCase):
     def setUp(self):
-        self.redis_connector = connectors.redis.Connector(
-            host='127.0.0.1',
-            port=6379,
-            database=0,
+        self.redis_connector = connectors.redis_cluster.Connector(
+            startup_nodes=[
+                {
+                    'host': '127.0.0.1',
+                    'port': 6379,
+                },
+            ]
         )
         self.test_key = 'test_key'
         self.test_value = b'test_value'

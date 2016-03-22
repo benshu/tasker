@@ -1,11 +1,26 @@
 import time
-import redis
+import rediscluster
 
 
-conn = redis.StrictRedis(
-    host='127.0.0.1',
-    port=6379,
-    db=0,
+conn = rediscluster.StrictRedisCluster(
+    startup_nodes=[
+        {
+            'host': '127.0.0.1',
+            'port': 6379,
+        },
+        {
+            'host': '127.0.0.1',
+            'port': 6380,
+        },
+        {
+            'host': '127.0.0.1',
+            'port': 6381,
+        },
+    ],
+    retry_on_timeout=True,
+    socket_keepalive=False,
+    socket_connect_timeout=10,
+    socket_timeout=60,
 )
 
 before = time.time()
