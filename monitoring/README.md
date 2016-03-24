@@ -25,8 +25,7 @@ kibana
 curl --header "kbn-version:4.4.2" -XPOST "http://localhost:5601/elasticsearch/.kibana/index-pattern/monitoring?op_type=create" -d '
     {
         "title": "monitoring",
-        "timeFieldName": "date",
-        "customFormats":"{}"
+        "timeFieldName": "date"
     }
 '
 
