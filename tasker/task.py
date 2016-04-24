@@ -73,7 +73,7 @@ class Task:
 
         self.logger.debug('enqueued a task')
 
-    def work_loop(self):
+    def work_loop(self, stop_event=None):
         '''
         '''
         self.pool = multiprocessing.pool.ThreadPool(
@@ -83,6 +83,11 @@ class Task:
         )
 
         for i in range(self.max_tasks_per_run):
+            if stop_event and not stop_event.is_set():
+                self.logger.debug('task execution has been stopped')
+
+                break
+
             task = self.task_queue.dequeue(
                 timeout=0,
             )
@@ -97,6 +102,11 @@ class Task:
 
         self.pool.terminate()
         logging.shutdown()
+
+        if not stop_event.is_set():
+            return False
+        else:
+            return True
 
     def execute_task(self, task):
         '''

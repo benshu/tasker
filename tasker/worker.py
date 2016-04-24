@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 import multiprocessing.pool
 import time
+import datetime
 
 
 class WorkersSharedQueue:
@@ -13,10 +14,33 @@ class WorkersSharedQueue:
         self.task_queue = task_queue
         self.shared_task_queue = shared_task_queue
 
+        self.tasks_consumed = 0
+        self.consumption_ratio = 0.0
+        self.last_consumption_ratio_sampling = datetime.datetime.utcnow()
+        self.consumption_ratio_sampling_period = datetime.timedelta(
+            seconds=5,
+        )
+
     def dequeue(self, timeout):
         '''
         '''
-        return self.shared_task_queue.get()
+        now_time = datetime.datetime.utcnow()
+        if self.last_consumption_ratio_sampling + self.consumption_ratio_sampling_period < now_time:
+            time_elapsed_from_last_sample = (now_time - self.last_consumption_ratio_sampling).total_seconds
+            self.consumption_ratio = self.tasks_consumed / time_elapsed_from_last_sample
+
+            self.last_consumption_ratio_sampling = now_time
+            self.tasks_consumed = 0
+
+        self.tasks_consumed += 1
+
+        if timeout == 0:
+            timeout = None
+
+        return self.shared_task_queue.get(
+            block=True,
+            timeout=timeout,
+        )
 
     def enqueue(self, value):
         '''
@@ -82,6 +106,12 @@ class Worker:
             task_queue=self.shared_task_queue,
         )
 
+        self.workers_watchdogs_thread_pool = multiprocessing.pool.ThreadPool(
+            processes=self.concurrent_workers + 1,
+        )
+
+        self.running_workers = []
+
         self.logger.debug('initialized')
 
     def _create_logger(self):
@@ -116,7 +146,7 @@ class Worker:
             task_queue_size = self.shared_task_queue.len()
 
             if shared_queue_size > (max_queue_size / 2) or task_queue_size == 0:
-                time.sleep(0)
+                time.sleep(0.5)
 
                 continue
 
@@ -130,7 +160,7 @@ class Worker:
                 for value in values:
                     self.shared_task_queue.shared_task_queue.put(value)
 
-    def worker_watchdog(self, function):
+    def worker_watchdog(self, function, stop_event):
         '''
         '''
         self.logger.debug('started')
@@ -147,50 +177,90 @@ class Worker:
 
                 async_result = process_pool.apply_async(
                     func=function,
+                    kwds={
+                        'stop_event': stop_event,
+                    }
                 )
-
                 async_result.wait()
 
                 self.logger.debug('task finished')
 
-                async_result.get()
-            except Exception as exc:
+                task_execution_result = async_result.get()
+
+                if task_execution_result is False:
+                    self.logger.debug('task has been stopped')
+
+                    return False
+            except Exception as exception:
                 self.logger.error(
-                    'task execution raised an exception: {exc}'.format(
-                        exc=exc,
+                    'task execution raised an exception: {exception}'.format(
+                        exception=exception,
                     )
                 )
             finally:
                 process_pool.terminate()
 
+    def add_worker(self):
+        '''
+        '''
+        if len(self.running_workers) == self.concurrent_workers:
+            self.logger.debug('max concurrent workers are already running')
+
+            return
+
+        multiprocessing_manager = multiprocessing.Manager()
+        stop_event = multiprocessing_manager.Event()
+        stop_event.set()
+
+        async_result = self.workers_watchdogs_thread_pool.apply_async(
+            func=self.worker_watchdog,
+            kwds={
+                'function': self.task.work_loop,
+                'stop_event': stop_event,
+            },
+        )
+        self.running_workers.append(
+            {
+                'async_result': async_result,
+                'stop_event': stop_event,
+            }
+        )
+
+        self.logger.debug('added another running worker')
+
+    def remove_worker(self):
+        '''
+        '''
+        if len(self.running_workers) == 0:
+            self.logger.debug('no running workers left to remove')
+
+            return
+
+        worker_to_remove = self.running_workers.pop()
+        worker_to_remove['stop_event'].clear()
+
+        self.logger.debug('a worker has been removed from the queue')
+
     def start(self):
         '''
         '''
-        async_results = []
-
         self.logger.debug('started')
 
-        thread_pool = multiprocessing.pool.ThreadPool(
-            processes=self.concurrent_workers + 1,
-        )
-
         for i in range(self.concurrent_workers):
-            async_result = thread_pool.apply_async(
-                func=self.worker_watchdog,
-                kwds={
-                    'function': self.task.work_loop,
-                }
-            )
-            async_results.append(async_result)
+            self.add_worker()
 
-        async_result = thread_pool.apply_async(
+        shared_task_queue_async_result = self.workers_watchdogs_thread_pool.apply_async(
             func=self.queue_manager,
         )
-        async_results.append(async_result)
 
+        async_results = [
+            worker['async_result']
+            for worker in self.running_workers
+        ]
+        async_results.append(shared_task_queue_async_result)
         for async_result in async_results:
             async_result.wait()
 
-        thread_pool.terminate()
+        self.workers_watchdogs_thread_pool.terminate()
 
         self.logger.debug('finished')

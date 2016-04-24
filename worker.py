@@ -9,21 +9,15 @@ class Task(tasker.task.Task):
     compression = 'none'
     timeout = 30.0
     max_tasks_per_run = 10000
-    tasks_per_transaction = 10
+    tasks_per_transaction = 10000
     max_retries = 3
-    log_level = logging.WARNING
+    log_level = logging.INFO
 
     def init(self):
         self.a = 0
-        print(time.time())
 
     def work(self, num):
         self.a += num
-
-        if num == 6:
-            print('finish')
-            print(time.time())
-            print(self.a)
 
 
 def main():
@@ -44,6 +38,7 @@ def main():
     # )
 
     worker = tasker.worker.Worker(Task, task_queue, 4, False)
+    worker.log_level = logging.DEBUG
     worker.start()
 
 if __name__ == '__main__':
