@@ -24,7 +24,8 @@ class SchedulerTestCase(unittest.TestCase):
         self.task_queue = queue.Queue(
             connector=self.redis_connector,
             queue_name='dummy_test_task',
-            compression='none',
+            compressor='none',
+            serializer='msgpack',
         )
 
         self.task = DummyTask(

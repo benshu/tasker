@@ -16,7 +16,7 @@ class QueueTestCase(unittest.TestCase):
 
         self.enqueued_value = {
             'str': 'string',
-            'date': datetime.datetime.utcnow(),
+            'date': datetime.datetime.utcnow().timestamp(),
             'array': [1, 2, 3, 4],
         }
 
@@ -24,7 +24,25 @@ class QueueTestCase(unittest.TestCase):
         test_queue = queue.Queue(
             connector=self.redis_connector,
             queue_name='no_compression_queue',
-            compression='',
+            compressor='',
+            serializer='pickle',
+        )
+
+        self.queue_functionality(
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+        )
+        self.queue_pickleability(
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+        )
+
+    def test_zlib_queue(self):
+        test_queue = queue.Queue(
+            connector=self.redis_connector,
+            queue_name='zlib_compression_queue',
+            compressor='zlib',
+            serializer='pickle',
         )
 
         self.queue_functionality(
@@ -40,7 +58,8 @@ class QueueTestCase(unittest.TestCase):
         test_queue = queue.Queue(
             connector=self.redis_connector,
             queue_name='gzip_compression_queue',
-            compression='gzip',
+            compressor='gzip',
+            serializer='pickle',
         )
 
         self.queue_functionality(
@@ -56,7 +75,8 @@ class QueueTestCase(unittest.TestCase):
         test_queue = queue.Queue(
             connector=self.redis_connector,
             queue_name='bzip2_compression_queue',
-            compression='bzip2',
+            compressor='bzip2',
+            serializer='pickle',
         )
 
         self.queue_functionality(
@@ -72,7 +92,76 @@ class QueueTestCase(unittest.TestCase):
         test_queue = queue.Queue(
             connector=self.redis_connector,
             queue_name='lzma_compression_queue',
-            compression='lzma',
+            compressor='lzma',
+            serializer='pickle',
+        )
+
+        self.queue_functionality(
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+        )
+        self.queue_pickleability(
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+        )
+
+    def test_pickle_queue(self):
+        test_queue = queue.Queue(
+            connector=self.redis_connector,
+            queue_name='pickle_queue',
+            compressor='none',
+            serializer='pickle',
+        )
+
+        self.queue_functionality(
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+        )
+        self.queue_pickleability(
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+        )
+
+    def test_msgpack_queue(self):
+        test_queue = queue.Queue(
+            connector=self.redis_connector,
+            queue_name='pickle_queue',
+            compressor='none',
+            serializer='msgpack',
+        )
+
+        self.queue_functionality(
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+        )
+        self.queue_pickleability(
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+        )
+
+    def test_msgpack_compressed_queue(self):
+        test_queue = queue.Queue(
+            connector=self.redis_connector,
+            queue_name='pickle_queue',
+            compressor='zlib',
+            serializer='msgpack',
+        )
+
+        self.queue_functionality(
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+        )
+        self.queue_pickleability(
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+        )
+
+    def test_pickle_compressed_queue(self):
+        test_queue = queue.Queue(
+            connector=self.redis_connector,
+            queue_name='pickle_queue',
+            compressor='zlib',
+            serializer='pickle',
         )
 
         self.queue_functionality(

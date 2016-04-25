@@ -63,7 +63,8 @@ class TaskTestCase(unittest.TestCase):
         self.task_queue = queue.Queue(
             connector=self.redis_connector,
             queue_name='events_test_task',
-            compression='none',
+            compressor='none',
+            serializer='msgpack',
         )
 
         self.events_test_task = EventsTestTask(

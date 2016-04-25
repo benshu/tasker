@@ -21,7 +21,8 @@ class Task:
     '''
     name = 'task_name'
 
-    compression = 'none'
+    compressor = 'zlib'
+    serializer = 'msgpack'
     timeout = 30.0
     max_tasks_per_run = 10
     max_retries = 3
@@ -61,7 +62,7 @@ class Task:
         '''
         '''
         task = {
-            'insertion_date': datetime.datetime.utcnow(),
+            'date': datetime.datetime.utcnow().timestamp(),
             'args': args,
             'kwargs': kwargs,
             'run_count': 0,
@@ -103,7 +104,7 @@ class Task:
         self.pool.terminate()
         logging.shutdown()
 
-        if not stop_event.is_set():
+        if stop_event and not stop_event.is_set():
             return False
         else:
             return True
@@ -175,7 +176,7 @@ class Task:
             )
 
         task = {
-            'insertion_date': datetime.datetime.utcnow(),
+            'date': datetime.datetime.utcnow().timestamp(),
             'args': self.last_task['args'],
             'kwargs': self.last_task['kwargs'],
             'run_count': self.last_task['run_count'] + 1,

@@ -1,4 +1,6 @@
 import pickle
+import msgpack
+import zlib
 import gzip
 import bz2
 import lzma
@@ -10,14 +12,15 @@ class Queue:
     '''
     log_level = logging.INFO
 
-    def __init__(self, connector, queue_name, compression):
+    def __init__(self, connector, queue_name, serializer, compressor):
         '''
         '''
         self.logger = self._create_logger()
 
         self.connector = connector
         self.queue_name = queue_name
-        self.compression = compression
+        self.serializer = serializer
+        self.compressor = compressor
 
         self.logger.debug('initialized')
 
@@ -124,69 +127,115 @@ class Queue:
 
         return pushed
 
-    def _encode(self, value):
+    def _compress(self, value):
         '''
         '''
-        pickled_value = pickle.dumps(value)
+        if self.compressor == 'zlib':
+            compressed_object = zlib.compress(value)
 
-        self.logger.debug('pickled')
-
-        if self.compression == 'gzip':
-            compressed_pickled_value = gzip.compress(
-                data=pickled_value,
-            )
+            self.logger.debug('zlib compressed')
+        elif self.compressor == 'gzip':
+            compressed_object = gzip.compress(value)
 
             self.logger.debug('gzip compressed')
-        elif self.compression == 'bzip2':
-            compressed_pickled_value = bz2.compress(
-                data=pickled_value,
-            )
+        elif self.compressor == 'bzip2':
+            compressed_object = bz2.compress(value)
 
             self.logger.debug('bzip2 compressed')
-        elif self.compression == 'lzma':
-            compressed_pickled_value = lzma.compress(
-                data=pickled_value,
-            )
+        elif self.compressor == 'lzma':
+            compressed_object = lzma.compress(value)
 
             self.logger.debug('lzma compressed')
         else:
-            compressed_pickled_value = pickled_value
+            compressed_object = value
 
             self.logger.debug('did not compress')
 
-        return compressed_pickled_value
+        return compressed_object
+
+    def _decompress(self, value):
+        '''
+        '''
+        if self.compressor == 'zlib':
+            decompressed_object = zlib.decompress(value)
+
+            self.logger.debug('zlib decompressed')
+        elif self.compressor == 'gzip':
+            decompressed_object = gzip.decompress(value)
+
+            self.logger.debug('gzip decompressed')
+        elif self.compressor == 'bzip2':
+            decompressed_object = bz2.decompress(value)
+
+            self.logger.debug('bzip2 decompressed')
+        elif self.compressor == 'lzma':
+            decompressed_object = lzma.decompress(value)
+
+            self.logger.debug('lzma decompressed')
+        else:
+            decompressed_object = value
+
+            self.logger.debug('did not decompress')
+
+        return decompressed_object
+
+    def _serialize(self, value):
+        '''
+        '''
+        if self.serializer == 'pickle':
+            serialized_value = pickle.dumps(value)
+        elif self.serializer == 'msgpack':
+            serialized_value = msgpack.dumps(value)
+        else:
+            serialized_value = value
+
+        return serialized_value
+
+    def _unserialize(self, value):
+        '''
+        '''
+        if self.serializer == 'pickle':
+            unserialized_value = pickle.loads(
+                data=value,
+                encoding='utf-8',
+            )
+        elif self.serializer == 'msgpack':
+            unserialized_value = msgpack.loads(
+                packed=value,
+                encoding='utf-8',
+            )
+        else:
+            unserialized_value = value
+
+        return unserialized_value
+
+    def _encode(self, value):
+        '''
+        '''
+        serialized_value = self._serialize(
+            value=value,
+        )
+        compressed_serialized_value = self._compress(
+            value=serialized_value,
+        )
+
+        self.logger.debug('encoded')
+
+        return compressed_serialized_value
 
     def _decode(self, value):
         '''
         '''
-        if self.compression == 'gzip':
-            decompressed_value = gzip.decompress(
-                data=value,
-            )
+        decompressed_value = self._decompress(
+            value=value,
+        )
+        unserialized_decompressed_value = self._unserialize(
+            value=decompressed_value,
+        )
 
-            self.logger.debug('gzip decompressed')
-        elif self.compression == 'bzip2':
-            decompressed_value = bz2.decompress(
-                data=value,
-            )
+        self.logger.debug('decoded')
 
-            self.logger.debug('bzip2 decompressed')
-        elif self.compression == 'lzma':
-            decompressed_value = lzma.decompress(
-                data=value,
-            )
-
-            self.logger.debug('lzma decompressed')
-        else:
-            decompressed_value = value
-
-            self.logger.debug('did not decompress')
-
-        decompressed_unpickled_value = pickle.loads(decompressed_value)
-
-        self.logger.debug('unpickled')
-
-        return decompressed_unpickled_value
+        return unserialized_decompressed_value
 
     def len(self):
         '''
@@ -214,7 +263,8 @@ class Queue:
         state = {
             'connector': self.connector,
             'queue_name': self.queue_name,
-            'compression': self.compression,
+            'compressor': self.compressor,
+            'serializer': self.serializer,
         }
 
         self.logger.debug('getstate')
@@ -227,7 +277,8 @@ class Queue:
         self.__init__(
             connector=value['connector'],
             queue_name=value['queue_name'],
-            compression=value['compression'],
+            compressor=value['compressor'],
+            serializer=value['serializer'],
         )
 
         self.logger.debug('setstate')

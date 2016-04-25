@@ -12,7 +12,8 @@ connector = tasker.connectors.redis.Connector(
 task_queue = tasker.queue.Queue(
     connector=connector,
     queue_name='test_task',
-    compression='none',
+    compressor='none',
+    serializer='msgpack',
 )
 task = worker.Task(
     task_queue=task_queue,

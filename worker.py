@@ -30,7 +30,8 @@ def main():
     task_queue = tasker.queue.Queue(
         connector=connector,
         queue_name='test_task',
-        compression='none',
+        compressor='none',
+        serializer='msgpack',
     )
 
     # task = Task(

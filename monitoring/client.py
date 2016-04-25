@@ -80,11 +80,6 @@ class MonitoringClient:
             message_type='retry',
         )
 
-    def send_install(self):
-        self._send_stats(
-            message_type='install',
-        )
-
     def install_kibana(self, kibana_host, kibana_port):
         kibana_version = self._get_kibana_version()
 
