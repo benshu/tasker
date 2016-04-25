@@ -111,7 +111,7 @@ class StatisticsServer:
                 StatisticsUDPServer,
                 **{
                     'statistics_obj': statistics_obj,
-                },
+                }
             ),
             local_addr=(
                 udp_server['host'],

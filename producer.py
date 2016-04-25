@@ -9,6 +9,14 @@ connector = tasker.connectors.redis.Connector(
     port=6379,
     database=0,
 )
+monitor_client = tasker.monitor.client.StatisticsClient(
+    stats_server={
+        'host': '127.0.0.1',
+        'port': 9999,
+    },
+    host_name='test_host',
+    worker_name='test_worker',
+)
 task_queue = tasker.queue.Queue(
     connector=connector,
     queue_name='test_task',
@@ -17,6 +25,7 @@ task_queue = tasker.queue.Queue(
 )
 task = worker.Task(
     task_queue=task_queue,
+    monitor_client=monitor_client,
 )
 
 scheduler = tasker.scheduler.Scheduler()

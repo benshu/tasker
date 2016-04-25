@@ -48,3 +48,23 @@ class StatisticsClient:
         self.send_stats(
             message_type='retry',
         )
+
+    def __getstate__(self):
+        '''
+        '''
+        state = {
+            'stats_server': self.stats_server,
+            'host_name': self.host_name,
+            'worker_name': self.worker_name,
+        }
+
+        return state
+
+    def __setstate__(self, value):
+        '''
+        '''
+        self.__init__(
+            stats_server=value['stats_server'],
+            host_name=value['host_name'],
+            worker_name=value['worker_name'],
+        )

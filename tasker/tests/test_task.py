@@ -5,6 +5,7 @@ import logging
 from .. import connectors
 from .. import task
 from .. import queue
+from .. import monitor
 
 
 class EventsTestTask(task.Task):
@@ -59,6 +60,14 @@ class TaskTestCase(unittest.TestCase):
             port=6379,
             database=0,
         )
+        self.monitor_client = monitor.client.StatisticsClient(
+            stats_server={
+                'host': '127.0.0.1',
+                'port': 9999,
+            },
+            host_name='test_host',
+            worker_name='test_worker',
+        )
 
         self.task_queue = queue.Queue(
             connector=self.redis_connector,
@@ -69,6 +78,7 @@ class TaskTestCase(unittest.TestCase):
 
         self.events_test_task = EventsTestTask(
             task_queue=self.task_queue,
+            monitor_client=self.monitor_client,
         )
 
     @classmethod

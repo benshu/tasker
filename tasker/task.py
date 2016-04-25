@@ -29,10 +29,11 @@ class Task:
     tasks_per_transaction = 10
     log_level = logging.INFO
 
-    def __init__(self, task_queue):
+    def __init__(self, task_queue, monitor_client):
         self.logger = self._create_logger()
 
         self.task_queue = task_queue
+        self.monitor_client = monitor_client
 
         self.logger.debug('initialized')
 
@@ -193,6 +194,7 @@ class Task:
     def _on_success(self, returned_value, args, kwargs):
         '''
         '''
+        self.monitor_client.send_success()
         self.logger.info(
             'task {task_name} reported a success:\n\tvalue: {value}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
@@ -211,6 +213,7 @@ class Task:
     def _on_failure(self, exception, args, kwargs):
         '''
         '''
+        self.monitor_client.send_failure()
         self.logger.error(
             'task {task_name} reported a failure:\n\texception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
@@ -229,6 +232,7 @@ class Task:
     def _on_retry(self, args, kwargs):
         '''
         '''
+        self.monitor_client.send_retry()
         self.logger.warning(
             'task {task_name} asked for a retry:\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
@@ -316,6 +320,7 @@ class Task:
         '''
         state = {
             'task_queue': self.task_queue,
+            'monitor_client': self.monitor_client,
         }
 
         self.logger.debug('getstate')
@@ -327,6 +332,7 @@ class Task:
         '''
         self.__init__(
             task_queue=value['task_queue'],
+            monitor_client=value['monitor_client'],
         )
 
         self.logger.debug('setstate')
