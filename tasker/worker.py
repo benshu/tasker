@@ -2,7 +2,6 @@ import logging
 import multiprocessing
 import multiprocessing.pool
 import time
-import datetime
 
 
 class WorkersSharedQueue:
@@ -15,23 +14,10 @@ class WorkersSharedQueue:
         self.shared_task_queue = shared_task_queue
 
         self.tasks_consumed = 0
-        self.consumption_ratio = 0.0
-        self.last_consumption_ratio_sampling = datetime.datetime.utcnow()
-        self.consumption_ratio_sampling_period = datetime.timedelta(
-            seconds=5,
-        )
 
     def dequeue(self, timeout):
         '''
         '''
-        now_time = datetime.datetime.utcnow()
-        if self.last_consumption_ratio_sampling + self.consumption_ratio_sampling_period < now_time:
-            time_elapsed_from_last_sample = (now_time - self.last_consumption_ratio_sampling).total_seconds
-            self.consumption_ratio = self.tasks_consumed / time_elapsed_from_last_sample
-
-            self.last_consumption_ratio_sampling = now_time
-            self.tasks_consumed = 0
-
         self.tasks_consumed += 1
 
         if timeout == 0:
@@ -88,7 +74,7 @@ class Worker:
     '''
     log_level = logging.WARNING
 
-    def __init__(self, task_class, task_queue, concurrent_workers, autoscale):
+    def __init__(self, task_class, task_queue, monitor_client, concurrent_workers, autoscale):
         self.logger = self._create_logger()
 
         self.concurrent_workers = concurrent_workers
@@ -104,6 +90,7 @@ class Worker:
         )
         self.task = task_class(
             task_queue=self.shared_task_queue,
+            monitor_client=monitor_client,
         )
 
         self.workers_watchdogs_thread_pool = multiprocessing.pool.ThreadPool(

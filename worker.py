@@ -9,9 +9,9 @@ class Task(tasker.task.Task):
     compression = 'none'
     timeout = 30.0
     max_tasks_per_run = 10000
-    tasks_per_transaction = 10000
+    tasks_per_transaction = 1000
     max_retries = 3
-    log_level = logging.INFO
+    log_level = logging.ERROR
 
     def init(self):
         self.a = 0
@@ -33,13 +33,17 @@ def main():
         compressor='none',
         serializer='msgpack',
     )
+    monitor_client = tasker.monitor.client.StatisticsClient(
+        stats_server={
+            'host': '127.0.0.1',
+            'port': 9999,
+        },
+        host_name='test_host',
+        worker_name='test_worker',
+    )
 
-    # task = Task(
-    #     task_queue=task_queue,
-    # )
-
-    worker = tasker.worker.Worker(Task, task_queue, 4, False)
-    worker.log_level = logging.DEBUG
+    worker = tasker.worker.Worker(Task, task_queue, monitor_client, 4, False)
+    worker.log_level = logging.ERROR
     worker.start()
 
 if __name__ == '__main__':
