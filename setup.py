@@ -14,6 +14,7 @@ setuptools.setup(
         'redis-py-cluster',
         'msgpack-python',
         'aiohttp',
+        'jinja2',
     ],
     packages=setuptools.find_packages(),
 )
