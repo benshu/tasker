@@ -1,7 +1,9 @@
 import asyncio
-import json
+import os
+import jinja2
 import pickle
 import functools
+import aiohttp
 import aiohttp.web
 
 from . import statistics
@@ -63,16 +65,32 @@ class StatisticsWebServer:
     '''
     def __init__(self, event_loop, host, port, statistics_obj):
         self.statistics_obj = statistics_obj
-
         self.event_loop = event_loop
         self.app = aiohttp.web.Application(
             loop=self.event_loop,
         )
 
+        interface_dir = '{current_path}/interface/'.format(
+            current_path=os.path.dirname(os.path.realpath(__file__)),
+        )
         self.app.router.add_route(
             method='GET',
             path='/statistics',
             handler=self.handle_get_statistics,
+        )
+        self.app.router.add_static(
+            prefix='/css/',
+            path=os.path.join(
+                interface_dir,
+                'css'
+            ),
+        )
+        self.app.router.add_static(
+            prefix='/images/',
+            path=os.path.join(
+                interface_dir,
+                'images'
+            ),
         )
 
         self.server = self.event_loop.create_server(
@@ -85,10 +103,22 @@ class StatisticsWebServer:
     def handle_get_statistics(self, request):
         '''
         '''
-        response_text = json.dumps(self.statistics_obj.all)
+        statistics = self.statistics_obj.all
+        templates_dir = '{current_path}/interface/templates'.format(
+            current_path=os.path.dirname(os.path.realpath(__file__)),
+        )
+
+        dashboard_template_html = ''
+        with open(os.path.join(templates_dir, 'dashboard.tpl')) as dashboard_template_file:
+            dashboard_template_html = dashboard_template_file.read()
+
+        template = jinja2.Template(dashboard_template_html)
+        html = template.render(
+            statistics=statistics,
+        )
 
         return aiohttp.web.Response(
-            body=response_text.encode('utf-8'),
+            body=html.encode('utf-8'),
         )
 
 

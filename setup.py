@@ -1,7 +1,7 @@
-from setuptools import setup
+import setuptools
 
 
-setup(
+setuptools.setup(
     name='tasker',
     version='0.0.1',
     author='gal@intsights.com',
@@ -13,10 +13,7 @@ setup(
         'hiredis',
         'redis-py-cluster',
         'msgpack-python',
+        'aiohttp',
     ],
-    packages=[
-        'tasker',
-        'tasker.connectors',
-        'tasker.monitor',
-    ],
+    packages=setuptools.find_packages(),
 )
