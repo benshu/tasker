@@ -3,6 +3,9 @@ import multiprocessing.pool
 import datetime
 import logging
 
+from . import encoder
+from . import monitor
+
 
 class TaskException(Exception):
     pass
@@ -23,17 +26,32 @@ class Task:
 
     compressor = 'zlib'
     serializer = 'msgpack'
+    monitoring = {
+        'host_name': '',
+        'stats_server': {
+            'host': '',
+            'port': 9999,
+        }
+    }
     timeout = 30.0
     max_tasks_per_run = 10
     max_retries = 3
     tasks_per_transaction = 10
     log_level = logging.INFO
 
-    def __init__(self, task_queue, monitor_client):
+    def __init__(self, task_queue):
         self.logger = self._create_logger()
 
         self.task_queue = task_queue
-        self.monitor_client = monitor_client
+        self.encoder = encoder.encoder.Encoder(
+            compressor_name=self.compressor,
+            serializer_name=self.serializer,
+        )
+        self.monitor_client = monitor.client.StatisticsClient(
+            stats_server=self.monitoring['stats_server'],
+            host_name=self.monitoring['host_name'],
+            worker_name=self.name,
+        )
 
         self.logger.debug('initialized')
 
@@ -59,6 +77,30 @@ class Task:
 
         return logger
 
+    def push_task(self, task):
+        '''
+        '''
+        encoded_task = self.encoder.encode(
+            data=task,
+        )
+
+        self.task_queue.enqueue(
+            value=encoded_task,
+        )
+
+    def pull_task(self):
+        '''
+        '''
+        encoded_task = self.task_queue.dequeue(
+            timeout=0,
+        )
+
+        decoded_task = self.encoder.decode(
+            data=encoded_task,
+        )
+
+        return decoded_task
+
     def run(self, *args, **kwargs):
         '''
         '''
@@ -69,8 +111,8 @@ class Task:
             'run_count': 0,
         }
 
-        self.task_queue.enqueue(
-            value=task,
+        self.push_task(
+            task=task,
         )
 
         self.logger.debug('enqueued a task')
@@ -90,9 +132,7 @@ class Task:
 
                 break
 
-            task = self.task_queue.dequeue(
-                timeout=0,
-            )
+            task = self.pull_task()
 
             self.logger.debug('dequeued a task')
 
@@ -183,8 +223,8 @@ class Task:
             'run_count': self.last_task['run_count'] + 1,
         }
 
-        self.task_queue.enqueue(
-            value=task,
+        self.push_task(
+            task=task,
         )
 
         self.logger.debug('task retry enqueued')
@@ -320,7 +360,6 @@ class Task:
         '''
         state = {
             'task_queue': self.task_queue,
-            'monitor_client': self.monitor_client,
         }
 
         self.logger.debug('getstate')
@@ -332,7 +371,6 @@ class Task:
         '''
         self.__init__(
             task_queue=value['task_queue'],
-            monitor_client=value['monitor_client'],
         )
 
         self.logger.debug('setstate')

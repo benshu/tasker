@@ -1,12 +1,12 @@
 import unittest
 import pickle
 
-from .. import connectors
+from .. import connector
 
 
 class RedisConnectorTestCase(unittest.TestCase):
     def setUp(self):
-        self.redis_connector = connectors.redis_cluster.Connector(
+        self.redis_connector = connector.redis_cluster.Connector(
             startup_nodes=[
                 {
                     'host': '127.0.0.1',

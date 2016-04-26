@@ -1,7 +1,9 @@
 import rediscluster
 
+from . import _connector
 
-class Connector:
+
+class Connector(_connector.Connector):
     '''
     '''
     def __init__(self, startup_nodes):
@@ -73,9 +75,11 @@ class Connector:
     def __getstate__(self):
         '''
         '''
-        return {
+        state = {
             'startup_nodes': self.startup_nodes,
         }
+
+        return state
 
     def __setstate__(self, value):
         '''

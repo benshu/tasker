@@ -2,7 +2,7 @@ import unittest
 import datetime
 import time
 
-from .. import connectors
+from .. import connector
 from .. import task
 from .. import scheduler
 from .. import queue
@@ -16,7 +16,7 @@ class DummyTask(task.Task):
 class SchedulerTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.redis_connector = connectors.redis.Connector(
+        self.redis_connector = connector.redis.Connector(
             host='127.0.0.1',
             port=6379,
             database=0,

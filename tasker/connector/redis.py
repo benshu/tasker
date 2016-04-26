@@ -1,7 +1,9 @@
 import redis
 
+from . import _connector
 
-class Connector:
+
+class Connector(_connector.Connector):
     '''
     '''
     def __init__(self, host, port, database):
@@ -77,11 +79,13 @@ class Connector:
     def __getstate__(self):
         '''
         '''
-        return {
+        state = {
             'host': self.host,
             'port': self.port,
             'database': self.database,
         }
+
+        return state
 
     def __setstate__(self, value):
         '''

@@ -1,101 +1,39 @@
 import logging
 import multiprocessing
 import multiprocessing.pool
-import time
+import zmq
+
+from . import queue
+from . import connector
 
 
-class WorkersSharedQueue:
-    '''
-    '''
-    def __init__(self, task_queue, shared_task_queue):
-        super().__init__()
+class TasksStreamer:
+    def __init__(self):
+        self.context = zmq.Context()
 
-        self.task_queue = task_queue
-        self.shared_task_queue = shared_task_queue
-
-        self.tasks_consumed = 0
-
-    def dequeue(self, timeout):
-        '''
-        '''
-        self.tasks_consumed += 1
-
-        if timeout == 0:
-            timeout = None
-
-        return self.shared_task_queue.get(
-            block=True,
-            timeout=timeout,
+        self.frontend = self.context.socket(zmq.PUSH)
+        self.frontend_port = self.frontend.bind_to_random_port(
+            addr='tcp://127.0.0.1',
         )
 
-    def dequeue_bulk(self, count):
-        '''
-        '''
-        values = self.task_queue.connector.pop_bulk(
-            key=self.task_queue.queue_name,
-            count=count,
+        self.backend = self.context.socket(zmq.PULL)
+        self.backend_port = self.backend.bind_to_random_port(
+            addr='tcp://127.0.0.1',
         )
 
-        decoded_values = []
-        for value in values:
-            decoded_value = self.task_queue._decode(
-                value=value,
+    def start(self):
+        try:
+            zmq.device(
+                device_type=zmq.STREAMER,
+                frontend=self.frontend,
+                backend=self.backend,
             )
-            decoded_values.append(decoded_value)
-
-        return decoded_values
-
-    def enqueue(self, value):
-        '''
-        '''
-        self.task_queue.enqueue(
-            value=value,
-        )
-
-    def enqueue_bulk(self, values):
-        '''
-        '''
-        encoded_values = []
-        for value in values:
-            encoded_value = self.task_queue._encode(
-                value=value,
-            )
-            encoded_values.append(encoded_value)
-
-        pushed = self.task_queue.connector.push_bulk(
-            key=self.task_queue.queue_name,
-            values=encoded_values,
-        )
-
-        return pushed
-
-    def len(self):
-        '''
-        '''
-        return self.task_queue.len()
-
-    def flush(self):
-        '''
-        '''
-        return self.task_queue.flush()
-
-    def __getstate__(self):
-        '''
-        '''
-        state = {
-            'task_queue': self.task_queue,
-            'shared_task_queue': self.shared_task_queue,
-        }
-
-        return state
-
-    def __setstate__(self, value):
-        '''
-        '''
-        self.__init__(
-            task_queue=value['task_queue'],
-            shared_task_queue=value['shared_task_queue'],
-        )
+        except Exception as exception:
+            print(exception)
+        finally:
+            self.frontend.close()
+            self.backend.close()
+            self.context.term()
 
 
 class Worker:
@@ -103,27 +41,37 @@ class Worker:
     '''
     log_level = logging.WARNING
 
-    def __init__(self, task_class, task_queue, monitor_client, concurrent_workers, autoscale):
+    def __init__(self, task_class, connector_obj, concurrent_workers, autoscale):
         self.logger = self._create_logger()
 
         self.concurrent_workers = concurrent_workers
         self.autoscale = autoscale
 
-        multiprocessing_manager = multiprocessing.Manager()
-        multiprocessing_queue = multiprocessing_manager.Queue(
-            maxsize=task_class.tasks_per_transaction * concurrent_workers,
+        self.task_queue = queue.regular.Queue(
+            queue_name=task_class.name,
+            connector=connector_obj,
         )
-        self.workers_shared_queue = WorkersSharedQueue(
-            task_queue=task_queue,
-            shared_task_queue=multiprocessing_queue,
+
+        self.tasks_streamer = TasksStreamer()
+
+        zmq_connector = connector.zmq.Connector(
+            push_address='tcp://127.0.0.1:{push_port}'.format(
+                push_port=self.tasks_streamer.frontend_port,
+            ),
+            pull_address='tcp://127.0.0.1:{pull_port}'.format(
+                pull_port=self.tasks_streamer.backend_port,
+            ),
+        )
+        self.workers_shared_queue = queue.regular.Queue(
+            queue_name=task_class.name,
+            connector=zmq_connector,
         )
         self.task = task_class(
             task_queue=self.workers_shared_queue,
-            monitor_client=monitor_client,
         )
 
         self.workers_watchdogs_thread_pool = multiprocessing.pool.ThreadPool(
-            processes=self.concurrent_workers + 1,
+            processes=self.concurrent_workers + 2,
         )
 
         self.running_workers = []
@@ -158,23 +106,11 @@ class Worker:
         max_queue_size = self.task.tasks_per_transaction * self.concurrent_workers
 
         while True:
-            shared_queue_size = self.workers_shared_queue.shared_task_queue.qsize()
-            task_queue_size = self.workers_shared_queue.len()
-
-            if shared_queue_size > (max_queue_size / 2) or task_queue_size == 0:
-                time.sleep(0.2)
-            
-                continue
-
-            values = self.workers_shared_queue.dequeue_bulk(
+            values = self.task_queue.dequeue_bulk(
                 count=max_queue_size,
             )
 
-            if not values:
-                time.sleep(0.2)
-            else:
-                for value in values:
-                    self.workers_shared_queue.shared_task_queue.put(value)
+            self.workers_shared_queue.enqueue_bulk(values)
 
     def worker_watchdog(self, function, stop_event):
         '''
@@ -265,6 +201,9 @@ class Worker:
         for i in range(self.concurrent_workers):
             self.add_worker()
 
+        tasks_streamer_async_result = self.workers_watchdogs_thread_pool.apply_async(
+            func=self.tasks_streamer.start,
+        )
         shared_task_queue_async_result = self.workers_watchdogs_thread_pool.apply_async(
             func=self.queue_manager,
         )
@@ -274,6 +213,7 @@ class Worker:
             for worker in self.running_workers
         ]
         async_results.append(shared_task_queue_async_result)
+        async_results.append(tasks_streamer_async_result)
         for async_result in async_results:
             async_result.wait()
 

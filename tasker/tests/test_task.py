@@ -2,7 +2,7 @@ import unittest
 import time
 import logging
 
-from .. import connectors
+from .. import connector
 from .. import task
 from .. import queue
 from .. import monitor
@@ -55,7 +55,7 @@ class EventsTestTask(task.Task):
 class TaskTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.redis_connector = connectors.redis.Connector(
+        self.redis_connector = connector.redis.Connector(
             host='127.0.0.1',
             port=6379,
             database=0,

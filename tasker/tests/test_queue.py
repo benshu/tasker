@@ -2,13 +2,13 @@ import unittest
 import pickle
 import datetime
 
-from .. import connectors
+from .. import connector
 from .. import queue
 
 
 class QueueTestCase(unittest.TestCase):
     def setUp(self):
-        self.redis_connector = connectors.redis.Connector(
+        self.redis_connector = connector.redis.Connector(
             host='127.0.0.1',
             port=6379,
             database=0,
