@@ -112,7 +112,7 @@ class Worker:
 
             self.workers_shared_queue.enqueue_bulk(values)
 
-    def worker_watchdog(self, function, stop_event):
+    def worker_watchdog(self, function):
         '''
         '''
         self.logger.debug('started')
@@ -129,9 +129,6 @@ class Worker:
 
                 async_result = process_pool.apply_async(
                     func=function,
-                    kwds={
-                        'stop_event': stop_event,
-                    }
                 )
                 async_result.wait()
 
@@ -160,21 +157,15 @@ class Worker:
 
             return
 
-        multiprocessing_manager = multiprocessing.Manager()
-        stop_event = multiprocessing_manager.Event()
-        stop_event.set()
-
         async_result = self.workers_watchdogs_thread_pool.apply_async(
             func=self.worker_watchdog,
             kwds={
                 'function': self.task.work_loop,
-                'stop_event': stop_event,
             },
         )
         self.running_workers.append(
             {
                 'async_result': async_result,
-                'stop_event': stop_event,
             }
         )
 

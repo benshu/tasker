@@ -16,8 +16,8 @@ task = worker.Task(
     task_queue=task_queue,
 )
 
-scheduler = tasker.scheduler.Scheduler()
-scheduler.start()
+# scheduler = tasker.scheduler.Scheduler()
+# scheduler.start()
 # scheduler.run_every(
 #     task=task,
 #     args=[],
@@ -30,10 +30,11 @@ scheduler.start()
 
 before = time.time()
 for i in range(100000):
-    scheduler.run_now(task, args=[], kwargs={'num': 5})
-scheduler.run_now(task, args=[], kwargs={'num': 6})
-after = time.time()
-
-print(after-before)
-time.sleep(20)
-scheduler.terminate()
+    task.run(num=6)
+#     scheduler.run_now(task, args=[], kwargs={'num': 5})
+# scheduler.run_now(task, args=[], kwargs={'num': 6})
+# after = time.time()
+#
+# print(after-before)
+# time.sleep(20)
+# scheduler.terminate()
