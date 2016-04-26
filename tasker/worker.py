@@ -28,6 +28,23 @@ class WorkersSharedQueue:
             timeout=timeout,
         )
 
+    def dequeue_bulk(self, count):
+        '''
+        '''
+        values = self.task_queue.connector.pop_bulk(
+            key=self.task_queue.queue_name,
+            count=count,
+        )
+
+        decoded_values = []
+        for value in values:
+            decoded_value = self.task_queue._decode(
+                value=value,
+            )
+            decoded_values.append(decoded_value)
+
+        return decoded_values
+
     def enqueue(self, value):
         '''
         '''
@@ -35,10 +52,22 @@ class WorkersSharedQueue:
             value=value,
         )
 
-    def qsize(self):
+    def enqueue_bulk(self, values):
         '''
         '''
-        return self.shared_task_queue.qsize()
+        encoded_values = []
+        for value in values:
+            encoded_value = self.task_queue._encode(
+                value=value,
+            )
+            encoded_values.append(encoded_value)
+
+        pushed = self.task_queue.connector.push_bulk(
+            key=self.task_queue.queue_name,
+            values=encoded_values,
+        )
+
+        return pushed
 
     def len(self):
         '''
@@ -84,12 +113,12 @@ class Worker:
         multiprocessing_queue = multiprocessing_manager.Queue(
             maxsize=task_class.tasks_per_transaction * concurrent_workers,
         )
-        self.shared_task_queue = WorkersSharedQueue(
+        self.workers_shared_queue = WorkersSharedQueue(
             task_queue=task_queue,
             shared_task_queue=multiprocessing_queue,
         )
         self.task = task_class(
-            task_queue=self.shared_task_queue,
+            task_queue=self.workers_shared_queue,
             monitor_client=monitor_client,
         )
 
@@ -129,23 +158,23 @@ class Worker:
         max_queue_size = self.task.tasks_per_transaction * self.concurrent_workers
 
         while True:
-            shared_queue_size = self.shared_task_queue.qsize()
-            task_queue_size = self.shared_task_queue.len()
+            shared_queue_size = self.workers_shared_queue.shared_task_queue.qsize()
+            task_queue_size = self.workers_shared_queue.len()
 
             if shared_queue_size > (max_queue_size / 2) or task_queue_size == 0:
-                time.sleep(0.5)
-
+                time.sleep(0.2)
+            
                 continue
 
-            values = self.shared_task_queue.task_queue.dequeue_bulk(
+            values = self.workers_shared_queue.dequeue_bulk(
                 count=max_queue_size,
             )
 
             if not values:
-                time.sleep(0)
+                time.sleep(0.2)
             else:
                 for value in values:
-                    self.shared_task_queue.shared_task_queue.put(value)
+                    self.workers_shared_queue.shared_task_queue.put(value)
 
     def worker_watchdog(self, function, stop_event):
         '''
