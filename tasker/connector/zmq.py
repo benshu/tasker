@@ -6,17 +6,21 @@ from . import _connector
 class Connector(_connector.Connector):
     '''
     '''
+    name = 'zmq'
+
     def __init__(self, push_address, pull_address):
         self.push_address = push_address
         self.pull_address = pull_address
 
         self.zmq_context = zmq.Context()
 
-        self.pull_socket = self.zmq_context.socket(zmq.PULL)
-        self.pull_socket.connect(self.push_address)
+        if push_address:
+            self.pull_socket = self.zmq_context.socket(zmq.PULL)
+            self.pull_socket.connect(self.push_address)
 
-        self.push_socket = self.zmq_context.socket(zmq.PUSH)
-        self.push_socket.connect(self.pull_address)
+        if pull_address:
+            self.push_socket = self.zmq_context.socket(zmq.PUSH)
+            self.push_socket.connect(self.pull_address)
 
         self.tasks_in_queue = 0
 

@@ -4,6 +4,8 @@ import logging
 class Queue:
     '''
     '''
+    name = ''
+
     log_level = logging.INFO
 
     def __init__(self, queue_name, connector):

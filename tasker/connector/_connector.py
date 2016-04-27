@@ -1,6 +1,8 @@
 class Connector:
     '''
     '''
+    name = ''
+
     def pop(self, key, timeout=0):
         '''
         '''

@@ -3,8 +3,10 @@ import multiprocessing.pool
 import datetime
 import logging
 
+from . import connector
 from . import encoder
 from . import monitor
+from . import queue
 
 
 class TaskException(Exception):
@@ -24,6 +26,10 @@ class Task:
     '''
     name = 'task_name'
 
+    queue = {
+        'type': 'regular',
+        'name': 'task_name',
+    }
     compressor = 'zlib'
     serializer = 'msgpack'
     monitoring = {
@@ -33,16 +39,51 @@ class Task:
             'port': 9999,
         }
     }
+    connector = {
+        'type': 'redis',
+        'params': {
+            'host': 'localhost',
+            'port': 6379,
+            'database': 0,
+        },
+    }
     timeout = 30.0
     max_tasks_per_run = 10
     max_retries = 3
     tasks_per_transaction = 10
     log_level = logging.INFO
 
-    def __init__(self, task_queue):
+    def __init__(self):
         self.logger = self._create_logger()
 
-        self.task_queue = task_queue
+        self.queue_connector = None
+        for connector_obj in connector.__connectors__:
+            if connector_obj.name == self.connector['type']:
+                self.queue_connector = connector_obj(**self.connector['params'])
+
+                break
+        else:
+            raise Exception(
+                'could not find connector: {connector_type}'.format(
+                    connector_type=self.connector['type'],
+                )
+            )
+
+        for queue_obj in queue.__queues__:
+            if queue_obj.name == self.queue['type']:
+                self.task_queue = queue_obj(
+                    queue_name=self.queue['name'],
+                    connector=self.queue_connector,
+                )
+
+                break
+        else:
+            raise Exception(
+                'could not find queue: {queue_type}'.format(
+                    queue_type=self.queue['type'],
+                )
+            )
+
         self.encoder = encoder.encoder.Encoder(
             compressor_name=self.compressor,
             serializer_name=self.serializer,
@@ -349,7 +390,17 @@ class Task:
         '''
         '''
         state = {
-            'task_queue': self.task_queue,
+            'name': self.name,
+            'queue': self.queue,
+            'compressor': self.compressor,
+            'serializer': self.serializer,
+            'monitoring': self.monitoring,
+            'connector': self.connector,
+            'timeout': self.timeout,
+            'max_tasks_per_run': self.max_tasks_per_run,
+            'max_retries': self.max_retries,
+            'tasks_per_transaction': self.tasks_per_transaction,
+            'log_level': self.log_level,
         }
 
         self.logger.debug('getstate')
@@ -359,8 +410,18 @@ class Task:
     def __setstate__(self, value):
         '''
         '''
-        self.__init__(
-            task_queue=value['task_queue'],
-        )
+        self.name = value['name']
+        self.queue = value['queue']
+        self.compressor = value['compressor']
+        self.serializer = value['serializer']
+        self.monitoring = value['monitoring']
+        self.connector = value['connector']
+        self.timeout = value['timeout']
+        self.max_tasks_per_run = value['max_tasks_per_run']
+        self.max_retries = value['max_retries']
+        self.tasks_per_transaction = value['tasks_per_transaction']
+        self.log_level = value['log_level']
+
+        self.__init__()
 
         self.logger.debug('setstate')

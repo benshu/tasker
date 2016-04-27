@@ -6,6 +6,8 @@ from . import _queue
 class Queue(_queue.Queue):
     '''
     '''
+    name = 'regular'
+
     log_level = logging.INFO
 
     def dequeue(self, timeout=0):

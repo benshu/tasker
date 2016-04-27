@@ -5,6 +5,10 @@ import logging
 class Task(tasker.task.Task):
     name = 'test_task'
 
+    queue = {
+        'type': 'regular',
+        'name': 'test_task',
+    }
     compressor = 'dummy'
     serializer = 'pickle'
     monitoring = {
@@ -13,6 +17,14 @@ class Task(tasker.task.Task):
             'host': '127.0.0.1',
             'port': 9999,
         }
+    }
+    connector = {
+        'type': 'redis',
+        'params': {
+            'host': 'localhost',
+            'port': 6379,
+            'database': 0,
+        },
     }
     timeout = 30.0
     max_tasks_per_run = 100000
@@ -28,15 +40,9 @@ class Task(tasker.task.Task):
 
 
 def main():
-    connector = tasker.connector.redis.Connector(
-        host='localhost',
-        port=6379,
-        database=0,
-    )
     worker = tasker.worker.Worker(
         task_class=Task,
-        connector_obj=connector,
-        concurrent_workers=4,
+        concurrent_workers=2,
         autoscale=False,
     )
     worker.log_level = logging.ERROR
@@ -45,5 +51,6 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except:
+    except Exception as e:
+        print(e)
         print('killed')

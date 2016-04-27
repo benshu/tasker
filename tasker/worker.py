@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 import multiprocessing.pool
 import zmq
+import time
 
 from . import queue
 from . import connector
@@ -41,40 +42,42 @@ class Worker:
     '''
     log_level = logging.WARNING
 
-    def __init__(self, task_class, connector_obj, concurrent_workers, autoscale):
+    def __init__(self, task_class, concurrent_workers, autoscale):
         self.logger = self._create_logger()
 
+        self.task_class = task_class
         self.concurrent_workers = concurrent_workers
         self.autoscale = autoscale
 
-        self.task_queue = queue.regular.Queue(
-            queue_name=task_class.name,
-            connector=connector_obj,
-        )
-
         self.tasks_streamer = TasksStreamer()
 
-        zmq_connector = connector.zmq.Connector(
-            push_address='tcp://127.0.0.1:{push_port}'.format(
-                push_port=self.tasks_streamer.frontend_port,
-            ),
-            pull_address='tcp://127.0.0.1:{pull_port}'.format(
-                pull_port=self.tasks_streamer.backend_port,
-            ),
+        queue_connector = self.get_connector(
+            connector_type=self.task_class.connector['type'],
+            connector_params=self.task_class.connector['params'],
         )
-        self.workers_shared_queue = queue.regular.Queue(
-            queue_name=task_class.name,
-            connector=zmq_connector,
+        self.task_queue = self.get_queue(
+            queue_type=self.task_class.queue['type'],
+            queue_name=self.task_class.queue['name'],
+            queue_connector=queue_connector,
         )
-        self.task = task_class(
-            task_queue=self.workers_shared_queue,
-        )
+
+        self.task_class.connector = {
+            'type': 'zmq',
+            'params': {
+                'push_address': 'tcp://127.0.0.1:{push_port}'.format(
+                    push_port=self.tasks_streamer.frontend_port,
+                ),
+                'pull_address': 'tcp://127.0.0.1:{pull_port}'.format(
+                    pull_port=self.tasks_streamer.backend_port,
+                ),
+            },
+        }
+        self.task = self.task_class()
+        self.task.queue_connector.pull_socket.close()
 
         self.workers_watchdogs_thread_pool = multiprocessing.pool.ThreadPool(
             processes=self.concurrent_workers + 2,
         )
-
-        self.running_workers = []
 
         self.logger.debug('initialized')
 
@@ -100,6 +103,35 @@ class Worker:
 
         return logger
 
+    def get_connector(self, connector_type, connector_params):
+        '''
+        '''
+        for connector_obj in connector.__connectors__:
+            if connector_obj.name == connector_type:
+                return connector_obj(**connector_params)
+        else:
+            raise Exception(
+                'could not find connector: {connector_type}'.format(
+                    connector_type=connector_type,
+                )
+            )
+
+    def get_queue(self, queue_type, queue_name, queue_connector):
+        '''
+        '''
+        for queue_obj in queue.__queues__:
+            if queue_obj.name == queue_type:
+                return queue_obj(
+                    queue_name=queue_name,
+                    connector=queue_connector,
+                )
+        else:
+            raise Exception(
+                'could not find queue: {queue_type}'.format(
+                    queue_type=queue_type,
+                )
+            )
+
     def queue_manager(self):
         '''
         '''
@@ -110,7 +142,10 @@ class Worker:
                 count=max_queue_size,
             )
 
-            self.workers_shared_queue.enqueue_bulk(values)
+            self.task.queue_connector.push_bulk(
+                key=self.task_class.name,
+                values=values,
+            )
 
     def worker_watchdog(self, function):
         '''
@@ -149,62 +184,41 @@ class Worker:
             finally:
                 process_pool.terminate()
 
-    def add_worker(self):
+    def start_task(self):
         '''
         '''
-        if len(self.running_workers) == self.concurrent_workers:
-            self.logger.debug('max concurrent workers are already running')
-
-            return
-
-        async_result = self.workers_watchdogs_thread_pool.apply_async(
-            func=self.worker_watchdog,
-            kwds={
-                'function': self.task.work_loop,
-            },
-        )
-        self.running_workers.append(
-            {
-                'async_result': async_result,
-            }
-        )
-
-        self.logger.debug('added another running worker')
-
-    def remove_worker(self):
-        '''
-        '''
-        if len(self.running_workers) == 0:
-            self.logger.debug('no running workers left to remove')
-
-            return
-
-        worker_to_remove = self.running_workers.pop()
-        worker_to_remove['stop_event'].clear()
-
-        self.logger.debug('a worker has been removed from the queue')
+        task = self.task_class()
+        task.work_loop()
 
     def start(self):
         '''
         '''
         self.logger.debug('started')
 
-        for i in range(self.concurrent_workers):
-            self.add_worker()
+        async_results = []
 
         tasks_streamer_async_result = self.workers_watchdogs_thread_pool.apply_async(
             func=self.tasks_streamer.start,
         )
+        async_results.append(tasks_streamer_async_result)
+        time.sleep(1)
+
+        for i in range(self.concurrent_workers):
+            async_result = self.workers_watchdogs_thread_pool.apply_async(
+                func=self.worker_watchdog,
+                kwds={
+                    'function': self.task.work_loop,
+                },
+            )
+            async_results.append(async_result)
+
+        time.sleep(1)
+
         shared_task_queue_async_result = self.workers_watchdogs_thread_pool.apply_async(
             func=self.queue_manager,
         )
-
-        async_results = [
-            worker['async_result']
-            for worker in self.running_workers
-        ]
         async_results.append(shared_task_queue_async_result)
-        async_results.append(tasks_streamer_async_result)
+
         for async_result in async_results:
             async_result.wait()
 

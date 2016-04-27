@@ -6,6 +6,8 @@ from . import _connector
 class Connector(_connector.Connector):
     '''
     '''
+    name = 'redis_cluster'
+
     def __init__(self, startup_nodes):
         self.startup_nodes = startup_nodes
 

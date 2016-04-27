@@ -6,6 +6,8 @@ from . import _connector
 class Connector(_connector.Connector):
     '''
     '''
+    name = 'redis'
+
     def __init__(self, host, port, database):
         self.host = host
         self.port = port
