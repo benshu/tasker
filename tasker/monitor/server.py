@@ -75,23 +75,23 @@ class StatisticsWebServer:
         )
         self.app.router.add_route(
             method='GET',
-            path='/statistics',
+            path='/',
             handler=self.handle_get_statistics,
         )
-        self.app.router.add_static(
-            prefix='/css/',
-            path=os.path.join(
-                interface_dir,
-                'css'
-            ),
-        )
-        self.app.router.add_static(
-            prefix='/images/',
-            path=os.path.join(
-                interface_dir,
-                'images'
-            ),
-        )
+        # self.app.router.add_static(
+        #     prefix='/css/',
+        #     path=os.path.join(
+        #         interface_dir,
+        #         'css'
+        #     ),
+        # )
+        # self.app.router.add_static(
+        #     prefix='/images/',
+        #     path=os.path.join(
+        #         interface_dir,
+        #         'images'
+        #     ),
+        # )
 
         self.server = self.event_loop.create_server(
             protocol_factory=self.app.make_handler(),
