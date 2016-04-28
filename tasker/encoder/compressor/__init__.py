@@ -7,10 +7,10 @@ from . import zlib
 from . import _compressor
 
 
-__compressors__ = [
-    bzip2.Compressor,
-    dummy.Compressor,
-    gzip.Compressor,
-    lzma.Compressor,
-    zlib.Compressor,
-]
+__compressors__ = {
+    bzip2.Compressor.name: bzip2.Compressor,
+    dummy.Compressor.name: dummy.Compressor,
+    gzip.Compressor.name: gzip.Compressor,
+    lzma.Compressor.name: lzma.Compressor,
+    zlib.Compressor.name: zlib.Compressor,
+}

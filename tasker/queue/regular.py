@@ -10,7 +10,7 @@ class Queue(_queue.Queue):
 
     log_level = logging.INFO
 
-    def dequeue(self, timeout=0):
+    def _dequeue(self, timeout=0):
         '''
         '''
         value = self.connector.pop(
@@ -25,7 +25,7 @@ class Queue(_queue.Queue):
 
         return value
 
-    def dequeue_bulk(self, count):
+    def _dequeue_bulk(self, count):
         '''
         '''
         values = self.connector.pop_bulk(
@@ -37,7 +37,7 @@ class Queue(_queue.Queue):
 
         return values
 
-    def enqueue(self, value):
+    def _enqueue(self, value):
         '''
         '''
         pushed = self.connector.push(
@@ -49,7 +49,7 @@ class Queue(_queue.Queue):
 
         return pushed
 
-    def enqueue_bulk(self, values):
+    def _enqueue_bulk(self, values):
         '''
         '''
         pushed = self.connector.push_bulk(

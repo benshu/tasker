@@ -6,35 +6,11 @@ class Encoder:
     '''
     '''
     def __init__(self, compressor_name, serializer_name):
-        self.compressors = compressor.__compressors__
-        self.serializers = serializer.__serializers__
-
         self.compressor_name = compressor_name
         self.serializer_name = serializer_name
 
-        for compressor_obj in self.compressors:
-            if compressor_obj.name == self.compressor_name:
-                self.compressor = compressor_obj
-
-                break
-        else:
-            raise Exception(
-                'unknown compressor: {compressor_name}'.format(
-                    compressor_name=compressor_name,
-                )
-            )
-
-        for serializer_obj in self.serializers:
-            if serializer_obj.name == self.serializer_name:
-                self.serializer = serializer_obj
-
-                break
-        else:
-            raise Exception(
-                'unknown serializer: {serializer_name}'.format(
-                    serializer_name=serializer_name,
-                )
-            )
+        self.compressor = compressor.__compressors__[compressor_name]
+        self.serializer = serializer.__serializers__[serializer_name]
 
     def encode(self, data):
         '''
@@ -59,3 +35,25 @@ class Encoder:
         )
 
         return unserialized_decompressed_data
+
+    def __getstate__(self):
+        '''
+        '''
+        state = {
+            'compressor_name': self.compressor_name,
+            'serializer_name': self.serializer_name,
+        }
+
+        self.logger.debug('getstate')
+
+        return state
+
+    def __setstate__(self, value):
+        '''
+        '''
+        self.__init__(
+            compressor_name=value['compressor_name'],
+            serializer_name=value['serializer_name'],
+        )
+
+        self.logger.debug('setstate')

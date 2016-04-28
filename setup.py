@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='tasker',
-    version='0.0.2',
+    version='0.0.3',
     author='gal@intsights.com',
     author_email='gal@intsights.com',
     description=('A fast, simple, task distribution library'),
@@ -15,7 +15,6 @@ setuptools.setup(
         'msgpack-python',
         'aiohttp',
         'jinja2',
-        'pyzmq',
     ],
     packages=setuptools.find_packages(),
 )

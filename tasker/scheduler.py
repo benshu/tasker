@@ -120,7 +120,7 @@ class Scheduler:
     def _enqueue_task(self, task, args, kwargs, time_delta, repeatedly):
         '''
         '''
-        task.run(
+        task.apply_async(
             *args,
             **kwargs
         )

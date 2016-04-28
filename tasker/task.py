@@ -56,38 +56,19 @@ class Task:
     def __init__(self):
         self.logger = self._create_logger()
 
-        self.queue_connector = None
-        for connector_obj in connector.__connectors__:
-            if connector_obj.name == self.connector['type']:
-                self.queue_connector = connector_obj(**self.connector['params'])
+        queue_connector_obj = connector.__connectors__[self.connector['type']]
+        self.queue_connector = queue_connector_obj(**self.connector['params'])
 
-                break
-        else:
-            raise Exception(
-                'could not find connector: {connector_type}'.format(
-                    connector_type=self.connector['type'],
-                )
-            )
-
-        for queue_obj in queue.__queues__:
-            if queue_obj.name == self.queue['type']:
-                self.task_queue = queue_obj(
-                    queue_name=self.queue['name'],
-                    connector=self.queue_connector,
-                )
-
-                break
-        else:
-            raise Exception(
-                'could not find queue: {queue_type}'.format(
-                    queue_type=self.queue['type'],
-                )
-            )
-
-        self.encoder = encoder.encoder.Encoder(
-            compressor_name=self.compressor,
-            serializer_name=self.serializer,
+        queue_obj = queue.__queues__[self.queue['type']]
+        self.task_queue = queue_obj(
+            queue_name=self.queue['name'],
+            connector=self.queue_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name=self.compressor,
+                serializer_name=self.serializer,
+            ),
         )
+
         self.monitor_client = monitor.client.StatisticsClient(
             stats_server=self.monitoring['stats_server'],
             host_name=self.monitoring['host_name'],
@@ -121,28 +102,20 @@ class Task:
     def push_task(self, task):
         '''
         '''
-        encoded_task = self.encoder.encode(
-            data=task,
-        )
-
         self.task_queue.enqueue(
-            value=encoded_task,
+            value=task,
         )
 
-    def pull_task(self):
+    def pull_tasks(self, count):
         '''
         '''
-        encoded_task = self.task_queue.dequeue(
-            timeout=0,
+        task = self.task_queue.dequeue_bulk(
+            count=count,
         )
 
-        decoded_task = self.encoder.decode(
-            data=encoded_task,
-        )
+        return task
 
-        return decoded_task
-
-    def run(self, *args, **kwargs):
+    def apply_async(self, *args, **kwargs):
         '''
         '''
         task = {
@@ -167,14 +140,23 @@ class Task:
             initargs=(),
         )
 
-        for i in range(self.max_tasks_per_run):
-            task = self.pull_task()
-
-            self.logger.debug('dequeued a task')
-
-            self.execute_task(
-                task=task,
+        tasks_left = self.max_tasks_per_run
+        while tasks_left:
+            tasks = self.pull_tasks(
+                count=self.tasks_per_transaction,
             )
+
+            self.logger.debug(
+                'dequeued {tasks_dequeued} tasks'.format(
+                    tasks_dequeued=len(tasks),
+                )
+            )
+
+            for task in tasks:
+                self.execute_task(
+                    task=task,
+                )
+                tasks_left -= 1
 
             self.logger.debug('task execution finished')
 
@@ -230,7 +212,7 @@ class Task:
             )
         except Exception as exception:
             self.logger.debug('task execution failed')
-
+            print(exception)
             self._on_failure(
                 exception=exception,
                 args=task['args'],
