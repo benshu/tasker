@@ -106,14 +106,23 @@ class Task:
             value=task,
         )
 
-    def pull_tasks(self, count):
+    def pull_task(self):
         '''
         '''
-        task = self.task_queue.dequeue_bulk(
-            count=count,
+        task = self.task_queue.dequeue(
+            timeout=0,
         )
 
         return task
+
+    def pull_tasks(self, count):
+        '''
+        '''
+        tasks = self.task_queue.dequeue_bulk(
+            count=count,
+        )
+
+        return tasks
 
     def apply_async(self, *args, **kwargs):
         '''
@@ -142,9 +151,18 @@ class Task:
 
         tasks_left = self.max_tasks_per_run
         while tasks_left:
-            tasks = self.pull_tasks(
-                count=self.tasks_per_transaction,
-            )
+            if tasks_left > self.tasks_per_transaction:
+                tasks = self.pull_tasks(
+                    count=self.tasks_per_transaction,
+                )
+            else:
+                tasks = self.pull_tasks(
+                    count=tasks_left,
+                )
+
+            if len(tasks) == 0:
+                task = self.pull_task()
+                tasks = [task]
 
             self.logger.debug(
                 'dequeued {tasks_dequeued} tasks'.format(
