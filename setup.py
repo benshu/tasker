@@ -10,7 +10,7 @@ setuptools.setup(
     zip_safe=True,
     install_requires=[
         'redis',
-        'hiredis',
+        # 'hiredis',
         'redis-py-cluster',
         'msgpack-python',
         'aiohttp',
