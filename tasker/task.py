@@ -1,5 +1,5 @@
-import multiprocessing
-import multiprocessing.pool
+import eventlet
+import eventlet.debug
 import datetime
 import logging
 import uuid
@@ -76,6 +76,10 @@ class Task:
             stats_server=self.monitoring['stats_server'],
             host_name=self.monitoring['host_name'],
             worker_name=self.name,
+        )
+
+        eventlet.debug.hub_exceptions(
+            state=False,
         )
 
         self.logger.debug('initialized')
@@ -198,11 +202,7 @@ class Task:
     def work_loop(self):
         '''
         '''
-        self.pool = multiprocessing.pool.ThreadPool(
-            processes=1,
-            initializer=self.init,
-            initargs=(),
-        )
+        self.init()
 
         tasks_left = self.max_tasks_per_run
         while tasks_left:
@@ -239,26 +239,24 @@ class Task:
 
             self.logger.debug('task execution finished')
 
-        self.pool.terminate()
         logging.shutdown()
 
     def execute_task(self, task):
         '''
         '''
         self.last_task = task
-
         try:
-            async_result = self.pool.apply_async(
-                func=self.work,
-                args=task['args'],
-                kwds=task['kwargs'],
+            timeout = eventlet.timeout.Timeout(self.timeout)
+            async_result = eventlet.spawn(
+                self.work,
+                *task['args'],
+                **task['kwargs']
             )
 
             self.logger.debug('task applied')
 
-            returned_value = async_result.get(
-                timeout=self.timeout,
-            )
+            returned_value = async_result.wait()
+            timeout.cancel()
 
             self.logger.debug('task succeeded')
 
@@ -269,7 +267,7 @@ class Task:
             )
 
             return True
-        except multiprocessing.TimeoutError as exception:
+        except eventlet.timeout.Timeout as exception:
             self.logger.debug('task execution timed out')
 
             self._on_timeout(

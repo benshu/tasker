@@ -31,7 +31,7 @@ class Task(tasker.task.Task):
     tasks_per_transaction = 1000
     max_retries = 3
     log_level = logging.ERROR
-    report_completion = True
+    report_completion = False
 
     def init(self):
         self.a = 0
