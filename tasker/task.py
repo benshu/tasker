@@ -2,6 +2,8 @@ import multiprocessing
 import multiprocessing.pool
 import datetime
 import logging
+import uuid
+import time
 
 from . import connector
 from . import encoder
@@ -52,6 +54,7 @@ class Task:
     max_retries = 3
     tasks_per_transaction = 10
     log_level = logging.INFO
+    report_completion = False
 
     def __init__(self):
         self.logger = self._create_logger()
@@ -127,11 +130,17 @@ class Task:
     def apply_async(self, *args, **kwargs):
         '''
         '''
+        if self.report_completion:
+            completion_key = self.create_completion_key()
+        else:
+            completion_key = ''
+
         task = {
             'date': datetime.datetime.utcnow().timestamp(),
             'args': args,
             'kwargs': kwargs,
             'run_count': 0,
+            'completion_key': completion_key,
         }
 
         self.push_task(
@@ -139,6 +148,52 @@ class Task:
         )
 
         self.logger.debug('enqueued a task')
+
+        return task
+
+    def create_completion_key(self):
+        '''
+        '''
+        added = False
+
+        while not added:
+            completion_key = uuid.uuid4()
+            completion_key = completion_key.hex
+            added = self.task_queue.add_result(
+                value=completion_key,
+            )
+
+        return completion_key
+
+    def report_complete(self, task):
+        '''
+        '''
+        completion_key = task['completion_key']
+
+        if completion_key:
+            removed = self.task_queue.remove_result(
+                value=completion_key,
+            )
+
+            return removed
+        else:
+            return True
+
+    def wait_task_finished(self, task):
+        '''
+        '''
+        completion_key = task['completion_key']
+
+        if completion_key:
+            has_result = self.task_queue.has_result(
+                value=completion_key,
+            )
+            while has_result:
+                has_result = self.task_queue.has_result(
+                    value=completion_key,
+                )
+
+                time.sleep(0.5)
 
     def work_loop(self):
         '''
@@ -171,9 +226,15 @@ class Task:
             )
 
             for task in tasks:
-                self.execute_task(
+                task_finished = self.execute_task(
                     task=task,
                 )
+
+                if task_finished:
+                    self.report_complete(
+                        task=task,
+                    )
+
                 tasks_left -= 1
 
             self.logger.debug('task execution finished')
@@ -206,6 +267,8 @@ class Task:
                 args=task['args'],
                 kwargs=task['kwargs'],
             )
+
+            return True
         except multiprocessing.TimeoutError as exception:
             self.logger.debug('task execution timed out')
 
@@ -214,6 +277,8 @@ class Task:
                 args=task['args'],
                 kwargs=task['kwargs'],
             )
+
+            return True
         except TaskRetryException as exception:
             self.logger.debug('task retry has called')
 
@@ -221,6 +286,8 @@ class Task:
                 args=task['args'],
                 kwargs=task['kwargs'],
             )
+
+            return False
         except TaskMaxRetriesException as exception:
             self.logger.debug('max retries exceeded')
 
@@ -228,14 +295,17 @@ class Task:
                 args=task['args'],
                 kwargs=task['kwargs'],
             )
+
+            return True
         except Exception as exception:
             self.logger.debug('task execution failed')
-            print(exception)
             self._on_failure(
                 exception=exception,
                 args=task['args'],
                 kwargs=task['kwargs'],
             )
+
+            return True
 
     def retry(self):
         '''
@@ -247,12 +317,8 @@ class Task:
                 )
             )
 
-        task = {
-            'date': datetime.datetime.utcnow().timestamp(),
-            'args': self.last_task['args'],
-            'kwargs': self.last_task['kwargs'],
-            'run_count': self.last_task['run_count'] + 1,
-        }
+        task = self.last_task
+        task['run_count'] += 1
 
         self.push_task(
             task=task,
@@ -401,6 +467,7 @@ class Task:
             'max_retries': self.max_retries,
             'tasks_per_transaction': self.tasks_per_transaction,
             'log_level': self.log_level,
+            'report_completion': self.report_completion,
         }
 
         self.logger.debug('getstate')
@@ -421,6 +488,7 @@ class Task:
         self.max_retries = value['max_retries']
         self.tasks_per_transaction = value['tasks_per_transaction']
         self.log_level = value['log_level']
+        self.report_completion = value['report_completion']
 
         self.__init__()
 

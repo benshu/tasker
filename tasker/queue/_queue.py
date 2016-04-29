@@ -41,6 +41,14 @@ class Queue:
 
         return logger
 
+    @property
+    def results_queue_name(self):
+        '''
+        '''
+        return '{queue_name}.results'.format(
+            queue_name=self.queue_name,
+        )
+
     def dequeue(self, timeout=0):
         '''
         '''
@@ -115,6 +123,42 @@ class Queue:
         )
 
     def _enqueue_bulk(self, count):
+        '''
+        '''
+        raise NotImplemented()
+
+    def add_result(self, value):
+        '''
+        '''
+        return self._add_result(
+            value=value,
+        )
+
+    def _add_result(self, value):
+        '''
+        '''
+        raise NotImplemented()
+
+    def remove_result(self, value):
+        '''
+        '''
+        return self._remove_result(
+            value=value,
+        )
+
+    def _remove_result(self, value):
+        '''
+        '''
+        raise NotImplemented()
+
+    def has_result(self, value):
+        '''
+        '''
+        return self._has_result(
+            value=value,
+        )
+
+    def _has_result(self, value):
         '''
         '''
         raise NotImplemented()

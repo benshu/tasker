@@ -61,6 +61,42 @@ class Queue(_queue.Queue):
 
         return pushed
 
+    def _add_result(self, value):
+        '''
+        '''
+        added = self.connector.add_to_set(
+            set_name=self.results_queue_name,
+            value=value,
+        )
+
+        self.logger.debug('result added')
+
+        return added
+
+    def _remove_result(self, value):
+        '''
+        '''
+        removed = self.connector.remove_from_set(
+            set_name=self.results_queue_name,
+            value=value,
+        )
+
+        self.logger.debug('result removed')
+
+        return removed
+
+    def _has_result(self, value):
+        '''
+        '''
+        is_in_set = self.connector.is_member_of_set(
+            set_name=self.results_queue_name,
+            value=value,
+        )
+
+        self.logger.debug('result has been checked')
+
+        return is_in_set
+
     def len(self):
         '''
         '''
@@ -77,6 +113,9 @@ class Queue(_queue.Queue):
         '''
         self.connector.delete(
             key=self.queue_name,
+        )
+        self.connector.delete(
+            key=self.results_queue_name,
         )
 
         self.logger.debug('flushed')

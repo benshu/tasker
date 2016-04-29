@@ -1,6 +1,7 @@
 import unittest
 import time
 import logging
+import threading
 
 from .. import task
 
@@ -13,6 +14,7 @@ class EventsTestTask(task.Task):
     max_tasks_per_run = 1
     max_retries = 1
     log_level = logging.CRITICAL + 10
+    report_completion = True
 
     def init(self):
         self.succeeded = False
@@ -32,6 +34,8 @@ class EventsTestTask(task.Task):
             self.retry()
         elif action == 'max_retried':
             self.retry()
+        elif action == 'report_completion':
+            time.sleep(5)
 
     def on_success(self, returned_value, args, kwargs):
         self.succeeded = True
@@ -107,6 +111,7 @@ class TaskTestCase(unittest.TestCase):
         )
 
     def test_time_out_event(self):
+        self.events_test_task.timeout = 2.0
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
         self.events_test_task.task_queue.flush()
@@ -177,3 +182,31 @@ class TaskTestCase(unittest.TestCase):
                 'max_retried',
             )
         )
+
+    def test_completion_report(self):
+        self.events_test_task.timeout = 10
+        self.events_test_task.max_retries = 2
+        self.events_test_task.task_queue.flush()
+        task = self.events_test_task.apply_async(
+            action='report_completion',
+        )
+        self.assertEqual(
+            self.events_test_task.task_queue.len(),
+            1,
+        )
+
+        before = time.time()
+        thread = threading.Thread(target=self.events_test_task.work_loop)
+        thread.start()
+
+        time.sleep(0.5)
+        self.assertEqual(
+            self.events_test_task.task_queue.len(),
+            0,
+        )
+
+        self.events_test_task.wait_task_finished(task)
+
+        after = time.time()
+        self.assertTrue(after - before > 5)
+        self.assertTrue(after - before < 6)

@@ -15,7 +15,9 @@ class RedisConnectorTestCase(unittest.TestCase):
             ]
         )
         self.test_key = 'test_key'
+        self.set_name = 'test_set'
         self.test_value = b'test_value'
+        self.test_set_value = b'test_value'
 
         self.redis_connector.delete(
             key=self.test_key,
@@ -60,6 +62,32 @@ class RedisConnectorTestCase(unittest.TestCase):
         )
         self.assertEqual(values, [self.test_value] * 100)
         self.assertEqual(self.redis_connector.len(self.test_key), 0)
+
+        added = self.redis_connector.add_to_set(
+            set_name=self.set_name,
+            value=self.test_set_value,
+        )
+        self.assertTrue(added)
+        added = self.redis_connector.add_to_set(
+            set_name=self.set_name,
+            value=self.test_set_value,
+        )
+        self.assertFalse(added)
+        is_member = self.redis_connector.is_member_of_set(
+            set_name=self.set_name,
+            value=self.test_set_value,
+        )
+        self.assertTrue(is_member)
+        removed = self.redis_connector.remove_from_set(
+            set_name=self.set_name,
+            value=self.test_set_value,
+        )
+        self.assertTrue(removed)
+        removed = self.redis_connector.remove_from_set(
+            set_name=self.set_name,
+            value=self.test_set_value,
+        )
+        self.assertFalse(removed)
 
     def test_connector_pickleability(self):
         pickled_connector = pickle.dumps(self.redis_connector)
@@ -110,3 +138,29 @@ class RedisConnectorTestCase(unittest.TestCase):
         self.assertEqual(values, [self.test_value] * 100)
         self.assertEqual(pickled_connector.len(self.test_key), 0)
         self.assertEqual(self.redis_connector.len(self.test_key), 0)
+
+        added = pickled_connector.add_to_set(
+            set_name=self.set_name,
+            value=self.test_set_value,
+        )
+        self.assertTrue(added)
+        added = pickled_connector.add_to_set(
+            set_name=self.set_name,
+            value=self.test_set_value,
+        )
+        self.assertFalse(added)
+        is_member = pickled_connector.is_member_of_set(
+            set_name=self.set_name,
+            value=self.test_set_value,
+        )
+        self.assertTrue(is_member)
+        removed = pickled_connector.remove_from_set(
+            set_name=self.set_name,
+            value=self.test_set_value,
+        )
+        self.assertTrue(removed)
+        removed = pickled_connector.remove_from_set(
+            set_name=self.set_name,
+            value=self.test_set_value,
+        )
+        self.assertFalse(removed)

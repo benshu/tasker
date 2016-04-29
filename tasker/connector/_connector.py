@@ -23,6 +23,21 @@ class Connector:
         '''
         raise NotImplemented()
 
+    def add_to_set(self, set_name, value):
+        '''
+        '''
+        raise NotImplemented()
+
+    def remove_from_set(self, set_name, value):
+        '''
+        '''
+        raise NotImplemented()
+
+    def is_member_of_set(self, set_name, value):
+        '''
+        '''
+        raise NotImplemented()
+
     def len(self, key):
         '''
         '''

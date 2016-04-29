@@ -1,3 +1,4 @@
+import uuid
 import unittest
 import pickle
 import datetime
@@ -20,6 +21,8 @@ class QueueTestCase(unittest.TestCase):
             'date': datetime.datetime.utcnow().timestamp(),
             'array': [1, 2, 3, 4],
         }
+
+        self.test_set_value = uuid.uuid4()
 
     def test_no_compression_queue(self):
         test_queue = queue.regular.Queue(
@@ -227,6 +230,27 @@ class QueueTestCase(unittest.TestCase):
         test_queue.flush()
         self.assertEqual(test_queue.len(), 0)
 
+        added = test_queue.add_result(
+            value=self.test_set_value,
+        )
+        self.assertTrue(added)
+        added = test_queue.add_result(
+            value=self.test_set_value,
+        )
+        self.assertFalse(added)
+        is_member = test_queue.has_result(
+            value=self.test_set_value,
+        )
+        self.assertTrue(is_member)
+        removed = test_queue.remove_result(
+            value=self.test_set_value,
+        )
+        self.assertTrue(removed)
+        removed = test_queue.remove_result(
+            value=self.test_set_value,
+        )
+        self.assertFalse(removed)
+
     def queue_pickleability(self, test_queue, enqueued_value):
         test_queue.flush()
         pickled_queue = pickle.dumps(test_queue)
@@ -271,3 +295,24 @@ class QueueTestCase(unittest.TestCase):
         pickled_queue.flush()
         self.assertEqual(pickled_queue.len(), 0)
         self.assertEqual(test_queue.len(), 0)
+
+        added = pickled_queue.add_result(
+            value=self.test_set_value,
+        )
+        self.assertTrue(added)
+        added = pickled_queue.add_result(
+            value=self.test_set_value,
+        )
+        self.assertFalse(added)
+        is_member = pickled_queue.has_result(
+            value=self.test_set_value,
+        )
+        self.assertTrue(is_member)
+        removed = pickled_queue.remove_result(
+            value=self.test_set_value,
+        )
+        self.assertTrue(removed)
+        removed = pickled_queue.remove_result(
+            value=self.test_set_value,
+        )
+        self.assertFalse(removed)

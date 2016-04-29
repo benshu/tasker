@@ -66,6 +66,30 @@ class Connector(_connector.Connector):
 
         return pipeline.execute()
 
+    def add_to_set(self, set_name, value):
+        '''
+        '''
+        added = self.connection.sadd(set_name, value)
+
+        return bool(added)
+
+    def remove_from_set(self, set_name, value):
+        '''
+        '''
+        removed = self.connection.srem(set_name, value)
+
+        return bool(removed)
+
+    def is_member_of_set(self, set_name, value):
+        '''
+        '''
+        is_memeber = self.connection.sismember(
+            name=set_name,
+            value=value,
+        )
+
+        return is_memeber
+
     def len(self, key):
         '''
         '''
