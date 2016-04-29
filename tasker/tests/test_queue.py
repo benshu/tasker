@@ -4,6 +4,7 @@ import datetime
 
 from .. import connector
 from .. import queue
+from .. import encoder
 
 
 class QueueTestCase(unittest.TestCase):
@@ -21,11 +22,13 @@ class QueueTestCase(unittest.TestCase):
         }
 
     def test_no_compression_queue(self):
-        test_queue = queue.Queue(
-            connector=self.redis_connector,
+        test_queue = queue.regular.Queue(
             queue_name='no_compression_queue',
-            compressor='',
-            serializer='pickle',
+            connector=self.redis_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='dummy',
+                serializer_name='pickle',
+            ),
         )
 
         self.queue_functionality(
@@ -38,11 +41,13 @@ class QueueTestCase(unittest.TestCase):
         )
 
     def test_zlib_queue(self):
-        test_queue = queue.Queue(
-            connector=self.redis_connector,
+        test_queue = queue.regular.Queue(
             queue_name='zlib_compression_queue',
-            compressor='zlib',
-            serializer='pickle',
+            connector=self.redis_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='zlib',
+                serializer_name='pickle',
+            ),
         )
 
         self.queue_functionality(
@@ -55,11 +60,13 @@ class QueueTestCase(unittest.TestCase):
         )
 
     def test_gzip_queue(self):
-        test_queue = queue.Queue(
-            connector=self.redis_connector,
+        test_queue = queue.regular.Queue(
             queue_name='gzip_compression_queue',
-            compressor='gzip',
-            serializer='pickle',
+            connector=self.redis_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='gzip',
+                serializer_name='pickle',
+            ),
         )
 
         self.queue_functionality(
@@ -72,11 +79,13 @@ class QueueTestCase(unittest.TestCase):
         )
 
     def test_bzip2_queue(self):
-        test_queue = queue.Queue(
-            connector=self.redis_connector,
+        test_queue = queue.regular.Queue(
             queue_name='bzip2_compression_queue',
-            compressor='bzip2',
-            serializer='pickle',
+            connector=self.redis_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='bzip2',
+                serializer_name='pickle',
+            ),
         )
 
         self.queue_functionality(
@@ -89,11 +98,13 @@ class QueueTestCase(unittest.TestCase):
         )
 
     def test_lzma_queue(self):
-        test_queue = queue.Queue(
-            connector=self.redis_connector,
+        test_queue = queue.regular.Queue(
             queue_name='lzma_compression_queue',
-            compressor='lzma',
-            serializer='pickle',
+            connector=self.redis_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='lzma',
+                serializer_name='pickle',
+            ),
         )
 
         self.queue_functionality(
@@ -106,11 +117,13 @@ class QueueTestCase(unittest.TestCase):
         )
 
     def test_pickle_queue(self):
-        test_queue = queue.Queue(
-            connector=self.redis_connector,
+        test_queue = queue.regular.Queue(
             queue_name='pickle_queue',
-            compressor='none',
-            serializer='pickle',
+            connector=self.redis_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='dummy',
+                serializer_name='pickle',
+            ),
         )
 
         self.queue_functionality(
@@ -123,11 +136,13 @@ class QueueTestCase(unittest.TestCase):
         )
 
     def test_msgpack_queue(self):
-        test_queue = queue.Queue(
-            connector=self.redis_connector,
+        test_queue = queue.regular.Queue(
             queue_name='pickle_queue',
-            compressor='none',
-            serializer='msgpack',
+            connector=self.redis_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='dummy',
+                serializer_name='msgpack',
+            ),
         )
 
         self.queue_functionality(
@@ -140,11 +155,13 @@ class QueueTestCase(unittest.TestCase):
         )
 
     def test_msgpack_compressed_queue(self):
-        test_queue = queue.Queue(
-            connector=self.redis_connector,
+        test_queue = queue.regular.Queue(
             queue_name='pickle_queue',
-            compressor='zlib',
-            serializer='msgpack',
+            connector=self.redis_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='zlib',
+                serializer_name='msgpack',
+            ),
         )
 
         self.queue_functionality(
@@ -157,11 +174,13 @@ class QueueTestCase(unittest.TestCase):
         )
 
     def test_pickle_compressed_queue(self):
-        test_queue = queue.Queue(
-            connector=self.redis_connector,
+        test_queue = queue.regular.Queue(
             queue_name='pickle_queue',
-            compressor='zlib',
-            serializer='pickle',
+            connector=self.redis_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='zlib',
+                serializer_name='pickle',
+            ),
         )
 
         self.queue_functionality(

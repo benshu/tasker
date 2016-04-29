@@ -2,16 +2,13 @@ import unittest
 import time
 import logging
 
-from .. import connector
 from .. import task
-from .. import queue
-from .. import monitor
 
 
 class EventsTestTask(task.Task):
     name = 'events_test_task'
 
-    compression = 'none'
+    compression = 'dummy'
     timeout = 2.0
     max_tasks_per_run = 1
     max_retries = 1
@@ -55,31 +52,7 @@ class EventsTestTask(task.Task):
 class TaskTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.redis_connector = connector.redis.Connector(
-            host='127.0.0.1',
-            port=6379,
-            database=0,
-        )
-        self.monitor_client = monitor.client.StatisticsClient(
-            stats_server={
-                'host': '127.0.0.1',
-                'port': 9999,
-            },
-            host_name='test_host',
-            worker_name='test_worker',
-        )
-
-        self.task_queue = queue.Queue(
-            connector=self.redis_connector,
-            queue_name='events_test_task',
-            compressor='none',
-            serializer='msgpack',
-        )
-
-        self.events_test_task = EventsTestTask(
-            task_queue=self.task_queue,
-            monitor_client=self.monitor_client,
-        )
+        self.events_test_task = EventsTestTask()
 
     @classmethod
     def tearDownClass(self):
@@ -89,7 +62,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
         self.events_test_task.task_queue.flush()
-        self.events_test_task.run(
+        self.events_test_task.apply_async(
             action='succeeded',
         )
         self.assertEqual(
@@ -113,7 +86,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
         self.events_test_task.task_queue.flush()
-        self.events_test_task.run(
+        self.events_test_task.apply_async(
             action='failed',
         )
         self.assertEqual(
@@ -137,7 +110,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
         self.events_test_task.task_queue.flush()
-        self.events_test_task.run(
+        self.events_test_task.apply_async(
             action='timed_out',
         )
         self.assertEqual(
@@ -161,7 +134,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
         self.events_test_task.task_queue.flush()
-        self.events_test_task.run(
+        self.events_test_task.apply_async(
             action='retried',
         )
         self.assertEqual(
@@ -185,7 +158,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.max_tasks_per_run = 3
         self.events_test_task.max_retries = 2
         self.events_test_task.task_queue.flush()
-        self.events_test_task.run(
+        self.events_test_task.apply_async(
             action='max_retried',
         )
         self.assertEqual(

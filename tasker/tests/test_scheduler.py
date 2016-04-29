@@ -2,11 +2,8 @@ import unittest
 import datetime
 import time
 
-from .. import connector
 from .. import task
 from .. import scheduler
-from .. import queue
-from .. import monitor
 
 
 class DummyTask(task.Task):
@@ -16,31 +13,7 @@ class DummyTask(task.Task):
 class SchedulerTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.redis_connector = connector.redis.Connector(
-            host='127.0.0.1',
-            port=6379,
-            database=0,
-        )
-        self.monitor_client = monitor.client.StatisticsClient(
-            stats_server={
-                'host': '127.0.0.1',
-                'port': 9999,
-            },
-            host_name='test_host',
-            worker_name='test_worker',
-        )
-
-        self.task_queue = queue.Queue(
-            connector=self.redis_connector,
-            queue_name='dummy_test_task',
-            compressor='none',
-            serializer='msgpack',
-        )
-
-        self.task = DummyTask(
-            task_queue=self.task_queue,
-            monitor_client=self.monitor_client,
-        )
+        self.task = DummyTask()
 
         self.scheduler = scheduler.Scheduler()
 

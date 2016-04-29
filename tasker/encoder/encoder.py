@@ -44,8 +44,6 @@ class Encoder:
             'serializer_name': self.serializer_name,
         }
 
-        self.logger.debug('getstate')
-
         return state
 
     def __setstate__(self, value):
@@ -55,5 +53,3 @@ class Encoder:
             compressor_name=value['compressor_name'],
             serializer_name=value['serializer_name'],
         )
-
-        self.logger.debug('setstate')

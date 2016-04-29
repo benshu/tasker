@@ -6,7 +6,7 @@ from . import _compressor
 class Compressor(_compressor.Compressor):
     '''
     '''
-    name = 'bz2'
+    name = 'bzip2'
 
     @staticmethod
     def compress(data):
