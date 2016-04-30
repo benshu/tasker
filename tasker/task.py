@@ -2,7 +2,7 @@ import eventlet
 import eventlet.debug
 import datetime
 import logging
-import uuid
+import random
 import time
 
 from . import connector
@@ -137,7 +137,7 @@ class Task:
         if self.report_completion:
             completion_key = self.create_completion_key()
         else:
-            completion_key = ''
+            completion_key = None
 
         task = {
             'date': datetime.datetime.utcnow().timestamp(),
@@ -155,14 +155,20 @@ class Task:
 
         return task
 
+    def generate_unique_key(self):
+        '''
+        '''
+        unique_key = random.randint(0, 9999999999999)
+
+        return unique_key
+
     def create_completion_key(self):
         '''
         '''
         added = False
 
         while not added:
-            completion_key = uuid.uuid4()
-            completion_key = completion_key.hex
+            completion_key = self.generate_unique_key()
             added = self.task_queue.add_result(
                 value=completion_key,
             )
