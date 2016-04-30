@@ -252,7 +252,8 @@ class Task:
         '''
         self.last_task = task
         try:
-            timeout = eventlet.timeout.Timeout(self.timeout)
+            if self.timeout > 0:
+                timeout = eventlet.timeout.Timeout(self.timeout)
             async_result = eventlet.spawn(
                 self.work,
                 *task['args'],
@@ -262,7 +263,9 @@ class Task:
             self.logger.debug('task applied')
 
             returned_value = async_result.wait()
-            timeout.cancel()
+
+            if self.timeout > 0:
+                timeout.cancel()
 
             self.logger.debug('task succeeded')
 
