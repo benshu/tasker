@@ -95,3 +95,25 @@ class Worker:
         self.workers_watchdogs_thread_pool.terminate()
 
         self.logger.debug('finished')
+
+    def __getstate__(self):
+        '''
+        '''
+        state = {
+            'task_class': self.task_class,
+            'concurrent_workers': self.concurrent_workers,
+        }
+
+        self.logger.debug('getstate')
+
+        return state
+
+    def __setstate__(self, value):
+        '''
+        '''
+        self.__init__(
+            task_class=value['task_class'],
+            concurrent_workers=value['concurrent_workers'],
+        )
+
+        self.logger.debug('setstate')
