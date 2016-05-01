@@ -18,4 +18,6 @@ setuptools.setup(
         'eventlet',
     ],
     packages=setuptools.find_packages(),
+    package_data={'': ['*.tpl']},
+    include_package_data=True,
 )
