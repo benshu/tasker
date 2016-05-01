@@ -1,7 +1,6 @@
 import asyncio
 import os
 import jinja2
-import pickle
 import functools
 import aiohttp
 import aiohttp.web
@@ -9,6 +8,7 @@ import aiohttp.web
 from . import statistics
 from . import host
 from . import worker
+from . import message
 
 
 class StatisticsUDPServer:
@@ -28,20 +28,20 @@ class StatisticsUDPServer:
         message_data = data
 
         try:
-            message = pickle.loads(message_data)
+            message_obj = message.Message.unserialize(message_data)
 
-            self.dispatch_message(message)
+            self.dispatch_message(message_obj)
         except ValueError as exc:
             print(str(exc))
             pass
 
-    def dispatch_message(self, message):
+    def dispatch_message(self, message_obj):
         host_obj = host.Host(
-            name=message['host_name'],
+            name=message_obj.hostname,
         )
 
         worker_obj = worker.Worker(
-            name=message['worker_name'],
+            name=message_obj.worker_name,
         )
 
         self.statistics_obj.ensure_host(
@@ -56,7 +56,7 @@ class StatisticsUDPServer:
         self.statistics_obj.report_worker(
             host_obj=host_obj,
             worker_obj=worker_obj,
-            message=message,
+            message_obj=message_obj,
         )
 
 
@@ -70,28 +70,16 @@ class StatisticsWebServer:
             loop=self.event_loop,
         )
 
-        interface_dir = '{current_path}/interface/'.format(
-            current_path=os.path.dirname(os.path.realpath(__file__)),
-        )
         self.app.router.add_route(
             method='GET',
             path='/',
+            handler=self.handle_get_main,
+        )
+        self.app.router.add_route(
+            method='GET',
+            path='/statistics',
             handler=self.handle_get_statistics,
         )
-        # self.app.router.add_static(
-        #     prefix='/css/',
-        #     path=os.path.join(
-        #         interface_dir,
-        #         'css'
-        #     ),
-        # )
-        # self.app.router.add_static(
-        #     prefix='/images/',
-        #     path=os.path.join(
-        #         interface_dir,
-        #         'images'
-        #     ),
-        # )
 
         self.server = self.event_loop.create_server(
             protocol_factory=self.app.make_handler(),
@@ -100,7 +88,7 @@ class StatisticsWebServer:
         )
 
     @asyncio.coroutine
-    def handle_get_statistics(self, request):
+    def handle_get_main(self, request):
         '''
         '''
         statistics = self.statistics_obj.all
@@ -119,6 +107,16 @@ class StatisticsWebServer:
 
         return aiohttp.web.Response(
             body=html.encode('utf-8'),
+        )
+
+    @asyncio.coroutine
+    def handle_get_statistics(self, request):
+        '''
+        '''
+        statistics = self.statistics_obj.all
+
+        return aiohttp.web.json_response(
+            data=statistics,
         )
 
 

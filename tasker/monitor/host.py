@@ -104,6 +104,56 @@ class Host:
 
         return self.retry / run_time_minutes
 
+    @property
+    def process(self):
+        process = 0
+
+        for worker in self.workers:
+            process += worker.process
+
+        return process
+
+    @property
+    def process_per_second(self):
+        process = 0
+
+        for worker in self.workers:
+            process += worker.process_per_second
+
+        return process
+
+    @property
+    def process_per_minute(self):
+        run_time = self.run_time
+        run_time_minutes = run_time / 60
+
+        return self.process / run_time_minutes
+
+    @property
+    def heartbeat(self):
+        heartbeat = 0
+
+        for worker in self.workers:
+            heartbeat += worker.heartbeat
+
+        return heartbeat
+
+    @property
+    def heartbeat_per_second(self):
+        heartbeat = 0
+
+        for worker in self.workers:
+            heartbeat += worker.heartbeat_per_second
+
+        return heartbeat
+
+    @property
+    def heartbeat_per_minute(self):
+        run_time = self.run_time
+        run_time_minutes = run_time / 60
+
+        return self.heartbeat / run_time_minutes
+
     def __eq__(self, other):
         if other.name == self.name:
             return True

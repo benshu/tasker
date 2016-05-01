@@ -1,6 +1,7 @@
 import socket
-import pickle
 import datetime
+
+from . import message
 
 
 class StatisticsClient:
@@ -17,17 +18,16 @@ class StatisticsClient:
         )
 
     def send_stats(self, message_type):
-        message = {
-            'host_name': self.host_name,
-            'worker_name': self.worker_name,
-            'type': message_type,
-            'date': datetime.datetime.utcnow(),
-        }
-
-        message_pickled = pickle.dumps(message)
+        message_obj = message.Message(
+            hostname=self.host_name,
+            worker_name=self.worker_name,
+            message_type=message_type,
+            date=datetime.datetime.utcnow(),
+        )
+        message_data = message_obj.serialize()
 
         self.statistics_socket.sendto(
-            message_pickled,
+            message_data,
             (
                 self.stats_server['host'],
                 self.stats_server['port'],
@@ -36,17 +36,27 @@ class StatisticsClient:
 
     def send_success(self):
         self.send_stats(
-            message_type='success',
+            message_type=message.MessageType.success,
         )
 
     def send_failure(self):
         self.send_stats(
-            message_type='failure',
+            message_type=message.MessageType.failure,
         )
 
     def send_retry(self):
         self.send_stats(
-            message_type='retry',
+            message_type=message.MessageType.retry,
+        )
+
+    def send_process(self):
+        self.send_stats(
+            message_type=message.MessageType.process,
+        )
+
+    def send_heartbeat(self):
+        self.send_stats(
+            message_type=message.MessageType.heartbeat,
         )
 
     def __getstate__(self):

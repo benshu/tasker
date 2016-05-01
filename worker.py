@@ -32,6 +32,7 @@ class Task(tasker.task.Task):
     max_retries = 3
     log_level = logging.ERROR
     report_completion = False
+    heartbeat_interval = 10.0
 
     def init(self):
         self.a = 0

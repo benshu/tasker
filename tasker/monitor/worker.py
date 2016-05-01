@@ -1,6 +1,8 @@
 import datetime
 import collections
 
+from . import message
+
 
 class Worker:
     def __init__(self, name):
@@ -11,6 +13,8 @@ class Worker:
             'success': 0,
             'failure': 0,
             'retry': 0,
+            'process': 0,
+            'heartbeat': 0,
         }
         self.last_reports = collections.deque(
             maxlen=1000,
@@ -23,19 +27,23 @@ class Worker:
 
         return time_delta.total_seconds()
 
-    def report(self, message):
-        message_type = message['type']
+    def report(self, message_obj):
+        message_type = message_obj.message_type
 
-        if message_type == 'success':
+        if message_type == message.MessageType.success:
             self.success += 1
-        elif message_type == 'failure':
+        elif message_type == message.MessageType.failure:
             self.failure += 1
-        elif message_type == 'retry':
+        elif message_type == message.MessageType.retry:
             self.retry += 1
+        elif message_type == message.MessageType.process:
+            self.process += 1
+        elif message_type == message.MessageType.heartbeat:
+            self.heartbeat += 1
         else:
             pass
 
-        self.last_reports.append(message)
+        self.last_reports.append(message_obj)
 
     @property
     def success_per_second(self):
@@ -55,6 +63,18 @@ class Worker:
             report_type='retry',
         )
 
+    @property
+    def process_per_second(self):
+        return self.report_type_per_second(
+            report_type='process',
+        )
+
+    @property
+    def heartbeat_per_second(self):
+        return self.report_type_per_second(
+            report_type='heartbeat',
+        )
+
     def report_type_per_second(self, report_type):
         num_of_reports = 0
 
@@ -64,7 +84,7 @@ class Worker:
         now_date = datetime.datetime.utcnow()
 
         for report in self.last_reports:
-            if now_date - report['date'] < report_diff_time and report['type'] == report_type:
+            if now_date - report.date < report_diff_time and report.message_type.name == report_type:
                 num_of_reports += 1
 
         return num_of_reports
@@ -121,6 +141,36 @@ class Worker:
         run_time_minutes = run_time / 60
 
         return self.statistics['retry'] / run_time_minutes
+
+    @property
+    def process(self):
+        return self.statistics['process']
+
+    @process.setter
+    def process(self, value):
+        self.statistics['process'] = value
+
+    @property
+    def process_per_minute(self):
+        run_time = self.run_time
+        run_time_minutes = run_time / 60
+
+        return self.statistics['process'] / run_time_minutes
+
+    @property
+    def heartbeat(self):
+        return self.statistics['heartbeat']
+
+    @heartbeat.setter
+    def heartbeat(self, value):
+        self.statistics['heartbeat'] = value
+
+    @property
+    def heartbeat_per_minute(self):
+        run_time = self.run_time
+        run_time_minutes = run_time / 60
+
+        return self.statistics['heartbeat'] / run_time_minutes
 
     def __eq__(self, other):
         if other.name == self.name:

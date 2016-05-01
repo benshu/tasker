@@ -33,13 +33,13 @@ class Statistics:
                     current_host.workers.append(worker_obj)
                     worker_obj.last_seen = report_time
 
-    def report_worker(self, host_obj, worker_obj, message):
+    def report_worker(self, host_obj, worker_obj, message_obj):
         for current_host in self.hosts:
             if host_obj == current_host:
                 for current_worker in current_host.workers:
                     if current_worker == worker_obj:
                         current_worker.report(
-                            message=message,
+                            message_obj=message_obj,
                         )
 
     @property
@@ -150,6 +150,60 @@ class Statistics:
         return retry_per_minute
 
     @property
+    def process(self):
+        process = 0
+
+        for host_obj in self.hosts:
+            process += host_obj.process
+
+        return process
+
+    @property
+    def process_per_second(self):
+        process_per_second = 0
+
+        for host_obj in self.hosts:
+            process_per_second += host_obj.process_per_second
+
+        return process_per_second
+
+    @property
+    def process_per_minute(self):
+        process_per_minute = 0
+
+        for host_obj in self.hosts:
+            process_per_minute += host_obj.process_per_minute
+
+        return process_per_minute
+
+    @property
+    def heartbeat(self):
+        heartbeat = 0
+
+        for host_obj in self.hosts:
+            heartbeat += host_obj.heartbeat
+
+        return heartbeat
+
+    @property
+    def heartbeat_per_second(self):
+        heartbeat_per_second = 0
+
+        for host_obj in self.hosts:
+            heartbeat_per_second += host_obj.heartbeat_per_second
+
+        return heartbeat_per_second
+
+    @property
+    def heartbeat_per_minute(self):
+        heartbeat_per_minute = 0
+
+        for host_obj in self.hosts:
+            heartbeat_per_minute += host_obj.heartbeat_per_minute
+
+        return heartbeat_per_minute
+
+    @property
     def all(self):
         online_hosts = [
             host_obj.name
@@ -175,12 +229,18 @@ class Statistics:
             'success': self.success,
             'failure': self.failure,
             'retry': self.retry,
+            'process': self.process,
+            'heartbeat': self.heartbeat,
             'success_per_minute': self.success_per_minute,
             'failure_per_minute': self.failure_per_minute,
             'retry_per_minute': self.retry_per_minute,
+            'process_per_minute': self.process_per_minute,
+            'heartbeat_per_minute': self.heartbeat_per_minute,
             'success_per_second': self.success_per_second,
             'failure_per_second': self.failure_per_second,
             'retry_per_second': self.retry_per_second,
+            'process_per_second': self.process_per_second,
+            'heartbeat_per_second': self.heartbeat_per_second,
         }
 
         return statistics

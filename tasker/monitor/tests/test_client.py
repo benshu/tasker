@@ -1,4 +1,5 @@
 import threading
+import time
 import unittest
 import requests
 import asyncio
@@ -6,6 +7,7 @@ import asyncio
 from .. import client
 from .. import server
 from .. import statistics
+from .. import message
 
 
 class ServerThread(threading.Thread):
@@ -68,17 +70,19 @@ class MonitorClientTest(unittest.TestCase):
 
     def test_reported_stats(self):
         for message_type in (
-            'success',
-            'failure',
-            'retry',
+            message.MessageType.process,
+            message.MessageType.success,
+            message.MessageType.failure,
+            message.MessageType.retry,
+            message.MessageType.heartbeat,
         ):
             current_stats = self.get_stats()
 
             self.assertEqual(
-                first=current_stats[message_type],
+                first=current_stats[message_type.name],
                 second=0,
                 msg='statistics server {message_type} rate is not cleaned up'.format(
-                    message_type=message_type,
+                    message_type=message_type.name,
                 ),
             )
 
@@ -86,24 +90,26 @@ class MonitorClientTest(unittest.TestCase):
                 message_type=message_type,
             )
             current_stats = self.get_stats()
+
             self.assertEqual(
-                first=current_stats[message_type],
+                first=current_stats[message_type.name],
                 second=1,
                 msg='statistics server {message_type} rate is not correct'.format(
-                    message_type=message_type,
+                    message_type=message_type.name,
                 ),
             )
 
             for i in range(10):
+                time.sleep(0.1)
                 self.client.send_stats(
                     message_type=message_type,
                 )
 
             current_stats = self.get_stats()
             self.assertEqual(
-                first=current_stats[message_type],
+                first=current_stats[message_type.name],
                 second=11,
                 msg='statistics server {message_type} rate is not correct'.format(
-                    message_type=message_type,
+                    message_type=message_type.name,
                 ),
             )

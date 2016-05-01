@@ -1,7 +1,9 @@
+import threading
 import eventlet
 import eventlet.debug
 import datetime
 import logging
+import socket
 import random
 import time
 
@@ -35,7 +37,7 @@ class Task:
     compressor = 'zlib'
     serializer = 'msgpack'
     monitoring = {
-        'host_name': '',
+        'host_name': socket.gethostname(),
         'stats_server': {
             'host': '',
             'port': 9999,
@@ -55,6 +57,7 @@ class Task:
     tasks_per_transaction = 10
     log_level = logging.INFO
     report_completion = False
+    heartbeat_interval = 10.0
 
     def __init__(self):
         self.logger = self._create_logger()
@@ -206,9 +209,22 @@ class Task:
 
                 time.sleep(0.5)
 
+    def heartbeater(self):
+        '''
+        '''
+        while True:
+            self.monitor_client.send_heartbeat()
+
+            time.sleep(self.heartbeat_interval)
+
     def work_loop(self):
         '''
         '''
+        heartbeater_thread = threading.Thread(
+            target=self.heartbeater,
+        )
+        heartbeater_thread.start()
+
         self.init()
 
         tasks_left = self.max_tasks_per_run

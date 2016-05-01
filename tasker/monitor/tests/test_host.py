@@ -4,6 +4,7 @@ import datetime
 
 from .. import host
 from .. import worker
+from .. import message
 
 
 class HostTest(unittest.TestCase):
@@ -71,9 +72,11 @@ class HostTest(unittest.TestCase):
 
     def test_reports(self):
         for report_type in (
-            'success',
-            'failure',
-            'retry',
+            message.MessageType.process.name,
+            message.MessageType.success.name,
+            message.MessageType.failure.name,
+            message.MessageType.retry.name,
+            message.MessageType.heartbeat.name,
         ):
             host_obj = host.Host(
                 name='test_host_name',
@@ -108,9 +111,11 @@ class HostTest(unittest.TestCase):
 
     def test_reports_per_second(self):
         for benchmark_type in (
-            ('success_per_second', 'success',),
-            ('failure_per_second', 'failure',),
-            ('retry_per_second', 'retry',),
+            ('success_per_second', message.MessageType.success,),
+            ('failure_per_second', message.MessageType.failure,),
+            ('retry_per_second', message.MessageType.retry,),
+            ('process_per_second', message.MessageType.process,),
+            ('heartbeat_per_second', message.MessageType.heartbeat,),
         ):
             host_obj = host.Host(
                 name='test_host_name',
@@ -133,12 +138,12 @@ class HostTest(unittest.TestCase):
 
             for i in range(3):
                 worker_obj.last_reports.append(
-                    {
-                        'host_name': host_obj.name,
-                        'worker_name': worker_obj.name,
-                        'type': benchmark_type[1],
-                        'date': datetime.datetime.utcnow(),
-                    }
+                    message.Message(
+                        hostname=host_obj.name,
+                        worker_name=worker_obj.name,
+                        message_type=benchmark_type[1],
+                        date=datetime.datetime.utcnow(),
+                    ),
                 )
 
             self.assertEqual(
