@@ -62,9 +62,10 @@ class Task:
         queue_connector_obj = connector.__connectors__[self.connector['type']]
         self.queue_connector = queue_connector_obj(**self.connector['params'])
 
+        queue_name = self.queue['name'] if self.queue['name'] else self.name
         queue_obj = queue.__queues__[self.queue['type']]
         self.task_queue = queue_obj(
-            queue_name=self.queue['name'],
+            queue_name=queue_name,
             connector=self.queue_connector,
             encoder=encoder.encoder.Encoder(
                 compressor_name=self.compressor,
