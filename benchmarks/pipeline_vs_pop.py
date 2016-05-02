@@ -108,3 +108,64 @@ print(
         time_taken=after-before,
     )
 )
+
+before = time.time()
+for i in range(100):
+    pipe = conn.pipeline()
+    arr = ['abcdefghijklmnopqrstuvwxyz0123456789'] * 1000
+    pipe.rpush('a', *arr)
+    pipe.rpush('b', *arr)
+    pipe.rpush('c', *arr)
+    pipe.execute()
+after = time.time()
+
+print(
+    'pipeline multiple rpush insertion: {time_taken}'.format(
+        time_taken=after-before,
+    )
+)
+
+before = time.time()
+for i in range(100):
+    pipe = conn.pipeline()
+    for j in range(1000):
+        pipe.lpop('a')
+        pipe.lpop('b')
+        pipe.lpop('c')
+    pipe.execute()
+after = time.time()
+
+print(
+    'pipeline lpop: {time_taken}'.format(
+        time_taken=after-before,
+    )
+)
+
+before = time.time()
+arr = ['abcdefghijklmnopqrstuvwxyz0123456789'] * 100000
+conn.rpush('a', *arr)
+conn.rpush('b', *arr)
+conn.rpush('c', *arr)
+after = time.time()
+
+print(
+    'multiple rpush insertion: {time_taken}'.format(
+        time_taken=after-before,
+    )
+)
+
+before = time.time()
+for i in range(100):
+    pipe = conn.pipeline()
+    for j in range(1000):
+        pipe.lpop('a')
+        pipe.lpop('b')
+        pipe.lpop('c')
+    pipe.execute()
+after = time.time()
+
+print(
+    'pipeline lpop: {time_taken}'.format(
+        time_taken=after-before,
+    )
+)

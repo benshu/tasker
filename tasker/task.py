@@ -80,11 +80,12 @@ class Task:
             ),
         )
 
-        self.monitor_client = monitor.client.StatisticsClient(
-            stats_server=self.monitoring['stats_server'],
-            host_name=self.monitoring['host_name'],
-            worker_name=self.name,
-        )
+        if self.monitoring:
+            self.monitor_client = monitor.client.StatisticsClient(
+                stats_server=self.monitoring['stats_server'],
+                host_name=self.monitoring['host_name'],
+                worker_name=self.name,
+            )
 
         eventlet.debug.hub_exceptions(
             state=False,
@@ -117,7 +118,7 @@ class Task:
 
         return tasks
 
-    def apply_async(self, *args, **kwargs):
+    def apply_async_one(self, *args, **kwargs):
         '''
         '''
         if self.report_completion:
@@ -209,12 +210,13 @@ class Task:
     def work_loop(self):
         '''
         '''
-        heartbeater_thread = threading.Thread(
-            target=self.heartbeater,
-        )
-        heartbeater_thread.start()
+        if self.monitoring:
+            heartbeater_thread = threading.Thread(
+                target=self.heartbeater,
+            )
+            heartbeater_thread.start()
 
-        self.init()
+            self.init()
 
         run_forever = False
         if self.max_tasks_per_run == 0:
@@ -352,7 +354,8 @@ class Task:
     def _on_success(self, returned_value, args, kwargs):
         '''
         '''
-        self.monitor_client.send_success()
+        if self.monitoring:
+            self.monitor_client.send_success()
         self.logger.info(
             'task {task_name} reported a success:\n\tvalue: {value}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
@@ -371,7 +374,8 @@ class Task:
     def _on_failure(self, exception, args, kwargs):
         '''
         '''
-        self.monitor_client.send_failure()
+        if self.monitoring:
+            self.monitor_client.send_failure()
         self.logger.error(
             'task {task_name} reported a failure:\n\texception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
@@ -390,7 +394,8 @@ class Task:
     def _on_retry(self, args, kwargs):
         '''
         '''
-        self.monitor_client.send_retry()
+        if self.monitoring:
+            self.monitor_client.send_retry()
         self.logger.warning(
             'task {task_name} asked for a retry:\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,

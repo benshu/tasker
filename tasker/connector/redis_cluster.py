@@ -50,7 +50,7 @@ class Connector(_connector.Connector):
     def push(self, key, value):
         '''
         '''
-        return self.connection.rpush(key, value)
+        return self.connection.rpush(key, values)
 
     def push_bulk(self, key, values):
         '''

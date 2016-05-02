@@ -59,12 +59,7 @@ class Connector(_connector.Connector):
     def push_bulk(self, key, values):
         '''
         '''
-        pipeline = self.connection.pipeline()
-
-        for value in values:
-            pipeline.rpush(key, value)
-
-        return pipeline.execute()
+        return self.connection.rpush(key, *values)
 
     def add_to_set(self, set_name, value):
         '''

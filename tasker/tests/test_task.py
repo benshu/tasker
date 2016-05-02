@@ -15,6 +15,7 @@ class EventsTestTask(task.Task):
     max_retries = 1
     log_level = logging.CRITICAL + 10
     report_completion = True
+    monitoring = {}
 
     def init(self):
         self.succeeded = False
@@ -66,7 +67,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
         self.events_test_task.task_queue.flush()
-        self.events_test_task.apply_async(
+        self.events_test_task.apply_async_one(
             action='succeeded',
         )
         self.assertEqual(
@@ -90,7 +91,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
         self.events_test_task.task_queue.flush()
-        self.events_test_task.apply_async(
+        self.events_test_task.apply_async_one(
             action='failed',
         )
         self.assertEqual(
@@ -115,7 +116,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
         self.events_test_task.task_queue.flush()
-        self.events_test_task.apply_async(
+        self.events_test_task.apply_async_one(
             action='timed_out',
         )
         self.assertEqual(
@@ -139,7 +140,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
         self.events_test_task.task_queue.flush()
-        self.events_test_task.apply_async(
+        self.events_test_task.apply_async_one(
             action='retried',
         )
         self.assertEqual(
@@ -163,7 +164,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.max_tasks_per_run = 3
         self.events_test_task.max_retries = 2
         self.events_test_task.task_queue.flush()
-        self.events_test_task.apply_async(
+        self.events_test_task.apply_async_one(
             action='max_retried',
         )
         self.assertEqual(
@@ -187,7 +188,7 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.timeout = 10
         self.events_test_task.max_retries = 2
         self.events_test_task.task_queue.flush()
-        task = self.events_test_task.apply_async(
+        task = self.events_test_task.apply_async_one(
             action='report_completion',
         )
         self.assertEqual(
