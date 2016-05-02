@@ -76,3 +76,35 @@ print(
         time_taken=after-before,
     )
 )
+
+before = time.time()
+for i in range(100):
+    pipe = conn.pipeline()
+    for j in range(1000):
+        pipe.rpush('a', 'abcdefghijklmnopqrstuvwxyz0123456789')
+        pipe.rpush('b', 'abcdefghijklmnopqrstuvwxyz0123456789')
+        pipe.rpush('c', 'abcdefghijklmnopqrstuvwxyz0123456789')
+    pipe.execute()
+after = time.time()
+
+print(
+    'pipeline insertion: {time_taken}'.format(
+        time_taken=after-before,
+    )
+)
+
+before = time.time()
+for i in range(100):
+    pipe = conn.pipeline()
+    for j in range(1000):
+        pipe.lpop('a')
+        pipe.lpop('b')
+        pipe.lpop('c')
+    pipe.execute()
+after = time.time()
+
+print(
+    'pipeline lpop: {time_taken}'.format(
+        time_taken=after-before,
+    )
+)
