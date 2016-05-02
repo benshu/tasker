@@ -1,14 +1,7 @@
-import logging
-
-from . import logger
-
-
 class Queue:
     '''
     '''
     name = ''
-
-    log_level = logging.ERROR
 
     def __init__(self, queue_name, connector, encoder):
         '''
@@ -16,13 +9,6 @@ class Queue:
         self.queue_name = queue_name
         self.connector = connector
         self.encoder = encoder
-
-        self.logger = logger.logger.Logger(
-            logger_name='Queue',
-            log_level=self.log_level,
-        )
-
-        self.logger.debug('initialized')
 
     @property
     def results_queue_name(self):
@@ -165,8 +151,6 @@ class Queue:
             'encoder': self.encoder,
         }
 
-        self.logger.debug('getstate')
-
         return state
 
     def __setstate__(self, value):
@@ -177,5 +161,3 @@ class Queue:
             connector=value['connector'],
             encoder=value['encoder'],
         )
-
-        self.logger.debug('setstate')
