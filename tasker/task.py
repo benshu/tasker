@@ -9,6 +9,7 @@ import time
 
 from . import connector
 from . import encoder
+from . import logger
 from . import monitor
 from . import queue
 
@@ -60,7 +61,10 @@ class Task:
     heartbeat_interval = 10.0
 
     def __init__(self):
-        self.logger = self._create_logger()
+        self.logger = logger.logger.Logger(
+            logger_name=self.name,
+            log_level=self.log_level,
+        )
 
         queue_connector_obj = connector.__connectors__[self.connector['type']]
         self.queue_connector = queue_connector_obj(**self.connector['params'])
@@ -87,28 +91,6 @@ class Task:
         )
 
         self.logger.debug('initialized')
-
-    def _create_logger(self):
-        '''
-        '''
-        logger = logging.getLogger(
-            name='Task',
-        )
-
-        for handler in logger.handlers:
-            logger.removeHandler(handler)
-
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            fmt='%(asctime)s %(name)-12s %(levelname)-8s %(funcName)-16s -> %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-        )
-        handler.setFormatter(formatter)
-
-        logger.addHandler(handler)
-        logger.setLevel(self.log_level)
-
-        return logger
 
     def push_task(self, task):
         '''
@@ -507,6 +489,7 @@ class Task:
             'tasks_per_transaction': self.tasks_per_transaction,
             'log_level': self.log_level,
             'report_completion': self.report_completion,
+            'heartbeat_interval': self.heartbeat_interval,
         }
 
         self.logger.debug('getstate')
@@ -528,6 +511,7 @@ class Task:
         self.tasks_per_transaction = value['tasks_per_transaction']
         self.log_level = value['log_level']
         self.report_completion = value['report_completion']
+        self.heartbeat_interval = value['heartbeat_interval']
 
         self.__init__()
 

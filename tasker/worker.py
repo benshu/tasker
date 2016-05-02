@@ -2,6 +2,8 @@ import logging
 import multiprocessing
 import multiprocessing.pool
 
+from . import logger
+
 
 class Worker:
     '''
@@ -9,7 +11,10 @@ class Worker:
     log_level = logging.WARNING
 
     def __init__(self, task_class, concurrent_workers):
-        self.logger = self._create_logger()
+        self.logger = logger.logger.Logger(
+            logger_name='Worker',
+            log_level=self.log_level,
+        )
 
         self.task_class = task_class
         self.concurrent_workers = concurrent_workers
@@ -21,28 +26,6 @@ class Worker:
         )
 
         self.logger.debug('initialized')
-
-    def _create_logger(self):
-        '''
-        '''
-        logger = logging.getLogger(
-            name='Worker',
-        )
-
-        for handler in logger.handlers:
-            logger.removeHandler(handler)
-
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            fmt='%(asctime)s %(name)-12s %(levelname)-8s %(funcName)-16s -> %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-        )
-        handler.setFormatter(formatter)
-
-        logger.addHandler(handler)
-        logger.setLevel(self.log_level)
-
-        return logger
 
     def worker_watchdog(self, function):
         '''

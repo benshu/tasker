@@ -1,12 +1,14 @@
 import logging
 
+from . import logger
+
 
 class Queue:
     '''
     '''
     name = ''
 
-    log_level = logging.INFO
+    log_level = logging.ERROR
 
     def __init__(self, queue_name, connector, encoder):
         '''
@@ -15,31 +17,12 @@ class Queue:
         self.connector = connector
         self.encoder = encoder
 
-        self.logger = self._create_logger()
+        self.logger = logger.logger.Logger(
+            logger_name='Queue',
+            log_level=self.log_level,
+        )
 
         self.logger.debug('initialized')
-
-    def _create_logger(self):
-        '''
-        '''
-        logger = logging.getLogger(
-            name='Queue',
-        )
-
-        for handler in logger.handlers:
-            logger.removeHandler(handler)
-
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            fmt='%(asctime)s %(name)-12s %(levelname)-8s %(funcName)-16s -> %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-        )
-        handler.setFormatter(formatter)
-
-        logger.addHandler(handler)
-        logger.setLevel(self.log_level)
-
-        return logger
 
     @property
     def results_queue_name(self):

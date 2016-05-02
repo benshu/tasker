@@ -8,8 +8,6 @@ class Queue(_queue.Queue):
     '''
     name = 'regular'
 
-    log_level = logging.INFO
-
     def _dequeue(self, timeout=0):
         '''
         '''

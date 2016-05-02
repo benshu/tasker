@@ -5,16 +5,19 @@ import threading
 import asyncio
 import logging
 
+from . import logger
+
 
 class Scheduler:
     '''
     '''
-    log_level = logging.INFO
-
     def __init__(self):
         '''
         '''
-        self.logger = self._create_logger()
+        self.logger = logger.logger.Logger(
+            logger_name='Scheduler',
+            log_level=logging.INFO,
+        )
 
         self.should_run = threading.Event()
         self.should_run.clear()
@@ -32,28 +35,6 @@ class Scheduler:
         self.logger.debug('initialized')
 
         self.schedulers_threads = []
-
-    def _create_logger(self):
-        '''
-        '''
-        logger = logging.getLogger(
-            name='Scheduler',
-        )
-
-        for handler in logger.handlers:
-            logger.removeHandler(handler)
-
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            fmt='%(asctime)s %(name)-12s %(levelname)-8s %(funcName)-16s -> %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-        )
-        handler.setFormatter(formatter)
-
-        logger.addHandler(handler)
-        logger.setLevel(self.log_level)
-
-        return logger
 
     def _loop_main(self):
         '''
