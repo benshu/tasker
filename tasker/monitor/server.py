@@ -11,7 +11,7 @@ from . import worker
 from . import message
 
 
-class StatisticsUDPServer:
+class StatisticsTCPServer(asyncio.Protocol):
     '''
     '''
     def __init__(self, statistics_obj):
@@ -22,7 +22,7 @@ class StatisticsUDPServer:
         '''
         self.transport = transport
 
-    def datagram_received(self, data, addr):
+    def data_received(self, data):
         '''
         '''
         message_data = data
@@ -34,6 +34,8 @@ class StatisticsUDPServer:
         except ValueError as exc:
             print(str(exc))
             pass
+        finally:
+            self.transport.close()
 
     def dispatch_message(self, message_obj):
         host_obj = host.Host(
@@ -123,7 +125,7 @@ class StatisticsWebServer:
 class StatisticsServer:
     '''
     '''
-    def __init__(self, event_loop, web_server, udp_server, statistics_obj):
+    def __init__(self, event_loop, web_server, tcp_server, statistics_obj):
         self.statistics_obj = statistics_obj
         self.event_loop = event_loop
 
@@ -134,21 +136,19 @@ class StatisticsServer:
             statistics_obj=statistics_obj,
         )
 
-        self.statistics_udp_server = self.event_loop.create_datagram_endpoint(
+        self.statistics_tcp_server = self.event_loop.create_server(
             protocol_factory=functools.partial(
-                StatisticsUDPServer,
+                StatisticsTCPServer,
                 **{
                     'statistics_obj': statistics_obj,
                 }
             ),
-            local_addr=(
-                udp_server['host'],
-                udp_server['port'],
-            ),
+            host=tcp_server['host'],
+            port=tcp_server['port'],
         )
 
         self.web_server_future = self.event_loop.run_until_complete(self.statistics_web_server.server)
-        self.udp_server_future = self.event_loop.run_until_complete(self.statistics_udp_server)
+        self.tcp_server_future = self.event_loop.run_until_complete(self.statistics_tcp_server)
 
     def close(self):
         self.web_server_future.close()
@@ -164,7 +164,7 @@ def main():
             'host': '0.0.0.0',
             'port': 8080,
         },
-        udp_server={
+        tcp_server={
             'host': '0.0.0.0',
             'port': 9999,
         },

@@ -23,7 +23,7 @@ class ServerThread(threading.Thread):
                 'host': '127.0.0.1',
                 'port': 8080,
             },
-            udp_server={
+            tcp_server={
                 'host': '127.0.0.1',
                 'port': 9999,
             },
