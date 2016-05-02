@@ -227,9 +227,16 @@ class Task:
 
         self.init()
 
+        run_forever = False
+        if self.max_tasks_per_run == 0:
+            run_forever = True
+
         tasks_left = self.max_tasks_per_run
-        while tasks_left:
-            if tasks_left > self.tasks_per_transaction:
+        while tasks_left > 0 or run_forever is True:
+            if self.tasks_per_transaction == 1:
+                task = self.pull_task()
+                tasks = [task]
+            elif tasks_left > self.tasks_per_transaction:
                 tasks = self.pull_tasks(
                     count=self.tasks_per_transaction,
                 )
@@ -258,7 +265,8 @@ class Task:
                         task=task,
                     )
 
-                tasks_left -= 1
+                if not run_forever:
+                    tasks_left -= 1
 
             self.logger.debug('task execution finished')
 
