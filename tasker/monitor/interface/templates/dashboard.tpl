@@ -42,6 +42,7 @@
                         <table class="bordered stripped">
                             <thead>
                                 <tr>
+                                    <th>Hostname</th>
                                     <th>Worker</th>
                                     <th>Success</th>
                                     <th>Retry</th>
@@ -51,7 +52,8 @@
                             <tbody>
                                 {% for worker in statistics['online_workers'] | sort(attribute='name') %}
                                     <tr>
-                                        <td style="font-weight: bold;">{{ worker['name'] }}</td>
+                                        <td style="font-weight: bold;">{{ worker['hostname'] }}</td>
+                                        <td style="font-weight: bold;">{{ worker['worker_name'] }}</td>
                                         <td style="color: #009688; font-weight: bold;">{{ worker['success'] }}</td>
                                         <td style="color: #03A9F4; font-weight: bold;">{{ worker['retry'] }}</td>
                                         <td style="color: #E53935; font-weight: bold;">{{ worker['failure'] }}</td>

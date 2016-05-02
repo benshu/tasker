@@ -212,10 +212,8 @@ class Statistics:
 
         online_workers = [
             {
-                'name': '{worker_name}@{host_name}'.format(
-                    worker_name=worker_obj['worker'].name,
-                    host_name=worker_obj['host'].name,
-                ),
+                'hostname': worker_obj['host'].name,
+                'worker_name': worker_obj['worker'].name,
                 'failure': worker_obj['worker'].failure,
                 'retry': worker_obj['worker'].retry,
                 'success': worker_obj['worker'].success,
