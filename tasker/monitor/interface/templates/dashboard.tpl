@@ -50,7 +50,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for worker in statistics['online_workers'] | sort(attribute='name') %}
+                                {% for worker in statistics['online_workers'] | sort(attribute='worker_name') %}
                                     <tr>
                                         <td style="font-weight: bold;">{{ worker['hostname'] }}</td>
                                         <td style="font-weight: bold;">{{ worker['worker_name'] }}</td>
