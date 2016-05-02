@@ -9,8 +9,10 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,300,600">
         <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.min.css">
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.11/css/jquery.dataTables.min.css">
         <script src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/js/materialize.min.js"></script>
+        <script src="https://cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
     </head>
 
     <body>
@@ -39,7 +41,7 @@
             <div class="row">
                 <div class="col s12">
                     <div class="row">
-                        <table class="bordered stripped">
+                        <table id="workers-table" class="bordered stripped">
                             <thead>
                                 <tr>
                                     <th>Hostname</th>
@@ -65,5 +67,8 @@
                 </div>
             </div>
         </div>
+        <script>
+                $(document).ready(function(){ $('#workers-table').DataTable(); });
+        </script>
     </body>
 </html>
