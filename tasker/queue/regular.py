@@ -1,5 +1,3 @@
-import logging
-
 from . import _queue
 
 
@@ -19,8 +17,6 @@ class Queue(_queue.Queue):
         if value is None:
             return None
 
-        self.logger.debug('popped')
-
         return value
 
     def _dequeue_bulk(self, count):
@@ -30,8 +26,6 @@ class Queue(_queue.Queue):
             key=self.queue_name,
             count=count,
         )
-
-        self.logger.debug('popped bulk')
 
         return values
 
@@ -43,8 +37,6 @@ class Queue(_queue.Queue):
             value=value,
         )
 
-        self.logger.debug('pushed')
-
         return pushed
 
     def _enqueue_bulk(self, values):
@@ -54,8 +46,6 @@ class Queue(_queue.Queue):
             key=self.queue_name,
             values=values,
         )
-
-        self.logger.debug('pushed bulk')
 
         return pushed
 
@@ -67,8 +57,6 @@ class Queue(_queue.Queue):
             value=value,
         )
 
-        self.logger.debug('result added')
-
         return added
 
     def _remove_result(self, value):
@@ -78,8 +66,6 @@ class Queue(_queue.Queue):
             set_name=self.results_queue_name,
             value=value,
         )
-
-        self.logger.debug('result removed')
 
         return removed
 
@@ -91,8 +77,6 @@ class Queue(_queue.Queue):
             value=value,
         )
 
-        self.logger.debug('result has been checked')
-
         return is_in_set
 
     def len(self):
@@ -101,8 +85,6 @@ class Queue(_queue.Queue):
         queue_len = self.connector.len(
             key=self.queue_name,
         )
-
-        self.logger.debug('len')
 
         return queue_len
 
@@ -115,5 +97,3 @@ class Queue(_queue.Queue):
         self.connector.delete(
             key=self.results_queue_name,
         )
-
-        self.logger.debug('flushed')
