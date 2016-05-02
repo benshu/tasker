@@ -100,6 +100,13 @@ class Task:
             value=task,
         )
 
+    def push_tasks(self, tasks):
+        '''
+        '''
+        self.task_queue.enqueue_bulk(
+            values=tasks,
+        )
+
     def pull_task(self):
         '''
         '''
@@ -118,7 +125,7 @@ class Task:
 
         return tasks
 
-    def apply_async_one(self, *args, **kwargs):
+    def craft_task(self, *args, **kwargs):
         '''
         '''
         if self.report_completion:
@@ -134,6 +141,13 @@ class Task:
             'completion_key': completion_key,
         }
 
+        return task
+
+    def apply_async_one(self, *args, **kwargs):
+        '''
+        '''
+        task = self.craft_task(*args, **kwargs)
+
         self.push_task(
             task=task,
         )
@@ -141,6 +155,15 @@ class Task:
         self.logger.debug('enqueued a task')
 
         return task
+
+    def apply_async_many(self, tasks):
+        '''
+        '''
+        self.push_tasks(
+            tasks=tasks,
+        )
+
+        self.logger.debug('enqueued tasks')
 
     def generate_unique_key(self):
         '''
@@ -216,7 +239,7 @@ class Task:
             )
             heartbeater_thread.start()
 
-            self.init()
+        self.init()
 
         run_forever = False
         if self.max_tasks_per_run == 0:

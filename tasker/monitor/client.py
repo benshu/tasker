@@ -12,6 +12,11 @@ class StatisticsClient:
         self.host_name = host_name
         self.worker_name = worker_name
 
+        self.statistics_socket = socket.socket(
+            family=socket.AF_INET,
+            type=socket.SOCK_DGRAM,
+        )
+
     def send_stats(self, message_type):
         message_obj = message.Message(
             hostname=self.host_name,
@@ -21,22 +26,13 @@ class StatisticsClient:
         )
         message_data = message_obj.serialize()
 
-        try:
-            statistics_socket = socket.socket(
-                family=socket.AF_INET,
-                type=socket.SOCK_STREAM,
-            )
-            statistics_socket.connect(
-                (
-                    self.stats_server['host'],
-                    self.stats_server['port'],
-                ),
-            )
-            statistics_socket.sendall(message_data)
-        except Exception as exception:
-            print(exception)
-        finally:
-            statistics_socket.close()
+        self.statistics_socket.sendto(
+            message_data,
+            (
+                self.stats_server['host'],
+                self.stats_server['port'],
+            ),
+        )
 
     def send_success(self):
         self.send_stats(
