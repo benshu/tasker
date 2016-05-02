@@ -68,7 +68,15 @@
             </div>
         </div>
         <script>
-                $(document).ready(function(){ $('#workers-table').DataTable(); });
+                $(document).ready(
+                    function () {
+                        $('#workers-table').DataTable(
+                            {
+                                "iDisplayLength": 100
+                            }
+                        );
+                    }
+                );
         </script>
     </body>
 </html>
