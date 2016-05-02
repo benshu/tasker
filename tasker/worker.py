@@ -46,6 +46,7 @@ class Worker:
                     func=function,
                 )
                 async_result.wait()
+                async_result.get()
 
                 self.logger.debug('task finished')
             except Exception as exception:
