@@ -20,7 +20,7 @@ class Statistics:
             self.hosts.append(host_obj)
 
     def ensure_worker(self, host_obj, worker_obj):
-        report_time = datetime.datetime.now()
+        report_time = datetime.datetime.utcnow()
 
         for current_host in self.hosts:
             if host_obj == current_host:
@@ -47,7 +47,7 @@ class Statistics:
         online_hosts = []
 
         for host_obj in self.hosts:
-            if host_obj.last_seen + self.online_host_timedelta > datetime.datetime.now():
+            if host_obj.last_seen + self.online_host_timedelta > datetime.datetime.utcnow():
                 online_hosts.append(host_obj)
 
         return online_hosts
@@ -58,7 +58,7 @@ class Statistics:
 
         for host_obj in self.hosts:
             for worker_obj in host_obj.workers:
-                if worker_obj.last_seen + self.online_worker_timedelta > datetime.datetime.now():
+                if worker_obj.last_seen + self.online_worker_timedelta > datetime.datetime.utcnow():
                     online_workers.append(
                         {
                             'host': host_obj,
