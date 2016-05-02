@@ -213,9 +213,16 @@ class Task:
         '''
         '''
         while True:
-            self.monitor_client.send_heartbeat()
+            try:
+                self.monitor_client.send_heartbeat()
 
-            time.sleep(self.heartbeat_interval)
+                time.sleep(self.heartbeat_interval)
+            except Exception as exception:
+                self.logger.error(
+                    'sending heartbeat has failed: {exception}'.format(
+                        exception=exception,
+                    )
+                )
 
     def work_loop(self):
         '''
