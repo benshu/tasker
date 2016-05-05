@@ -1,6 +1,6 @@
 import threading
-import eventlet
-import eventlet.debug
+import multiprocessing
+import traceback
 import datetime
 import logging
 import socket
@@ -86,10 +86,6 @@ class Task:
                 host_name=self.monitoring['host_name'],
                 worker_name=self.name,
             )
-
-        eventlet.debug.hub_exceptions(
-            state=False,
-        )
 
         self.logger.debug('initialized')
 
@@ -291,20 +287,29 @@ class Task:
         '''
         self.last_task = task
         try:
-            if self.timeout > 0:
-                timeout = eventlet.timeout.Timeout(self.timeout)
-            async_result = eventlet.spawn(
-                self.work,
-                *task['args'],
-                **task['kwargs']
+            work_thread = SafeThread(
+                target=self.work,
+                args=task['args'],
+                kwargs=task['kwargs'],
             )
-
+            work_thread.start()
             self.logger.debug('task applied')
 
-            returned_value = async_result.wait()
-
             if self.timeout > 0:
-                timeout.cancel()
+                timeout = self.timeout
+            else:
+                timeout = None
+
+            work_thread.join(
+                timeout=timeout,
+            )
+            if work_thread.is_alive():
+                raise TimeoutError()
+
+            if work_thread.exception:
+                raise work_thread.exception['exception']
+
+            returned_value = work_thread.returned_value
 
             self.logger.debug('task succeeded')
 
@@ -315,7 +320,7 @@ class Task:
             )
 
             return True
-        except eventlet.timeout.Timeout as exception:
+        except TimeoutError as exception:
             self.logger.debug('task execution timed out')
 
             self._on_timeout(
@@ -544,3 +549,61 @@ class Task:
         self.__init__()
 
         self.logger.debug('setstate')
+
+
+class SafeThread(threading.Thread):
+    '''
+    '''
+    _exc_pipe = multiprocessing.Pipe()
+    _ret_pipe = multiprocessing.Pipe()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._exc_parent_connection = self._exc_pipe[0]
+        self._exc_child_connection = self._exc_pipe[1]
+
+        self._ret_parent_connection = self._ret_pipe[0]
+        self._ret_child_connection = self._ret_pipe[1]
+
+        self._exception = None
+        self._returned_value = None
+
+    def run(self):
+        try:
+            if self._target:
+                returned_value = self._target(*self._args, **self._kwargs)
+
+                if returned_value:
+                    self._ret_child_connection.send(returned_value)
+        except Exception as exception:
+            self._exc_child_connection.send(
+                {
+                    'exception': exception,
+                    'traceback': traceback.format_exc(),
+                }
+            )
+        finally:
+            del self._target
+            del self._args
+            del self._kwargs
+
+    @property
+    def returned_value(self):
+        if self._returned_value is not None:
+            return self._returned_value
+
+        if self._ret_parent_connection.poll():
+            self._returned_value = self._ret_parent_connection.recv()
+
+        return self._returned_value
+
+    @property
+    def exception(self):
+        if self._exception is not None:
+            return self._exception
+
+        if self._exc_parent_connection.poll():
+            self._exception = self._exc_parent_connection.recv()
+
+        return self._exception

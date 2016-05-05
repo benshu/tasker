@@ -26,7 +26,7 @@ class EventsTestTask(task.Task):
 
     def work(self, action):
         if action == 'succeeded':
-            return
+            return 'success'
         elif action == 'failed':
             raise Exception
         elif action == 'timed_out':

@@ -1,5 +1,6 @@
 import tasker
 import logging
+import time
 
 
 class Task(tasker.task.Task):
@@ -39,6 +40,12 @@ class Task(tasker.task.Task):
 
     def work(self, num):
         self.a += num
+        if num == 4:
+            print('start')
+            print(time.time())
+        if num == 6:
+            print('end')
+            print(time.time())
 
 
 def main():
