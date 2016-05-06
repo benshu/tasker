@@ -8,6 +8,11 @@ class Process(multiprocessing.Process):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        multiprocessing.set_start_method(
+            method='spawn',
+            force=True,
+        )
+
         self._pipe = multiprocessing.Pipe()
 
         self._parent_connection = self._pipe[0]

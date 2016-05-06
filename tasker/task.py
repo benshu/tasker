@@ -82,7 +82,7 @@ class Task:
             ),
         )
 
-        self._heartbeater = None
+        self.heartbeater = None
         self.monitor_client = None
         if self.monitoring:
             self.monitor_client = monitor.client.StatisticsClient(
@@ -90,12 +90,6 @@ class Task:
                 host_name=self.monitoring['host_name'],
                 worker_name=self.name,
             )
-
-            self._heartbeater = devices.heartbeater.Heartbeater(
-                monitor_client=self.monitor_client,
-                interval=self.heartbeat_interval,
-            )
-            self._heartbeater.start()
 
         self.logger.debug('initialized')
 
@@ -224,6 +218,13 @@ class Task:
     def work_loop(self):
         '''
         '''
+        if self.monitoring:
+            self.heartbeater = devices.heartbeater.Heartbeater(
+                monitor_client=self.monitor_client,
+                interval=self.heartbeat_interval,
+            )
+            self.heartbeater.start()
+
         self.init()
 
         run_forever = False
@@ -517,8 +518,6 @@ class Task:
             'heartbeat_interval': self.heartbeat_interval,
         }
 
-        self.logger.debug('getstate')
-
         return state
 
     def __setstate__(self, value):
@@ -538,12 +537,12 @@ class Task:
         self.report_completion = value['report_completion']
         self.heartbeat_interval = value['heartbeat_interval']
 
-        super().__init__()
-
-        self.logger.debug('setstate')
+        self.__init__(
+            abstract=False,
+        )
 
     def __del__(self):
         '''
         '''
-        if self._heartbeater:
-            self._heartbeater.stop()
+        if self.heartbeater:
+            self.heartbeater.stop()
