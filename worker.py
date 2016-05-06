@@ -41,11 +41,11 @@ class Task(tasker.task.Task):
     def work(self, num):
         self.a += num
         if num == 4:
-            print('start')
-            print(time.time())
+            self.logger.error('start')
+            self.logger.error(time.time())
         if num == 6:
-            print('end')
-            print(time.time())
+            self.logger.error('end')
+            self.logger.error(time.time())
 
 
 def main():
