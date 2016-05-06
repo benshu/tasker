@@ -218,7 +218,6 @@ class Task:
     def work_loop(self):
         '''
         '''
-        print('new')
         try:
             if self.monitoring:
                 self.heartbeater = devices.heartbeater.Heartbeater(
