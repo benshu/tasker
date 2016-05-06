@@ -55,6 +55,8 @@ class Worker:
                         exception=exception,
                     )
                 )
+            finally:
+                process.terminate()
 
     def start(self):
         '''
