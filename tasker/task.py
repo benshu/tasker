@@ -271,6 +271,8 @@ class Task:
             self.logger.debug('task execution finished')
 
         logging.shutdown()
+        if self.heartbeater:
+            self.heartbeater.stop()
 
     def execute_task(self, task):
         '''
@@ -540,9 +542,3 @@ class Task:
         self.__init__(
             abstract=False,
         )
-
-    def __del__(self):
-        '''
-        '''
-        if self.heartbeater:
-            self.heartbeater.stop()

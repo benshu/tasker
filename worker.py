@@ -28,7 +28,7 @@ class Task(tasker.task.Task):
         },
     }
     timeout = 30.0
-    max_tasks_per_run = 100000
+    max_tasks_per_run = 1000
     tasks_per_transaction = 1000
     max_retries = 3
     log_level = logging.ERROR
