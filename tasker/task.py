@@ -218,61 +218,64 @@ class Task:
     def work_loop(self):
         '''
         '''
-        if self.monitoring:
-            self.heartbeater = devices.heartbeater.Heartbeater(
-                monitor_client=self.monitor_client,
-                interval=self.heartbeat_interval,
-            )
-            self.heartbeater.start()
-
-        self.init()
-
-        run_forever = False
-        if self.max_tasks_per_run == 0:
-            run_forever = True
-
-        tasks_left = self.max_tasks_per_run
-        while tasks_left > 0 or run_forever is True:
-            if self.tasks_per_transaction == 1:
-                task = self.pull_task()
-                tasks = [task]
-            elif tasks_left > self.tasks_per_transaction:
-                tasks = self.pull_tasks(
-                    count=self.tasks_per_transaction,
+        try:
+            if self.monitoring:
+                self.heartbeater = devices.heartbeater.Heartbeater(
+                    monitor_client=self.monitor_client,
+                    interval=self.heartbeat_interval,
                 )
-            else:
-                tasks = self.pull_tasks(
-                    count=tasks_left,
-                )
+                self.heartbeater.start()
 
-            if len(tasks) == 0:
-                task = self.pull_task()
-                tasks = [task]
+            self.init()
 
-            self.logger.debug(
-                'dequeued {tasks_dequeued} tasks'.format(
-                    tasks_dequeued=len(tasks),
-                )
-            )
+            run_forever = False
+            if self.max_tasks_per_run == 0:
+                run_forever = True
 
-            for task in tasks:
-                task_finished = self.execute_task(
-                    task=task,
+            tasks_left = self.max_tasks_per_run
+            while tasks_left > 0 or run_forever is True:
+                if self.tasks_per_transaction == 1:
+                    task = self.pull_task()
+                    tasks = [task]
+                elif tasks_left > self.tasks_per_transaction:
+                    tasks = self.pull_tasks(
+                        count=self.tasks_per_transaction,
+                    )
+                else:
+                    tasks = self.pull_tasks(
+                        count=tasks_left,
+                    )
+
+                if len(tasks) == 0:
+                    task = self.pull_task()
+                    tasks = [task]
+
+                self.logger.debug(
+                    'dequeued {tasks_dequeued} tasks'.format(
+                        tasks_dequeued=len(tasks),
+                    )
                 )
 
-                if task_finished:
-                    self.report_complete(
+                for task in tasks:
+                    task_finished = self.execute_task(
                         task=task,
                     )
 
-                if not run_forever:
-                    tasks_left -= 1
+                    if task_finished:
+                        self.report_complete(
+                            task=task,
+                        )
 
-            self.logger.debug('task execution finished')
+                    if not run_forever:
+                        tasks_left -= 1
 
-        logging.shutdown()
-        if self.heartbeater:
-            self.heartbeater.stop()
+                self.logger.debug('task execution finished')
+        except Exception as exception:
+            logging.shutdown()
+            if self.heartbeater:
+                self.heartbeater.stop()
+
+            raise exception
 
     def execute_task(self, task):
         '''
