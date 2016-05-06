@@ -21,8 +21,8 @@ class Heartbeater(threading.Thread):
 
         while self._stop_event.is_set():
             if sleep_duration < self.interval:
-                time.sleep(0.5)
-                sleep_duration += 0.5
+                time.sleep(0.1)
+                sleep_duration += 0.1
 
                 continue
 

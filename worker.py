@@ -51,7 +51,7 @@ class Task(tasker.task.Task):
 def main():
     worker = tasker.worker.Worker(
         task_class=Task,
-        concurrent_workers=4,
+        concurrent_workers=1,
     )
     worker.log_level = logging.ERROR
     worker.start()

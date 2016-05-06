@@ -218,6 +218,7 @@ class Task:
     def work_loop(self):
         '''
         '''
+        print('new')
         try:
             if self.monitoring:
                 self.heartbeater = devices.heartbeater.Heartbeater(
@@ -271,11 +272,11 @@ class Task:
 
                 self.logger.debug('task execution finished')
         except Exception as exception:
+            raise exception
+        finally:
             logging.shutdown()
             if self.heartbeater:
                 self.heartbeater.stop()
-
-            raise exception
 
     def execute_task(self, task):
         '''
