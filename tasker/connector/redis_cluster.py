@@ -14,8 +14,8 @@ class Connector(_connector.Connector):
         self.connection = rediscluster.StrictRedisCluster(
             startup_nodes=startup_nodes,
             retry_on_timeout=True,
-            socket_keepalive=True,
-            socket_connect_timeout=10,
+            socket_keepalive=False,
+            socket_connect_timeout=60,
             socket_timeout=60,
         )
 
