@@ -1,6 +1,3 @@
-import threading
-import multiprocessing
-import traceback
 import datetime
 import logging
 import socket
@@ -8,10 +5,12 @@ import random
 import time
 
 from . import connector
+from . import devices
 from . import encoder
 from . import logger
 from . import monitor
 from . import queue
+from . import runner
 
 
 class TaskException(Exception):
@@ -60,7 +59,10 @@ class Task:
     report_completion = False
     heartbeat_interval = 10.0
 
-    def __init__(self):
+    def __init__(self, abstract=False):
+        if abstract is True:
+            return
+
         self.logger = logger.logger.Logger(
             logger_name=self.name,
             log_level=self.log_level,
@@ -80,12 +82,20 @@ class Task:
             ),
         )
 
+        self._heartbeater = None
+        self.monitor_client = None
         if self.monitoring:
             self.monitor_client = monitor.client.StatisticsClient(
                 stats_server=self.monitoring['stats_server'],
                 host_name=self.monitoring['host_name'],
                 worker_name=self.name,
             )
+
+            self._heartbeater = devices.heartbeater.Heartbeater(
+                monitor_client=self.monitor_client,
+                interval=self.heartbeat_interval,
+            )
+            self._heartbeater.start()
 
         self.logger.debug('initialized')
 
@@ -211,30 +221,9 @@ class Task:
 
                 time.sleep(0.5)
 
-    def heartbeater(self):
-        '''
-        '''
-        while True:
-            try:
-                self.monitor_client.send_heartbeat()
-
-                time.sleep(self.heartbeat_interval)
-            except Exception as exception:
-                self.logger.error(
-                    'sending heartbeat has failed: {exception}'.format(
-                        exception=exception,
-                    )
-                )
-
     def work_loop(self):
         '''
         '''
-        if self.monitoring:
-            heartbeater_thread = threading.Thread(
-                target=self.heartbeater,
-            )
-            heartbeater_thread.start()
-
         self.init()
 
         run_forever = False
@@ -287,7 +276,7 @@ class Task:
         '''
         self.last_task = task
         try:
-            work_thread = SafeThread(
+            work_thread = runner.extended_thread.Thread(
                 target=self.work,
                 args=task['args'],
                 kwargs=task['kwargs'],
@@ -384,6 +373,7 @@ class Task:
         '''
         if self.monitoring:
             self.monitor_client.send_success()
+
         self.logger.info(
             'task {task_name} reported a success:\n\tvalue: {value}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
@@ -404,6 +394,7 @@ class Task:
         '''
         if self.monitoring:
             self.monitor_client.send_failure()
+
         self.logger.error(
             'task {task_name} reported a failure:\n\texception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
@@ -424,6 +415,7 @@ class Task:
         '''
         if self.monitoring:
             self.monitor_client.send_retry()
+
         self.logger.warning(
             'task {task_name} asked for a retry:\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
@@ -546,64 +538,12 @@ class Task:
         self.report_completion = value['report_completion']
         self.heartbeat_interval = value['heartbeat_interval']
 
-        self.__init__()
+        super().__init__()
 
         self.logger.debug('setstate')
 
-
-class SafeThread(threading.Thread):
-    '''
-    '''
-    _exc_pipe = multiprocessing.Pipe()
-    _ret_pipe = multiprocessing.Pipe()
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self._exc_parent_connection = self._exc_pipe[0]
-        self._exc_child_connection = self._exc_pipe[1]
-
-        self._ret_parent_connection = self._ret_pipe[0]
-        self._ret_child_connection = self._ret_pipe[1]
-
-        self._exception = None
-        self._returned_value = None
-
-    def run(self):
-        try:
-            if self._target:
-                returned_value = self._target(*self._args, **self._kwargs)
-
-                if returned_value:
-                    self._ret_child_connection.send(returned_value)
-        except Exception as exception:
-            self._exc_child_connection.send(
-                {
-                    'exception': exception,
-                    'traceback': traceback.format_exc(),
-                }
-            )
-        finally:
-            del self._target
-            del self._args
-            del self._kwargs
-
-    @property
-    def returned_value(self):
-        if self._returned_value is not None:
-            return self._returned_value
-
-        if self._ret_parent_connection.poll():
-            self._returned_value = self._ret_parent_connection.recv()
-
-        return self._returned_value
-
-    @property
-    def exception(self):
-        if self._exception is not None:
-            return self._exception
-
-        if self._exc_parent_connection.poll():
-            self._exception = self._exc_parent_connection.recv()
-
-        return self._exception
+    def __del__(self):
+        '''
+        '''
+        if self._heartbeater:
+            self._heartbeater.stop()
