@@ -15,7 +15,6 @@ setuptools.setup(
         'msgpack-python',
         'aiohttp',
         'jinja2',
-        'eventlet',
     ],
     packages=setuptools.find_packages(),
     package_data={'': ['*.tpl']},
