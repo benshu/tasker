@@ -41,10 +41,6 @@ class Process(multiprocessing.Process):
                 }
             )
 
-            self.logger.error(
-                msg=exception,
-            )
-
     @property
     def exception(self):
         try:
