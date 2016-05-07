@@ -255,25 +255,28 @@ class Task:
     def get_next_tasks(self, tasks_left):
         '''
         '''
-        while True:
-            if self.tasks_per_transaction == 1:
-                task = self.pull_task()
+        if self.tasks_per_transaction == 1:
+            task = self.pull_task()
 
-                if not task:
-                    continue
+            if not task:
+                continue
 
-                tasks = [task]
-            elif tasks_left > self.tasks_per_transaction:
-                tasks = self.pull_tasks(
-                    count=self.tasks_per_transaction,
-                )
-            else:
-                tasks = self.pull_tasks(
-                    count=tasks_left,
-                )
+            tasks = [task]
+        elif tasks_left > self.tasks_per_transaction:
+            tasks = self.pull_tasks(
+                count=self.tasks_per_transaction,
+            )
+        else:
+            tasks = self.pull_tasks(
+                count=tasks_left,
+            )
 
-            if tasks:
-                return tasks
+        if tasks:
+            return tasks
+        else:
+            task = self.pull_task()
+
+            return [task]
 
     def work_loop(self):
         '''
