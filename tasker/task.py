@@ -256,13 +256,13 @@ class Task:
         '''
         '''
         if self.tasks_per_transaction == 1:
-            task = self.pull_task()
+            while True:
+                task = self.pull_task()
 
-            if not task:
-                continue
+                if task:
+                    return [task]
 
-            tasks = [task]
-        elif tasks_left > self.tasks_per_transaction:
+        if tasks_left > self.tasks_per_transaction:
             tasks = self.pull_tasks(
                 count=self.tasks_per_transaction,
             )
@@ -273,10 +273,12 @@ class Task:
 
         if tasks:
             return tasks
-        else:
+
+        while True:
             task = self.pull_task()
 
-            return [task]
+            if task:
+                return [task]
 
     def work_loop(self):
         '''
