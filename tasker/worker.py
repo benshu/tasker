@@ -37,18 +37,22 @@ class Worker:
 
         while True:
             try:
-                process = runner.extended_process.Process(
-                    target=function,
+                context = multiprocessing.get_context(
+                    method='spawn',
                 )
-                process.start()
-
-                self.logger.debug('task applied')
-
-                process.join()
-
-                self.logger.debug('task finished')
-                if process.exception:
-                    raise process.exception['exception']
+                worker_process_pool = multiprocessing.pool.Pool(
+                    processes=1,
+                    context=context,
+                )
+                async_result = worker_process_pool.apply_async(
+                    func=function,
+                )
+                async_result.wait(
+                    timeout=None,
+                )
+                async_result.get(
+                    timeout=5,
+                )
             except Exception as exception:
                 self.logger.error(
                     'task execution raised an exception: {exception}'.format(
@@ -56,7 +60,7 @@ class Worker:
                     )
                 )
             finally:
-                process.terminate()
+                worker_process_pool.terminate()
 
     def start(self):
         '''

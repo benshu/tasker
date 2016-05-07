@@ -27,7 +27,7 @@ class Task(tasker.task.Task):
         },
     }
     timeout = 30.0
-    max_tasks_per_run = 1000
+    max_tasks_per_run = 25000
     tasks_per_transaction = 1000
     max_retries = 3
     log_level = logging.ERROR
@@ -39,12 +39,11 @@ class Task(tasker.task.Task):
 
     def work(self, num):
         self.a += num
+
         if num == 4:
-            print('a')
             self.logger.error('start')
             self.logger.error(time.time())
         if num == 6:
-            print('b')
             self.logger.error('end')
             self.logger.error(time.time())
 

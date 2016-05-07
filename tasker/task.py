@@ -1,5 +1,7 @@
 import datetime
 import logging
+import multiprocessing
+import multiprocessing.pool
 import socket
 import random
 import time
@@ -286,6 +288,10 @@ class Task:
 
             self.init()
 
+            self.worker_thread_pool = multiprocessing.pool.ThreadPool(
+                processes=1,
+            )
+
             tasks_left = self.max_tasks_per_run
             while tasks_left > 0 or self.run_forever is True:
                 tasks = self.get_next_tasks(
@@ -320,20 +326,23 @@ class Task:
             raise exception
         finally:
             logging.shutdown()
+
             if self.heartbeater:
                 self.heartbeater.stop()
+
+            self.worker_thread_pool.terminate()
 
     def execute_task(self, task):
         '''
         '''
         self.last_task = task
         try:
-            work_thread = runner.extended_thread.Thread(
-                target=self.work,
+            async_result = self.worker_thread_pool.apply_async(
+                func=self.work,
                 args=task['args'],
-                kwargs=task['kwargs'],
+                kwds=task['kwargs'],
             )
-            work_thread.start()
+
             self.logger.debug('task applied')
 
             if self.timeout > 0:
@@ -341,16 +350,15 @@ class Task:
             else:
                 timeout = None
 
-            work_thread.join(
+            async_result.wait(
                 timeout=timeout,
             )
-            if work_thread.is_alive():
+            if not async_result.ready():
                 raise TimeoutError()
 
-            if work_thread.exception:
-                raise work_thread.exception['exception']
-
-            returned_value = work_thread.returned_value
+            returned_value = async_result.get(
+                timeout=None,
+            )
 
             self.logger.debug('task succeeded')
 
