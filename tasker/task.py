@@ -32,7 +32,6 @@ class Task:
 
     queue = {
         'type': 'regular',
-        'name': 'task_name',
     }
     compressor = 'zlib'
     serializer = 'msgpack'
@@ -60,21 +59,20 @@ class Task:
     heartbeat_interval = 10.0
 
     def __init__(self, abstract=False):
-        if abstract is True:
-            return
-
         self.logger = logger.logger.Logger(
             logger_name=self.name,
             log_level=self.log_level,
         )
 
+        if abstract is True:
+            return
+
         queue_connector_obj = connector.__connectors__[self.connector['type']]
         self.queue_connector = queue_connector_obj(**self.connector['params'])
 
-        queue_name = self.queue['name'] if self.queue['name'] else self.name
         queue_obj = queue.__queues__[self.queue['type']]
         self.task_queue = queue_obj(
-            queue_name=queue_name,
+            queue_name=self.name,
             connector=self.queue_connector,
             encoder=encoder.encoder.Encoder(
                 compressor_name=self.compressor,
@@ -91,39 +89,83 @@ class Task:
                 worker_name=self.name,
             )
 
+        self.run_forever = False
+        if self.max_tasks_per_run == 0:
+            self.run_forever = True
+
         self.logger.debug('initialized')
 
     def push_task(self, task):
         '''
         '''
-        self.task_queue.enqueue(
-            value=task,
-        )
+        try:
+            self.task_queue.enqueue(
+                value=task,
+            )
+
+            return True
+        except Exception as exception:
+            self.logger.error(
+                msg='could not push task: {exception}'.format(
+                    exception=exception,
+                )
+            )
+
+            return False
 
     def push_tasks(self, tasks):
         '''
         '''
-        self.task_queue.enqueue_bulk(
-            values=tasks,
-        )
+        try:
+            self.task_queue.enqueue_bulk(
+                values=tasks,
+            )
+
+            return True
+        except Exception as exception:
+            self.logger.error(
+                msg='could not push tasks: {exception}'.format(
+                    exception=exception,
+                )
+            )
+
+            return False
 
     def pull_task(self):
         '''
         '''
-        task = self.task_queue.dequeue(
-            timeout=0,
-        )
+        try:
+            task = self.task_queue.dequeue(
+                timeout=0,
+            )
 
-        return task
+            return task
+        except Exception as exception:
+            self.logger.error(
+                msg='could not pull task: {exception}'.format(
+                    exception=exception,
+                )
+            )
+
+            return {}
 
     def pull_tasks(self, count):
         '''
         '''
-        tasks = self.task_queue.dequeue_bulk(
-            count=count,
-        )
+        try:
+            tasks = self.task_queue.dequeue_bulk(
+                count=count,
+            )
 
-        return tasks
+            return tasks
+        except Exception as exception:
+            self.logger.error(
+                msg='could not pull tasks: {exception}'.format(
+                    exception=exception,
+                )
+            )
+
+            return []
 
     def craft_task(self, *args, **kwargs):
         '''
@@ -143,42 +185,13 @@ class Task:
 
         return task
 
-    def apply_async_one(self, *args, **kwargs):
-        '''
-        '''
-        task = self.craft_task(*args, **kwargs)
-
-        self.push_task(
-            task=task,
-        )
-
-        self.logger.debug('enqueued a task')
-
-        return task
-
-    def apply_async_many(self, tasks):
-        '''
-        '''
-        self.push_tasks(
-            tasks=tasks,
-        )
-
-        self.logger.debug('enqueued tasks')
-
-    def generate_unique_key(self):
-        '''
-        '''
-        unique_key = random.randint(0, 9999999999999)
-
-        return unique_key
-
     def create_completion_key(self):
         '''
         '''
         added = False
 
         while not added:
-            completion_key = self.generate_unique_key()
+            completion_key = random.randint(0, 9999999999999)
             added = self.task_queue.add_result(
                 value=completion_key,
             )
@@ -215,6 +228,51 @@ class Task:
 
                 time.sleep(0.5)
 
+    def apply_async_one(self, *args, **kwargs):
+        '''
+        '''
+        task = self.craft_task(*args, **kwargs)
+
+        self.push_task(
+            task=task,
+        )
+
+        self.logger.debug('enqueued a task')
+
+        return task
+
+    def apply_async_many(self, tasks):
+        '''
+        '''
+        self.push_tasks(
+            tasks=tasks,
+        )
+
+        self.logger.debug('enqueued tasks')
+
+    def get_next_tasks(self, tasks_left):
+        '''
+        '''
+        while True:
+            if self.tasks_per_transaction == 1:
+                task = self.pull_task()
+
+                if not task:
+                    continue
+
+                tasks = [task]
+            elif tasks_left > self.tasks_per_transaction:
+                tasks = self.pull_tasks(
+                    count=self.tasks_per_transaction,
+                )
+            else:
+                tasks = self.pull_tasks(
+                    count=tasks_left,
+                )
+
+            if tasks:
+                return tasks
+
     def work_loop(self):
         '''
         '''
@@ -228,27 +286,11 @@ class Task:
 
             self.init()
 
-            run_forever = False
-            if self.max_tasks_per_run == 0:
-                run_forever = True
-
             tasks_left = self.max_tasks_per_run
-            while tasks_left > 0 or run_forever is True:
-                if self.tasks_per_transaction == 1:
-                    task = self.pull_task()
-                    tasks = [task]
-                elif tasks_left > self.tasks_per_transaction:
-                    tasks = self.pull_tasks(
-                        count=self.tasks_per_transaction,
-                    )
-                else:
-                    tasks = self.pull_tasks(
-                        count=tasks_left,
-                    )
-
-                if len(tasks) == 0:
-                    task = self.pull_task()
-                    tasks = [task]
+            while tasks_left > 0 or self.run_forever is True:
+                tasks = self.get_next_tasks(
+                    tasks_left=tasks_left,
+                )
 
                 self.logger.debug(
                     'dequeued {tasks_dequeued} tasks'.format(
@@ -266,11 +308,15 @@ class Task:
                             task=task,
                         )
 
-                    if not run_forever:
+                    if not self.run_forever:
                         tasks_left -= 1
 
                 self.logger.debug('task execution finished')
         except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
+
             raise exception
         finally:
             logging.shutdown()

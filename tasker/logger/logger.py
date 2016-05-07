@@ -89,3 +89,27 @@ class Logger:
         self.logger.error(
             msg=msg,
         )
+
+    def __getstate__(self):
+        '''
+        '''
+        state = {
+            'logger_name': self.logger_name,
+            'log_level': self.log_level,
+        }
+
+        return state
+
+    def __setstate__(self, value):
+        '''
+        '''
+        self.__init__(
+            logger_name=value['logger_name'],
+            log_level=value['log_level'],
+        )
+
+    def __del__(self):
+        '''
+        '''
+        for handler in self.logger.handlers:
+            handler.close()

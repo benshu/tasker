@@ -1,11 +1,21 @@
+import logging
+
+from .. import logger
+
+
 class Queue:
     '''
     '''
-    name = ''
+    name = 'Queue'
 
     def __init__(self, queue_name, connector, encoder):
         '''
         '''
+        self.logger = logger.logger.Logger(
+            logger_name=self.name,
+            log_level=logging.ERROR,
+        )
+
         self.queue_name = queue_name
         self.connector = connector
         self.encoder = encoder
@@ -21,15 +31,22 @@ class Queue:
     def dequeue(self, timeout=0):
         '''
         '''
-        value = self._dequeue(
-            timeout=timeout,
-        )
+        try:
+            value = self._dequeue(
+                timeout=timeout,
+            )
 
-        decoded_value = self.encoder.decode(
-            data=value,
-        )
+            decoded_value = self.encoder.decode(
+                data=value,
+            )
 
-        return decoded_value
+            return decoded_value
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
+
+            raise exception
 
     def _dequeue(self, timeout):
         '''
@@ -39,20 +56,27 @@ class Queue:
     def dequeue_bulk(self, count):
         '''
         '''
-        decoded_values = []
+        try:
+            decoded_values = []
 
-        values = self._dequeue_bulk(
-            count=count,
-        )
-
-        for value in values:
-            decoded_value = self.encoder.decode(
-                data=value,
+            values = self._dequeue_bulk(
+                count=count,
             )
 
-            decoded_values.append(decoded_value)
+            for value in values:
+                decoded_value = self.encoder.decode(
+                    data=value,
+                )
 
-        return decoded_values
+                decoded_values.append(decoded_value)
+
+            return decoded_values
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
+
+            raise exception
 
     def _dequeue_bulk(self, count):
         '''
@@ -62,13 +86,20 @@ class Queue:
     def enqueue(self, value):
         '''
         '''
-        encoded_value = self.encoder.encode(
-            data=value,
-        )
+        try:
+            encoded_value = self.encoder.encode(
+                data=value,
+            )
 
-        self._enqueue(
-            value=encoded_value,
-        )
+            self._enqueue(
+                value=encoded_value,
+            )
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
+
+            raise exception
 
     def _enqueue(self, timeout):
         '''
@@ -78,18 +109,25 @@ class Queue:
     def enqueue_bulk(self, values):
         '''
         '''
-        encoded_values = []
+        try:
+            encoded_values = []
 
-        for value in values:
-            encoded_value = self.encoder.encode(
-                data=value,
+            for value in values:
+                encoded_value = self.encoder.encode(
+                    data=value,
+                )
+
+                encoded_values.append(encoded_value)
+
+            self._enqueue_bulk(
+                values=encoded_values,
+            )
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
             )
 
-            encoded_values.append(encoded_value)
-
-        self._enqueue_bulk(
-            values=encoded_values,
-        )
+            raise exception
 
     def _enqueue_bulk(self, count):
         '''
@@ -99,9 +137,16 @@ class Queue:
     def add_result(self, value):
         '''
         '''
-        return self._add_result(
-            value=value,
-        )
+        try:
+            return self._add_result(
+                value=value,
+            )
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
+
+            raise exception
 
     def _add_result(self, value):
         '''
@@ -111,9 +156,16 @@ class Queue:
     def remove_result(self, value):
         '''
         '''
-        return self._remove_result(
-            value=value,
-        )
+        try:
+            return self._remove_result(
+                value=value,
+            )
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
+
+            raise exception
 
     def _remove_result(self, value):
         '''
@@ -123,9 +175,16 @@ class Queue:
     def has_result(self, value):
         '''
         '''
-        return self._has_result(
-            value=value,
-        )
+        try:
+            return self._has_result(
+                value=value,
+            )
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
+
+            raise exception
 
     def _has_result(self, value):
         '''
@@ -135,9 +194,33 @@ class Queue:
     def len(self):
         '''
         '''
+        try:
+            return self._len()
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
+
+            raise exception
+
+    def _len(self):
+        '''
+        '''
         raise NotImplemented()
 
     def flush(self):
+        '''
+        '''
+        try:
+            return self._flush()
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
+
+            raise exception
+
+    def _flush(self):
         '''
         '''
         raise NotImplemented()

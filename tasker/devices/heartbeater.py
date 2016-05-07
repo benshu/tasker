@@ -1,5 +1,8 @@
 import time
+import logging
 import threading
+
+from .. import logger
 
 
 class Heartbeater(threading.Thread):
@@ -13,6 +16,11 @@ class Heartbeater(threading.Thread):
 
         self._stop_event = threading.Event()
         self._stop_event.set()
+
+        self.logger = logger.logger.Logger(
+            logger_name='heartbeater',
+            log_level=logging.ERROR,
+        )
 
     def run(self):
         '''
@@ -30,8 +38,10 @@ class Heartbeater(threading.Thread):
                 self.monitor_client.send_heartbeat()
 
                 sleep_duration = 0
-            except Exception:
-                pass
+            except Exception as exception:
+                self.logger.error(
+                    msg=exception,
+                )
 
     def stop(self):
         '''

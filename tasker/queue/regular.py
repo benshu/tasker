@@ -79,7 +79,7 @@ class Queue(_queue.Queue):
 
         return is_in_set
 
-    def len(self):
+    def _len(self):
         '''
         '''
         queue_len = self.connector.len(
@@ -88,7 +88,7 @@ class Queue(_queue.Queue):
 
         return queue_len
 
-    def flush(self):
+    def _flush(self):
         '''
         '''
         self.connector.delete(

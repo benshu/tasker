@@ -8,7 +8,6 @@ class Task(tasker.task.Task):
 
     queue = {
         'type': 'regular',
-        'name': 'test_task',
     }
     compressor = 'dummy'
     serializer = 'pickle'
@@ -41,9 +40,11 @@ class Task(tasker.task.Task):
     def work(self, num):
         self.a += num
         if num == 4:
+            print('a')
             self.logger.error('start')
             self.logger.error(time.time())
         if num == 6:
+            print('b')
             self.logger.error('end')
             self.logger.error(time.time())
 
@@ -51,7 +52,7 @@ class Task(tasker.task.Task):
 def main():
     worker = tasker.worker.Worker(
         task_class=Task,
-        concurrent_workers=1,
+        concurrent_workers=2,
     )
     worker.log_level = logging.ERROR
     worker.start()

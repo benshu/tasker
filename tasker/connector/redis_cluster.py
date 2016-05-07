@@ -9,13 +9,15 @@ class Connector(_connector.Connector):
     name = 'redis_cluster'
 
     def __init__(self, startup_nodes):
+        super().__init__()
+
         self.startup_nodes = startup_nodes
 
         self.connection = rediscluster.StrictRedisCluster(
             startup_nodes=startup_nodes,
             retry_on_timeout=True,
             socket_keepalive=True,
-            socket_connect_timeout=60,
+            socket_connect_timeout=10,
             socket_timeout=60,
         )
 

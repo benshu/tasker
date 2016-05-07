@@ -9,6 +9,8 @@ class Connector(_connector.Connector):
     name = 'redis'
 
     def __init__(self, host, port, database):
+        super().__init__()
+
         self.host = host
         self.port = port
         self.database = database
