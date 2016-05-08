@@ -1,5 +1,6 @@
 import datetime
 import logging
+import traceback
 import multiprocessing
 import multiprocessing.pool
 import socket
@@ -12,7 +13,6 @@ from . import encoder
 from . import logger
 from . import monitor
 from . import queue
-from . import runner
 
 
 class TaskException(Exception):
@@ -326,6 +326,9 @@ class Task:
         except Exception as exception:
             self.logger.error(
                 msg=exception,
+            )
+            self.logger.error(
+                msg=traceback.format_exc(),
             )
 
             raise exception
