@@ -330,6 +330,9 @@ class Task:
             self.logger.error(
                 msg=traceback.format_exc(),
             )
+            self.logger.error(
+                msg=self.last_task,
+            )
 
             raise exception
         finally:
@@ -451,11 +454,16 @@ class Task:
             )
         )
 
-        self.on_success(
-            returned_value=returned_value,
-            args=args,
-            kwargs=kwargs,
-        )
+        try:
+            self.on_success(
+                returned_value=returned_value,
+                args=args,
+                kwargs=kwargs,
+            )
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
 
     def _on_failure(self, exception, args, kwargs):
         '''
@@ -472,11 +480,16 @@ class Task:
             )
         )
 
-        self.on_failure(
-            exception=exception,
-            args=args,
-            kwargs=kwargs,
-        )
+        try:
+            self.on_failure(
+                exception=exception,
+                args=args,
+                kwargs=kwargs,
+            )
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
 
     def _on_retry(self, args, kwargs):
         '''
@@ -492,10 +505,15 @@ class Task:
             )
         )
 
-        self.on_retry(
-            args=args,
-            kwargs=kwargs,
-        )
+        try:
+            self.on_retry(
+                args=args,
+                kwargs=kwargs,
+            )
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
 
     def _on_timeout(self, exception, args, kwargs):
         '''
@@ -509,11 +527,16 @@ class Task:
             )
         )
 
-        self.on_timeout(
-            exception=exception,
-            args=args,
-            kwargs=kwargs,
-        )
+        try:
+            self.on_timeout(
+                exception=exception,
+                args=args,
+                kwargs=kwargs,
+            )
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
 
     def _on_max_retries(self, args, kwargs):
         '''
@@ -526,10 +549,15 @@ class Task:
             )
         )
 
-        self.on_max_retries(
-            args=args,
-            kwargs=kwargs,
-        )
+        try:
+            self.on_max_retries(
+                args=args,
+                kwargs=kwargs,
+            )
+        except Exception as exception:
+            self.logger.error(
+                msg=exception,
+            )
 
     def init(self):
         '''
