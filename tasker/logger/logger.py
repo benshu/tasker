@@ -6,14 +6,14 @@ import logging
 class Logger:
     '''
     '''
+    log_level = logging.ERROR
     logs_dir_path = os.path.join(
         tempfile.gettempdir(),
         'tasker',
     )
 
-    def __init__(self, logger_name, log_level):
+    def __init__(self, logger_name):
         self.logger_name = logger_name
-        self.log_level = log_level
 
         logs_dir_path = os.path.join(
             self.logs_dir_path,
@@ -103,9 +103,10 @@ class Logger:
     def __setstate__(self, value):
         '''
         '''
+        self.log_level = value['log_level']
+
         self.__init__(
             logger_name=value['logger_name'],
-            log_level=value['log_level'],
         )
 
     def __del__(self):

@@ -6,9 +6,6 @@ import time
 class Task(tasker.task.Task):
     name = 'test_task'
 
-    queue = {
-        'type': 'regular',
-    }
     compressor = 'dummy'
     serializer = 'pickle'
     monitoring = {
@@ -30,7 +27,6 @@ class Task(tasker.task.Task):
     max_tasks_per_run = 25000
     tasks_per_transaction = 1000
     max_retries = 3
-    log_level = logging.ERROR
     report_completion = False
     heartbeat_interval = 10.0
 
@@ -53,7 +49,6 @@ def main():
         task_class=Task,
         concurrent_workers=2,
     )
-    worker.log_level = logging.ERROR
     worker.start()
 
 if __name__ == '__main__':

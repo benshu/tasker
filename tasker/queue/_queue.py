@@ -1,4 +1,4 @@
-import logging
+import traceback
 
 from .. import logger
 
@@ -13,7 +13,6 @@ class Queue:
         '''
         self.logger = logger.logger.Logger(
             logger_name=self.name,
-            log_level=logging.ERROR,
         )
 
         self.queue_name = queue_name
@@ -35,6 +34,8 @@ class Queue:
             value = self._dequeue(
                 timeout=timeout,
             )
+            if not value:
+                return {}
 
             decoded_value = self.encoder.decode(
                 data=value,

@@ -1,5 +1,4 @@
 import time
-import logging
 import threading
 
 from .. import logger
@@ -19,7 +18,6 @@ class Heartbeater(threading.Thread):
 
         self.logger = logger.logger.Logger(
             logger_name='heartbeater',
-            log_level=logging.ERROR,
         )
 
     def run(self):

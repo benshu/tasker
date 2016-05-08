@@ -32,9 +32,6 @@ class Task:
     '''
     name = 'task_name'
 
-    queue = {
-        'type': 'regular',
-    }
     compressor = 'zlib'
     serializer = 'msgpack'
     monitoring = {
@@ -56,31 +53,27 @@ class Task:
     max_tasks_per_run = 10
     max_retries = 3
     tasks_per_transaction = 10
-    log_level = logging.INFO
     report_completion = False
     heartbeat_interval = 10.0
 
-    def __init__(self, abstract=False):
+    def __init__(self, task_queue=None):
         self.logger = logger.logger.Logger(
             logger_name=self.name,
-            log_level=self.log_level,
         )
 
-        if abstract is True:
-            return
-
-        queue_connector_obj = connector.__connectors__[self.connector['type']]
-        self.queue_connector = queue_connector_obj(**self.connector['params'])
-
-        queue_obj = queue.__queues__[self.queue['type']]
-        self.task_queue = queue_obj(
-            queue_name=self.name,
-            connector=self.queue_connector,
-            encoder=encoder.encoder.Encoder(
-                compressor_name=self.compressor,
-                serializer_name=self.serializer,
-            ),
-        )
+        if not task_queue:
+            queue_connector_obj = connector.__connectors__[self.connector['type']]
+            queue_connector = queue_connector_obj(**self.connector['params'])
+            self.task_queue = queue.regular.Queue(
+                queue_name=self.name,
+                connector=queue_connector,
+                encoder=encoder.encoder.Encoder(
+                    compressor_name=self.compressor,
+                    serializer_name=self.serializer,
+                ),
+            )
+        else:
+            self.task_queue = task_queue
 
         self.heartbeater = None
         self.monitor_client = None
@@ -150,24 +143,6 @@ class Task:
             )
 
             return {}
-
-    def pull_tasks(self, count):
-        '''
-        '''
-        try:
-            tasks = self.task_queue.dequeue_bulk(
-                count=count,
-            )
-
-            return tasks
-        except Exception as exception:
-            self.logger.error(
-                msg='could not pull tasks: {exception}'.format(
-                    exception=exception,
-                )
-            )
-
-            return []
 
     def craft_task(self, *args, **kwargs):
         '''
@@ -252,34 +227,6 @@ class Task:
 
         self.logger.debug('enqueued tasks')
 
-    def get_next_tasks(self, tasks_left):
-        '''
-        '''
-        if self.tasks_per_transaction == 1:
-            while True:
-                task = self.pull_task()
-
-                if task:
-                    return [task]
-
-        if tasks_left > self.tasks_per_transaction:
-            tasks = self.pull_tasks(
-                count=self.tasks_per_transaction,
-            )
-        else:
-            tasks = self.pull_tasks(
-                count=tasks_left,
-            )
-
-        if tasks:
-            return tasks
-
-        while True:
-            task = self.pull_task()
-
-            if task:
-                return [task]
-
     def work_loop(self):
         '''
         '''
@@ -299,28 +246,21 @@ class Task:
 
             tasks_left = self.max_tasks_per_run
             while tasks_left > 0 or self.run_forever is True:
-                tasks = self.get_next_tasks(
-                    tasks_left=tasks_left,
+                task = self.pull_task()
+                while not task:
+                    task = self.pull_task()
+
+                task_finished = self.execute_task(
+                    task=task,
                 )
 
-                self.logger.debug(
-                    'dequeued {tasks_dequeued} tasks'.format(
-                        tasks_dequeued=len(tasks),
-                    )
-                )
-
-                for task in tasks:
-                    task_finished = self.execute_task(
+                if task_finished:
+                    self.report_complete(
                         task=task,
                     )
 
-                    if task_finished:
-                        self.report_complete(
-                            task=task,
-                        )
-
-                    if not self.run_forever:
-                        tasks_left -= 1
+                if not self.run_forever:
+                    tasks_left -= 1
 
                 self.logger.debug('task execution finished')
         except Exception as exception:
@@ -331,7 +271,7 @@ class Task:
                 msg=traceback.format_exc(),
             )
             self.logger.error(
-                msg=self.last_task,
+                msg=self.current_task,
             )
 
             raise exception
@@ -346,8 +286,8 @@ class Task:
     def execute_task(self, task):
         '''
         '''
-        self.last_task = task
         try:
+            self.current_task = task
             async_result = self.worker_thread_pool.apply_async(
                 func=self.work,
                 args=task['args'],
@@ -368,7 +308,7 @@ class Task:
                 raise TimeoutError()
 
             returned_value = async_result.get(
-                timeout=None,
+                timeout=5,
             )
 
             self.logger.debug('task succeeded')
@@ -389,7 +329,7 @@ class Task:
                 kwargs=task['kwargs'],
             )
 
-            return True
+            raise exception
         except TaskRetryException as exception:
             self.logger.debug('task retry has called')
 
@@ -421,14 +361,14 @@ class Task:
     def retry(self):
         '''
         '''
-        if self.max_retries <= self.last_task['run_count']:
+        if self.max_retries <= self.current_task['run_count']:
             raise TaskMaxRetriesException(
                 'max retries of: {max_retries}, exceeded'.format(
                     max_retries=self.max_retries,
                 )
             )
 
-        task = self.last_task
+        task = self.current_task
         task['run_count'] += 1
 
         self.push_task(
@@ -599,7 +539,6 @@ class Task:
         '''
         state = {
             'name': self.name,
-            'queue': self.queue,
             'compressor': self.compressor,
             'serializer': self.serializer,
             'monitoring': self.monitoring,
@@ -608,9 +547,9 @@ class Task:
             'max_tasks_per_run': self.max_tasks_per_run,
             'max_retries': self.max_retries,
             'tasks_per_transaction': self.tasks_per_transaction,
-            'log_level': self.log_level,
             'report_completion': self.report_completion,
             'heartbeat_interval': self.heartbeat_interval,
+            'task_queue': self.task_queue,
         }
 
         return state
@@ -619,7 +558,6 @@ class Task:
         '''
         '''
         self.name = value['name']
-        self.queue = value['queue']
         self.compressor = value['compressor']
         self.serializer = value['serializer']
         self.monitoring = value['monitoring']
@@ -628,10 +566,10 @@ class Task:
         self.max_tasks_per_run = value['max_tasks_per_run']
         self.max_retries = value['max_retries']
         self.tasks_per_transaction = value['tasks_per_transaction']
-        self.log_level = value['log_level']
         self.report_completion = value['report_completion']
         self.heartbeat_interval = value['heartbeat_interval']
+        self.task_queue = value['task_queue']
 
         self.__init__(
-            abstract=False,
+            task_queue=self.task_queue,
         )

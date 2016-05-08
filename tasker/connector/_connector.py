@@ -1,5 +1,3 @@
-import logging
-
 from .. import logger
 
 
@@ -11,7 +9,6 @@ class Connector:
     def __init__(self):
         self.logger = logger.logger.Logger(
             logger_name=self.name,
-            log_level=logging.ERROR,
         )
 
     def pop(self, key, timeout=0):

@@ -1,27 +1,37 @@
-import logging
 import multiprocessing
 import multiprocessing.pool
 
 from . import logger
-from . import runner
+from . import queue
+from . import connector
+from . import encoder
 
 
 class Worker:
     '''
     '''
-    log_level = logging.WARNING
 
     def __init__(self, task_class, concurrent_workers):
         self.logger = logger.logger.Logger(
             logger_name='Worker',
-            log_level=self.log_level,
         )
 
         self.task_class = task_class
         self.concurrent_workers = concurrent_workers
 
+        queue_connector_obj = connector.__connectors__[self.task_class.connector['type']]
+        queue_connector = queue_connector_obj(**self.task_class.connector['params'])
+        task_queue = queue.shared.Queue(
+            queue_name=self.task_class.name,
+            connector=queue_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name=self.task_class.compressor,
+                serializer_name=self.task_class.serializer,
+            ),
+            tasks_per_transaction=self.task_class.tasks_per_transaction,
+        )
         self.task = self.task_class(
-            abstract=True,
+            task_queue=task_queue,
         )
 
         self.workers_watchdogs_thread_pool = multiprocessing.pool.ThreadPool(
