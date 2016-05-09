@@ -458,6 +458,9 @@ class Task:
     def _on_timeout(self, exception, args, kwargs):
         '''
         '''
+        if self.monitoring:
+            self.monitor_client.send_failure()
+
         self.logger.error(
             'task {task_name} raised a timeout exception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
@@ -481,6 +484,9 @@ class Task:
     def _on_max_retries(self, args, kwargs):
         '''
         '''
+        if self.monitoring:
+            self.monitor_client.send_failure()
+
         self.logger.error(
             'task {task_name} has reached the max retries:\n\targs: {args}\n\tkwargs: {kwargs}'.format(
                 task_name=self.name,
