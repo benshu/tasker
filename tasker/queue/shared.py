@@ -30,7 +30,7 @@ class Queue(_queue.Queue):
         '''
         value = self.connector.pop(
             key=self.queue_name,
-            timeeout=0,
+            timeout=0,
         )
 
         return value
