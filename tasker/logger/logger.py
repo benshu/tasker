@@ -108,9 +108,3 @@ class Logger:
         self.__init__(
             logger_name=value['logger_name'],
         )
-
-    def __del__(self):
-        '''
-        '''
-        for handler in self.logger.handlers:
-            handler.close()

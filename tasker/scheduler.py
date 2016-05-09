@@ -3,7 +3,6 @@ import datetime
 import time
 import threading
 import asyncio
-import logging
 
 from . import logger
 
@@ -16,7 +15,6 @@ class Scheduler:
         '''
         self.logger = logger.logger.Logger(
             logger_name='Scheduler',
-            log_level=logging.INFO,
         )
 
         self.should_run = threading.Event()

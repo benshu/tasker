@@ -15,6 +15,7 @@ setuptools.setup(
         'msgpack-python',
         'aiohttp',
         'jinja2',
+        'zmq',
     ],
     packages=setuptools.find_packages(),
     package_data={'': ['*.tpl']},

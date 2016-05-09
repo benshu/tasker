@@ -1,4 +1,4 @@
-import multiprocessing
+import zmq
 import queue
 
 from . import _queue
@@ -9,17 +9,33 @@ class Queue(_queue.Queue):
     '''
     name = 'shared'
 
-    def __init__(self, tasks_per_transaction, *args, **kwargs):
+    def __init__(self, tasks_per_transaction, rep_port, *args, **kwargs):
         '''
         '''
         super().__init__(*args, **kwargs)
 
         self.tasks_per_transaction = tasks_per_transaction
+        self.rep_port = rep_port
 
-        multiprocessing_manager = multiprocessing.Manager()
-        self.multiprocessing_queue = multiprocessing_manager.Queue()
+        context = zmq.Context()
+        self.zmq_req_socket = context.socket(zmq.REQ)
+        self.zmq_req_socket.connect(
+            'tcp://127.0.0.1:{rep_port}'.format(
+                rep_port=rep_port,
+            )
+        )
 
-    def fill_queue(self):
+    def _dequeue_from_original(self):
+        '''
+        '''
+        value = self.connector.pop(
+            key=self.queue_name,
+            timeeout=0,
+        )
+
+        return value
+
+    def _dequeue_bulk_from_original(self):
         '''
         '''
         values = self.connector.pop_bulk(
@@ -27,22 +43,14 @@ class Queue(_queue.Queue):
             count=self.tasks_per_transaction,
         )
 
-        for value in values:
-            self.multiprocessing_queue.put(
-                item=value,
-            )
+        return values
 
     def _dequeue(self, timeout):
         '''
         '''
-        if self.multiprocessing_queue.empty():
-            self.fill_queue()
-
         try:
-            value = self.multiprocessing_queue.get(
-                block=True,
-                timeout=1,
-            )
+            self.zmq_req_socket.send(b'')
+            value = self.zmq_req_socket.recv()
 
             return value
         except queue.Empty:
@@ -129,11 +137,10 @@ class Queue(_queue.Queue):
         '''
         state = {
             'tasks_per_transaction': self.tasks_per_transaction,
+            'rep_port': self.rep_port,
             'queue_name': self.queue_name,
             'connector': self.connector,
             'encoder': self.encoder,
-            'multiprocessing_queue': self.multiprocessing_queue,
-            'logger': self.logger,
         }
 
         return state
@@ -141,9 +148,10 @@ class Queue(_queue.Queue):
     def __setstate__(self, value):
         '''
         '''
-        self.tasks_per_transaction = value['tasks_per_transaction']
-        self.queue_name = value['queue_name']
-        self.connector = value['connector']
-        self.encoder = value['encoder']
-        self.multiprocessing_queue = value['multiprocessing_queue']
-        self.logger = value['logger']
+        self.__init__(
+            tasks_per_transaction=value['tasks_per_transaction'],
+            rep_port=value['rep_port'],
+            queue_name=value['queue_name'],
+            connector=value['connector'],
+            encoder=value['encoder'],
+        )
