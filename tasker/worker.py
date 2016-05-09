@@ -28,7 +28,7 @@ class Worker:
                 compressor_name=self.task_class.compressor,
                 serializer_name=self.task_class.serializer,
             ),
-            tasks_per_transaction=self.task_class.tasks_per_transaction,
+            tasks_per_transaction=self.task_class.tasks_per_transaction * concurrent_workers,
         )
         self.task = self.task_class(
             task_queue=task_queue,
