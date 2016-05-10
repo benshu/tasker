@@ -1,12 +1,7 @@
-import time
-import zmq
 import multiprocessing
 import multiprocessing.pool
 
 from . import logger
-from . import queue
-from . import connector
-from . import encoder
 
 
 class Worker:
@@ -21,40 +16,11 @@ class Worker:
         self.task_class = task_class
         self.concurrent_workers = concurrent_workers
 
-        context = zmq.Context()
-        self.rep_socket = context.socket(zmq.REP)
-        rep_port = self.rep_socket.bind_to_random_port('tcp://*')
-
-        queue_connector_obj = connector.__connectors__[self.task_class.connector['type']]
-        queue_connector = queue_connector_obj(**self.task_class.connector['params'])
-        self.task_queue = queue.shared.Queue(
-            queue_name=self.task_class.name,
-            connector=queue_connector,
-            encoder=encoder.encoder.Encoder(
-                compressor_name=self.task_class.compressor,
-                serializer_name=self.task_class.serializer,
-            ),
-            tasks_per_transaction=self.task_class.tasks_per_transaction * concurrent_workers,
-            rep_port=rep_port,
-        )
         self.task = self.task_class(
-            task_queue=self.task_queue,
+            abstract=True,
         )
 
         self.logger.debug('initialized')
-
-    def queue_manager(self):
-        '''
-        '''
-        while True:
-            values = self.task_queue._dequeue_bulk_from_original()
-            if not values:
-                value = self.task_queue._dequeue_from_original()
-                values = [value]
-
-            for value in values:
-                self.rep_socket.recv()
-                self.rep_socket.send(value)
 
     def worker_watchdog(self, function):
         '''
@@ -95,7 +61,7 @@ class Worker:
         self.logger.debug('started')
 
         worker_managers_thread_pool = multiprocessing.pool.ThreadPool(
-            processes=self.concurrent_workers + 1,
+            processes=self.concurrent_workers,
         )
 
         async_results = []
@@ -107,11 +73,6 @@ class Worker:
                 },
             )
             async_results.append(async_result)
-
-        async_result = worker_managers_thread_pool.apply_async(
-            func=self.queue_manager,
-        )
-        async_results.append(async_result)
 
         for async_result in async_results:
             async_result.wait()

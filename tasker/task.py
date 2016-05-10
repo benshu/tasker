@@ -56,24 +56,24 @@ class Task:
     report_completion = False
     heartbeat_interval = 10.0
 
-    def __init__(self, task_queue=None):
+    def __init__(self, abstract=False):
         self.logger = logger.logger.Logger(
             logger_name=self.name,
         )
 
-        if not task_queue:
-            queue_connector_obj = connector.__connectors__[self.connector['type']]
-            queue_connector = queue_connector_obj(**self.connector['params'])
-            self.task_queue = queue.regular.Queue(
-                queue_name=self.name,
-                connector=queue_connector,
-                encoder=encoder.encoder.Encoder(
-                    compressor_name=self.compressor,
-                    serializer_name=self.serializer,
-                ),
-            )
-        else:
-            self.task_queue = task_queue
+        if abstract is True:
+            return
+
+        queue_connector_obj = connector.__connectors__[self.connector['type']]
+        queue_connector = queue_connector_obj(**self.connector['params'])
+        self.task_queue = queue.regular.Queue(
+            queue_name=self.name,
+            connector=queue_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name=self.compressor,
+                serializer_name=self.serializer,
+            ),
+        )
 
         self.heartbeater = None
         self.monitor_client = None
@@ -143,6 +143,24 @@ class Task:
             )
 
             return {}
+
+    def pull_tasks(self, count):
+        '''
+        '''
+        try:
+            tasks = self.task_queue.dequeue_bulk(
+                count=count,
+            )
+
+            return tasks
+        except Exception as exception:
+            self.logger.error(
+                msg='could not pull tasks: {exception}'.format(
+                    exception=exception,
+                )
+            )
+
+            return []
 
     def craft_task(self, *args, **kwargs):
         '''
@@ -227,6 +245,29 @@ class Task:
 
         self.logger.debug('enqueued tasks')
 
+    def get_next_tasks(self, tasks_left):
+        '''
+        '''
+        while True:
+            if self.tasks_per_transaction == 1:
+                task = self.pull_task()
+
+                if not task:
+                    continue
+
+                tasks = [task]
+            elif tasks_left > self.tasks_per_transaction:
+                tasks = self.pull_tasks(
+                    count=self.tasks_per_transaction,
+                )
+            else:
+                tasks = self.pull_tasks(
+                    count=tasks_left,
+                )
+
+            if tasks:
+                return tasks
+
     def work_loop(self):
         '''
         '''
@@ -246,21 +287,28 @@ class Task:
 
             tasks_left = self.max_tasks_per_run
             while tasks_left > 0 or self.run_forever is True:
-                task = self.pull_task()
-                while not task:
-                    task = self.pull_task()
-
-                task_finished = self.execute_task(
-                    task=task,
+                tasks = self.get_next_tasks(
+                    tasks_left=tasks_left,
                 )
 
-                if task_finished:
-                    self.report_complete(
+                self.logger.debug(
+                    'dequeued {tasks_dequeued} tasks'.format(
+                        tasks_dequeued=len(tasks),
+                    )
+                )
+
+                for task in tasks:
+                    task_finished = self.execute_task(
                         task=task,
                     )
 
-                if not self.run_forever:
-                    tasks_left -= 1
+                    if task_finished:
+                        self.report_complete(
+                            task=task,
+                        )
+
+                    if not self.run_forever:
+                        tasks_left -= 1
 
                 self.logger.debug('task execution finished')
         except Exception as exception:
@@ -555,7 +603,6 @@ class Task:
             'tasks_per_transaction': self.tasks_per_transaction,
             'report_completion': self.report_completion,
             'heartbeat_interval': self.heartbeat_interval,
-            'task_queue': self.task_queue,
         }
 
         return state
@@ -574,8 +621,7 @@ class Task:
         self.tasks_per_transaction = value['tasks_per_transaction']
         self.report_completion = value['report_completion']
         self.heartbeat_interval = value['heartbeat_interval']
-        self.task_queue = value['task_queue']
 
         self.__init__(
-            task_queue=self.task_queue,
+            abstract=False,
         )
