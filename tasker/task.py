@@ -310,6 +310,8 @@ class Task:
                     if not self.run_forever:
                         tasks_left -= 1
 
+                    tasks.remove(task)
+
                 self.logger.debug('task execution finished')
         except Exception as exception:
             self.logger.error(
@@ -324,6 +326,12 @@ class Task:
 
             raise exception
         finally:
+            if tasks:
+                try:
+                    self.push_tasks(tasks)
+                except:
+                    pass
+
             logging.shutdown()
 
             if self.heartbeater:
