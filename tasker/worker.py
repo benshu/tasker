@@ -39,14 +39,23 @@ class Worker:
                 async_result = worker_process_pool.apply_async(
                     func=function,
                 )
-                async_result.wait(
-                    timeout=None,
-                )
-                async_result.get(
-                    timeout=5,
-                )
+
+                if self.task.global_timeout != 0.0:
+                    async_result.wait(
+                        timeout=self.task.global_timeout,
+                    )
+                else:
+                    async_result.wait(
+                        timeout=None,
+                    )
+
+                if async_result.ready():
+                    async_result.get(
+                        timeout=5,
+                    )
+                else:
+                    raise TimeoutError()
             except Exception as exception:
-                print(exception)
                 self.logger.error(
                     'task execution raised an exception: {exception}'.format(
                         exception=exception,

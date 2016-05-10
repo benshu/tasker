@@ -50,6 +50,7 @@ class Task:
         },
     }
     timeout = 30.0
+    global_timeout = 0.0
     max_tasks_per_run = 10
     max_retries = 3
     tasks_per_transaction = 10
