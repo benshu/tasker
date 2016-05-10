@@ -285,6 +285,7 @@ class Task:
                 processes=1,
             )
 
+            tasks_to_finish = []
             tasks_left = self.max_tasks_per_run
             while tasks_left > 0 or self.run_forever is True:
                 tasks = self.get_next_tasks(
@@ -297,6 +298,7 @@ class Task:
                     )
                 )
 
+                tasks_to_finish = tasks.copy()
                 for task in tasks:
                     task_finished = self.execute_task(
                         task=task,
@@ -310,7 +312,7 @@ class Task:
                     if not self.run_forever:
                         tasks_left -= 1
 
-                    tasks.remove(task)
+                    tasks_to_finish.remove(task)
 
                 self.logger.debug('task execution finished')
         except Exception as exception:
@@ -326,9 +328,9 @@ class Task:
 
             raise exception
         finally:
-            if tasks:
+            if tasks_to_finish:
                 try:
-                    self.push_tasks(tasks)
+                    self.push_tasks(tasks_to_finish)
                 except:
                     pass
 
