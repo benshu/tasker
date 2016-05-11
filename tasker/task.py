@@ -1,8 +1,9 @@
 import datetime
+import os
+import signal
 import logging
 import traceback
-import multiprocessing
-import multiprocessing.pool
+import threading
 import socket
 import random
 import time
@@ -88,6 +89,9 @@ class Task:
         self.run_forever = False
         if self.max_tasks_per_run == 0:
             self.run_forever = True
+
+        self.current_task = None
+        signal.signal(signal.SIGINT, self.timeout_signal_handler)
 
         self.logger.debug('initialized')
 
@@ -274,10 +278,20 @@ class Task:
             if task:
                 return [task]
 
+    def timeout_signal_handler(self, signal, frame):
+        raise TimeoutError()
+
+    def kill_task(self):
+        '''
+        '''
+        os.kill(os.getpid(), signal.SIGINT)
+
     def work_loop(self):
         '''
         '''
         try:
+            tasks_to_finish = []
+
             if self.monitoring:
                 self.heartbeater = devices.heartbeater.Heartbeater(
                     monitor_client=self.monitor_client,
@@ -287,11 +301,6 @@ class Task:
 
             self.init()
 
-            self.worker_thread_pool = multiprocessing.pool.ThreadPool(
-                processes=1,
-            )
-
-            tasks_to_finish = []
             tasks_left = self.max_tasks_per_run
             while tasks_left > 0 or self.run_forever is True:
                 tasks = self.get_next_tasks(
@@ -306,19 +315,22 @@ class Task:
 
                 tasks_to_finish = tasks.copy()
                 for task in tasks:
-                    task_finished = self.execute_task(
+                    self.current_task = task
+                    task_execution_result = self.execute_task(
                         task=task,
                     )
+                    tasks_to_finish.remove(task)
 
-                    if task_finished:
+                    if task_execution_result == 'timeout':
+                        return
+
+                    if task_execution_result != 'retry':
                         self.report_complete(
                             task=task,
                         )
 
                     if not self.run_forever:
                         tasks_left -= 1
-
-                    tasks_to_finish.remove(task)
 
                 self.logger.debug('task execution finished')
         except Exception as exception:
@@ -345,35 +357,25 @@ class Task:
             if self.heartbeater:
                 self.heartbeater.stop()
 
-            self.worker_thread_pool.terminate()
-
     def execute_task(self, task):
         '''
         '''
         try:
-            self.current_task = task
-            async_result = self.worker_thread_pool.apply_async(
-                func=self.work,
-                args=task['args'],
-                kwds=task['kwargs'],
-            )
-
-            self.logger.debug('task applied')
-
+            self.killer_timer = None
             if self.timeout > 0:
-                timeout = self.timeout
-            else:
-                timeout = None
+                self.killer_timer = threading.Timer(
+                    self.timeout,
+                    self.kill_task,
+                )
+                self.killer_timer.start()
 
-            async_result.wait(
-                timeout=timeout,
+            returned_value = self.work(
+                *task['args'],
+                **task['kwargs']
             )
-            if not async_result.ready():
-                raise TimeoutError()
-
-            returned_value = async_result.get(
-                timeout=5,
-            )
+            if self.killer_timer:
+                self.killer_timer.cancel()
+                self.killer_timer = None
 
             self.logger.debug('task succeeded')
 
@@ -383,7 +385,7 @@ class Task:
                 kwargs=task['kwargs'],
             )
 
-            return True
+            return 'success'
         except TimeoutError as exception:
             self.logger.debug('task execution timed out')
 
@@ -393,7 +395,7 @@ class Task:
                 kwargs=task['kwargs'],
             )
 
-            raise exception
+            return 'timeout'
         except TaskRetryException as exception:
             self.logger.debug('task retry has called')
 
@@ -402,7 +404,7 @@ class Task:
                 kwargs=task['kwargs'],
             )
 
-            return False
+            return 'retry'
         except TaskMaxRetriesException as exception:
             self.logger.debug('max retries exceeded')
 
@@ -411,7 +413,7 @@ class Task:
                 kwargs=task['kwargs'],
             )
 
-            return True
+            return 'max_retries'
         except Exception as exception:
             self.logger.debug('task execution failed')
             self._on_failure(
@@ -420,7 +422,11 @@ class Task:
                 kwargs=task['kwargs'],
             )
 
-            return True
+            return 'exception'
+        finally:
+            if self.killer_timer:
+                self.killer_timer.cancel()
+                self.killer_timer = None
 
     def retry(self):
         '''
@@ -574,7 +580,7 @@ class Task:
         '''
         pass
 
-    def work(self, test_param):
+    def work(self):
         '''
         '''
         pass
