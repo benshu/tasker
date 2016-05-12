@@ -3,7 +3,6 @@ import os
 import signal
 import logging
 import traceback
-import threading
 import socket
 import random
 import time
@@ -50,7 +49,8 @@ class Task:
             'database': 0,
         },
     }
-    timeout = 30.0
+    soft_timeout = 30.0
+    hard_timeout = 35.0
     global_timeout = 0.0
     max_tasks_per_run = 10
     max_retries = 3
@@ -77,24 +77,37 @@ class Task:
             ),
         )
 
-        self.heartbeater = None
         self.monitor_client = None
+        self.heartbeater = None
         if self.monitoring:
             self.monitor_client = monitor.client.StatisticsClient(
                 stats_server=self.monitoring['stats_server'],
                 host_name=self.monitoring['host_name'],
                 worker_name=self.name,
             )
+            self.heartbeater = devices.heartbeater.Heartbeater(
+                monitor_client=self.monitor_client,
+                interval=self.heartbeat_interval,
+            )
+
+        self.killer = devices.killer.Killer(
+            soft_timeout=self.soft_timeout,
+            soft_timeout_signal=signal.SIGINT,
+            hard_timeout=self.hard_timeout,
+            hard_timeout_signal=signal.SIGABRT,
+        )
+        signal.signal(signal.SIGINT, self.sigint_handler)
+        signal.signal(signal.SIGABRT, self.sigabrt_handler)
 
         self.run_forever = False
         if self.max_tasks_per_run == 0:
             self.run_forever = True
 
+        self.tasks_to_finish = []
         self.current_task = None
         self.tasks_left = 0
-        signal.signal(signal.SIGTERM, self.timeout_signal_handler)
-
-        self.logger.debug('initialized')
+        self.soft_killer_timer = None
+        self.hard_killer_timer = None
 
     def push_task(self, task):
         '''
@@ -238,8 +251,6 @@ class Task:
             task=task,
         )
 
-        self.logger.debug('enqueued a task')
-
         return task
 
     def apply_async_many(self, tasks):
@@ -248,8 +259,6 @@ class Task:
         self.push_tasks(
             tasks=tasks,
         )
-
-        self.logger.debug('enqueued tasks')
 
     def get_next_tasks(self, tasks_left):
         '''
@@ -279,29 +288,48 @@ class Task:
             if task:
                 return [task]
 
-    def timeout_signal_handler(self, signal, frame):
-        if self.tasks_left > 0:
-            raise TimeoutError()
+    def sigint_handler(self, signal_num, frame):
+        raise TimeoutError()
 
-    def kill_task(self):
+    def sigabrt_handler(self, signal_num, frame):
         '''
         '''
+        self.end_task()
+
         os.kill(os.getpid(), signal.SIGTERM)
+
+    def begin_task(self):
+        '''
+        '''
+        if self.monitoring:
+            self.heartbeater.start()
+
+        self.init()
+
+        self.killer.create()
+
+    def end_task(self):
+        '''
+        '''
+        if self.tasks_to_finish:
+            try:
+                self.push_tasks(self.tasks_to_finish)
+            except:
+                pass
+
+        logging.shutdown()
+
+        if self.heartbeater:
+            self.heartbeater.stop()
+
+        self.killer.destroy()
 
     def work_loop(self):
         '''
         '''
         try:
-            tasks_to_finish = []
-
-            if self.monitoring:
-                self.heartbeater = devices.heartbeater.Heartbeater(
-                    monitor_client=self.monitor_client,
-                    interval=self.heartbeat_interval,
-                )
-                self.heartbeater.start()
-
-            self.init()
+            print('new')
+            self.begin_task()
 
             self.tasks_left = self.max_tasks_per_run
             while self.tasks_left > 0 or self.run_forever is True:
@@ -309,19 +337,13 @@ class Task:
                     tasks_left=self.tasks_left,
                 )
 
-                self.logger.debug(
-                    'dequeued {tasks_dequeued} tasks'.format(
-                        tasks_dequeued=len(tasks),
-                    )
-                )
-
-                tasks_to_finish = tasks.copy()
+                self.tasks_to_finish = tasks.copy()
                 for task in tasks:
                     self.current_task = task
                     task_execution_result = self.execute_task(
                         task=task,
                     )
-                    tasks_to_finish.remove(task)
+                    self.tasks_to_finish.remove(task)
 
                     if task_execution_result == 'timeout':
                         return
@@ -333,8 +355,6 @@ class Task:
 
                     if not self.run_forever:
                         self.tasks_left -= 1
-
-                self.logger.debug('task execution finished')
         except Exception as exception:
             self.logger.error(
                 msg=exception,
@@ -345,41 +365,22 @@ class Task:
             self.logger.error(
                 msg=self.current_task,
             )
-
-            raise exception
         finally:
-            if tasks_to_finish:
-                try:
-                    self.push_tasks(tasks_to_finish)
-                except:
-                    pass
-
-            logging.shutdown()
-
-            if self.heartbeater:
-                self.heartbeater.stop()
+            self.end_task()
 
     def execute_task(self, task):
         '''
         '''
         try:
-            self.killer_timer = None
-            if self.timeout > 0:
-                self.killer_timer = threading.Timer(
-                    self.timeout,
-                    self.kill_task,
-                )
-                self.killer_timer.start()
+            self.killer.reset()
+            self.killer.start()
 
             returned_value = self.work(
                 *task['args'],
                 **task['kwargs']
             )
-            if self.killer_timer:
-                self.killer_timer.cancel()
-                self.killer_timer = None
 
-            self.logger.debug('task succeeded')
+            self.killer.stop()
 
             self._on_success(
                 returned_value=returned_value,
@@ -389,8 +390,6 @@ class Task:
 
             return 'success'
         except TimeoutError as exception:
-            self.logger.debug('task execution timed out')
-
             self._on_timeout(
                 exception=exception,
                 args=task['args'],
@@ -399,8 +398,6 @@ class Task:
 
             return 'timeout'
         except TaskRetryException as exception:
-            self.logger.debug('task retry has called')
-
             self._on_retry(
                 args=task['args'],
                 kwargs=task['kwargs'],
@@ -408,8 +405,6 @@ class Task:
 
             return 'retry'
         except TaskMaxRetriesException as exception:
-            self.logger.debug('max retries exceeded')
-
             self._on_max_retries(
                 args=task['args'],
                 kwargs=task['kwargs'],
@@ -417,7 +412,6 @@ class Task:
 
             return 'max_retries'
         except Exception as exception:
-            self.logger.debug('task execution failed')
             self._on_failure(
                 exception=exception,
                 args=task['args'],
@@ -426,9 +420,7 @@ class Task:
 
             return 'exception'
         finally:
-            if self.killer_timer:
-                self.killer_timer.cancel()
-                self.killer_timer = None
+            self.killer.stop()
 
     def retry(self):
         '''
@@ -446,8 +438,6 @@ class Task:
         self.push_task(
             task=task,
         )
-
-        self.logger.debug('task retry enqueued')
 
         raise TaskRetryException
 
@@ -621,7 +611,8 @@ class Task:
             'serializer': self.serializer,
             'monitoring': self.monitoring,
             'connector': self.connector,
-            'timeout': self.timeout,
+            'soft_timeout': self.soft_timeout,
+            'hard_timeout': self.hard_timeout,
             'max_tasks_per_run': self.max_tasks_per_run,
             'max_retries': self.max_retries,
             'tasks_per_transaction': self.tasks_per_transaction,
@@ -639,7 +630,8 @@ class Task:
         self.serializer = value['serializer']
         self.monitoring = value['monitoring']
         self.connector = value['connector']
-        self.timeout = value['timeout']
+        self.soft_timeout = value['soft_timeout']
+        self.hard_timeout = value['hard_timeout']
         self.max_tasks_per_run = value['max_tasks_per_run']
         self.max_retries = value['max_retries']
         self.tasks_per_transaction = value['tasks_per_transaction']

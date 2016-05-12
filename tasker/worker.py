@@ -4,6 +4,19 @@ import multiprocessing.pool
 from . import logger
 
 
+import os
+
+
+def check_pid(pid):
+    """ Check For the existence of a unix pid. """
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    else:
+        return True
+
+
 class Worker:
     '''
     '''
@@ -20,41 +33,27 @@ class Worker:
             abstract=True,
         )
 
-        self.logger.debug('initialized')
-
     def worker_watchdog(self, function):
         '''
         '''
-        self.logger.debug('started')
-
         while True:
             try:
                 context = multiprocessing.get_context(
                     method='spawn',
                 )
-                worker_process_pool = multiprocessing.pool.Pool(
-                    processes=1,
-                    context=context,
+                process = context.Process(
+                    target=function,
                 )
-                async_result = worker_process_pool.apply_async(
-                    func=function,
-                )
+                process.start()
 
                 if self.task.global_timeout != 0.0:
-                    async_result.wait(
+                    process.join(
                         timeout=self.task.global_timeout,
                     )
                 else:
-                    async_result.wait(
+                    process.join(
                         timeout=None,
                     )
-
-                if async_result.ready():
-                    async_result.get(
-                        timeout=5,
-                    )
-                else:
-                    raise TimeoutError()
             except Exception as exception:
                 self.logger.error(
                     'task execution raised an exception: {exception}'.format(
@@ -62,13 +61,11 @@ class Worker:
                     )
                 )
             finally:
-                worker_process_pool.terminate()
+                process.terminate()
 
     def start(self):
         '''
         '''
-        self.logger.debug('started')
-
         worker_managers_thread_pool = multiprocessing.pool.ThreadPool(
             processes=self.concurrent_workers,
         )
@@ -88,8 +85,6 @@ class Worker:
 
         worker_managers_thread_pool.terminate()
 
-        self.logger.debug('finished')
-
     def __getstate__(self):
         '''
         '''
@@ -97,8 +92,6 @@ class Worker:
             'task_class': self.task_class,
             'concurrent_workers': self.concurrent_workers,
         }
-
-        self.logger.debug('getstate')
 
         return state
 
@@ -109,5 +102,3 @@ class Worker:
             task_class=value['task_class'],
             concurrent_workers=value['concurrent_workers'],
         )
-
-        self.logger.debug('setstate')
