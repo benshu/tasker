@@ -1,20 +1,9 @@
+import os
+import signal
 import multiprocessing
 import multiprocessing.pool
 
 from . import logger
-
-
-import os
-
-
-def check_pid(pid):
-    """ Check For the existence of a unix pid. """
-    try:
-        os.kill(pid, 0)
-    except OSError:
-        return False
-    else:
-        return True
 
 
 class Worker:
@@ -61,7 +50,7 @@ class Worker:
                     )
                 )
             finally:
-                process.terminate()
+                os.kill(process.pid, signal.SIGTERM)
 
     def start(self):
         '''
@@ -80,10 +69,13 @@ class Worker:
             )
             async_results.append(async_result)
 
-        for async_result in async_results:
-            async_result.wait()
-
-        worker_managers_thread_pool.terminate()
+        try:
+            for async_result in async_results:
+                async_result.wait()
+        except:
+            pass
+        finally:
+            worker_managers_thread_pool.terminate()
 
     def __getstate__(self):
         '''

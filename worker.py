@@ -1,5 +1,5 @@
 import tasker
-import logging
+import webkit_browser
 import time
 
 
@@ -23,7 +23,8 @@ class Task(tasker.task.Task):
             'database': 0,
         },
     }
-    timeout = 30.0
+    soft_timeout = 0.0
+    hard_timeout = 5.0
     global_timeout = 0.0
     max_tasks_per_run = 25000
     tasks_per_transaction = 1000
@@ -35,6 +36,8 @@ class Task(tasker.task.Task):
         self.a = 0
 
     def work(self, num):
+        br = webkit_browser.browser.Browser()
+        br.sleep(10000)
         self.a += num
 
         if num == 4:

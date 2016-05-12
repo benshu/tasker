@@ -31,10 +31,12 @@ class Killer:
             if self.kill_event.is_set():
                 return
 
-            if self.time_elapsed >= self.soft_timeout:
+            if self.time_elapsed >= self.soft_timeout and self.soft_timeout != 0:
+                print('kill soft')
                 os.kill(os.getpid(), self.soft_timeout_signal)
 
-            if self.time_elapsed >= self.hard_timeout:
+            if self.time_elapsed >= self.hard_timeout and self.hard_timeout != 0:
+                print('kill hard')
                 os.kill(os.getpid(), self.hard_timeout_signal)
 
             time.sleep(self.sleep_interval)

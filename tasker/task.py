@@ -94,10 +94,10 @@ class Task:
             soft_timeout=self.soft_timeout,
             soft_timeout_signal=signal.SIGINT,
             hard_timeout=self.hard_timeout,
-            hard_timeout_signal=signal.SIGABRT,
+            hard_timeout_signal=signal.SIGTERM,
         )
-        signal.signal(signal.SIGINT, self.sigint_handler)
         signal.signal(signal.SIGABRT, self.sigabrt_handler)
+        signal.signal(signal.SIGINT, self.sigint_handler)
 
         self.run_forever = False
         if self.max_tasks_per_run == 0:
@@ -288,10 +288,10 @@ class Task:
             if task:
                 return [task]
 
-    def sigint_handler(self, signal_num, frame):
+    def sigabrt_handler(self, signal_num, frame):
         raise TimeoutError()
 
-    def sigabrt_handler(self, signal_num, frame):
+    def sigint_handler(self, signal_num, frame):
         '''
         '''
         self.end_task()
