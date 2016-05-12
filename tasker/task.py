@@ -91,6 +91,7 @@ class Task:
             self.run_forever = True
 
         self.current_task = None
+        self.tasks_left = 0
         signal.signal(signal.SIGTERM, self.timeout_signal_handler)
 
         self.logger.debug('initialized')
