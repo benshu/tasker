@@ -91,7 +91,7 @@ class Task:
             self.run_forever = True
 
         self.current_task = None
-        signal.signal(signal.SIGINT, self.timeout_signal_handler)
+        signal.signal(signal.SIGTERM, self.timeout_signal_handler)
 
         self.logger.debug('initialized')
 
@@ -279,12 +279,13 @@ class Task:
                 return [task]
 
     def timeout_signal_handler(self, signal, frame):
-        raise TimeoutError()
+        if self.tasks_left > 0:
+            raise TimeoutError()
 
     def kill_task(self):
         '''
         '''
-        os.kill(os.getpid(), signal.SIGINT)
+        os.kill(os.getpid(), signal.SIGTERM)
 
     def work_loop(self):
         '''
@@ -301,10 +302,10 @@ class Task:
 
             self.init()
 
-            tasks_left = self.max_tasks_per_run
-            while tasks_left > 0 or self.run_forever is True:
+            self.tasks_left = self.max_tasks_per_run
+            while self.tasks_left > 0 or self.run_forever is True:
                 tasks = self.get_next_tasks(
-                    tasks_left=tasks_left,
+                    tasks_left=self.tasks_left,
                 )
 
                 self.logger.debug(
@@ -330,7 +331,7 @@ class Task:
                         )
 
                     if not self.run_forever:
-                        tasks_left -= 1
+                        self.tasks_left -= 1
 
                 self.logger.debug('task execution finished')
         except Exception as exception:
