@@ -20,6 +20,8 @@ class Heartbeater(threading.Thread):
             logger_name='heartbeater',
         )
 
+        self.daemon = True
+
     def run(self):
         '''
         '''

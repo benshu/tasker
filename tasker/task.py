@@ -328,7 +328,6 @@ class Task:
         '''
         '''
         try:
-            print('new')
             self.begin_task()
 
             self.tasks_left = self.max_tasks_per_run

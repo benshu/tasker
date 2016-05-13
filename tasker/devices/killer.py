@@ -48,6 +48,7 @@ class Killer:
         self.killing_loop_thread = threading.Thread(
             target=self.killing_loop,
         )
+        self.killing_loop_thread.daemon = True
         self.killing_loop_thread.start()
 
     def start(self):

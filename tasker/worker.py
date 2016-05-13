@@ -1,5 +1,5 @@
-import os
-import signal
+import sys
+import threading
 import multiprocessing
 import multiprocessing.pool
 
@@ -22,10 +22,15 @@ class Worker:
             abstract=True,
         )
 
+        self.workers_processes = []
+
+        self.should_work_event = threading.Event()
+        self.should_work_event.set()
+
     def worker_watchdog(self, function):
         '''
         '''
-        while True:
+        while self.should_work_event.is_set():
             try:
                 context = multiprocessing.get_context(
                     method='spawn',
@@ -34,6 +39,7 @@ class Worker:
                     target=function,
                 )
                 process.start()
+                self.workers_processes.append(process)
 
                 if self.task.global_timeout != 0.0:
                     process.join(
@@ -50,32 +56,36 @@ class Worker:
                     )
                 )
             finally:
-                os.kill(process.pid, signal.SIGTERM)
+                process.terminate()
+                self.workers_processes.remove(process)
 
     def start(self):
         '''
         '''
-        worker_managers_thread_pool = multiprocessing.pool.ThreadPool(
-            processes=self.concurrent_workers,
-        )
-
-        async_results = []
+        threads = []
         for i in range(self.concurrent_workers):
-            async_result = worker_managers_thread_pool.apply_async(
-                func=self.worker_watchdog,
-                kwds={
+            thread = threading.Thread(
+                target=self.worker_watchdog,
+                kwargs={
                     'function': self.task.work_loop,
                 },
             )
-            async_results.append(async_result)
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
 
         try:
-            for async_result in async_results:
-                async_result.wait()
-        except:
+            for thread in threads:
+                thread.join()
+        except KeyboardInterrupt:
             pass
+        except Exception as exception:
+            print(exception)
         finally:
-            worker_managers_thread_pool.terminate()
+            self.should_work_event.clear()
+            for worker_process in self.workers_processes:
+                worker_process.terminate()
+            sys.exit(0)
 
     def __getstate__(self):
         '''
