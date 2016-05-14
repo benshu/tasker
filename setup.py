@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='tasker',
-    version='0.0.5',
+    version='0.1.0',
     author='gal@intsights.com',
     author_email='gal@intsights.com',
     description=('A fast, simple, task distribution library'),
@@ -17,6 +17,10 @@ setuptools.setup(
         'jinja2',
     ],
     packages=setuptools.find_packages(),
-    package_data={'': ['*.tpl']},
+    package_data={
+        '': [
+            '*.tpl',
+        ],
+    },
     include_package_data=True,
 )
