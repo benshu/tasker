@@ -21,16 +21,11 @@ class Killer:
 
         self.stop_event = threading.Event()
         self.stop_event.clear()
-        self.kill_event = threading.Event()
-        self.kill_event.clear()
 
     def killing_loop(self):
         '''
         '''
         while self.stop_event.wait():
-            if self.kill_event.is_set():
-                return
-
             if self.time_elapsed >= self.soft_timeout and self.soft_timeout != 0:
                 os.kill(os.getpid(), self.soft_timeout_signal)
 
@@ -63,9 +58,3 @@ class Killer:
         '''
         '''
         self.time_elapsed = 0.0
-
-    def destroy(self):
-        '''
-        '''
-        self.stop_event.set()
-        self.kill_event.set()

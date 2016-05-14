@@ -77,38 +77,6 @@ class Task:
             ),
         )
 
-        self.monitor_client = None
-        self.heartbeater = None
-        if self.monitoring:
-            self.monitor_client = monitor.client.StatisticsClient(
-                stats_server=self.monitoring['stats_server'],
-                host_name=self.monitoring['host_name'],
-                worker_name=self.name,
-            )
-            self.heartbeater = devices.heartbeater.Heartbeater(
-                monitor_client=self.monitor_client,
-                interval=self.heartbeat_interval,
-            )
-
-        self.killer = devices.killer.Killer(
-            soft_timeout=self.soft_timeout,
-            soft_timeout_signal=signal.SIGABRT,
-            hard_timeout=self.hard_timeout,
-            hard_timeout_signal=signal.SIGINT,
-        )
-        signal.signal(signal.SIGABRT, self.sigabrt_handler)
-        signal.signal(signal.SIGINT, self.sigint_handler)
-
-        self.run_forever = False
-        if self.max_tasks_per_run == 0:
-            self.run_forever = True
-
-        self.tasks_to_finish = []
-        self.current_task = None
-        self.tasks_left = 0
-        self.soft_killer_timer = None
-        self.hard_killer_timer = None
-
     def push_task(self, task):
         '''
         '''
@@ -240,7 +208,7 @@ class Task:
                     value=completion_key,
                 )
 
-                time.sleep(0.5)
+                time.sleep(0.2)
 
     def apply_async_one(self, *args, **kwargs):
         '''
@@ -289,7 +257,6 @@ class Task:
                 return [task]
 
     def sigabrt_handler(self, signal_num, frame):
-        print('abrt')
         raise TimeoutError()
 
     def sigint_handler(self, signal_num, frame):
@@ -302,8 +269,37 @@ class Task:
     def begin_task(self):
         '''
         '''
+        self.monitor_client = None
+        self.heartbeater = None
+
+        self.run_forever = False
+        if self.max_tasks_per_run == 0:
+            self.run_forever = True
+
+        self.tasks_to_finish = []
+        self.current_task = None
+        self.tasks_left = 0
+
         if self.monitoring:
+            self.monitor_client = monitor.client.StatisticsClient(
+                stats_server=self.monitoring['stats_server'],
+                host_name=self.monitoring['host_name'],
+                worker_name=self.name,
+            )
+            self.heartbeater = devices.heartbeater.Heartbeater(
+                monitor_client=self.monitor_client,
+                interval=self.heartbeat_interval,
+            )
             self.heartbeater.start()
+
+        self.killer = devices.killer.Killer(
+            soft_timeout=self.soft_timeout,
+            soft_timeout_signal=signal.SIGABRT,
+            hard_timeout=self.hard_timeout,
+            hard_timeout_signal=signal.SIGINT,
+        )
+        signal.signal(signal.SIGABRT, self.sigabrt_handler)
+        signal.signal(signal.SIGINT, self.sigint_handler)
 
         self.init()
 
@@ -322,8 +318,6 @@ class Task:
 
         if self.heartbeater:
             self.heartbeater.stop()
-
-        self.killer.destroy()
 
     def work_loop(self):
         '''

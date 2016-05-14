@@ -1,7 +1,7 @@
 import unittest
 import time
 import logging
-import threading
+import multiprocessing
 
 from .. import task
 
@@ -37,7 +37,7 @@ class EventsTestTask(task.Task):
         elif action == 'max_retried':
             self.retry()
         elif action == 'report_completion':
-            time.sleep(5)
+            time.sleep(2)
 
     def on_success(self, returned_value, args, kwargs):
         self.succeeded = True
@@ -198,8 +198,8 @@ class TaskTestCase(unittest.TestCase):
         )
 
         before = time.time()
-        thread = threading.Thread(target=self.events_test_task.work_loop)
-        thread.start()
+        worker_process = multiprocessing.Process(target=self.events_test_task.work_loop)
+        worker_process.start()
 
         time.sleep(0.5)
         self.assertEqual(
@@ -210,5 +210,4 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_task.wait_task_finished(task)
 
         after = time.time()
-        self.assertTrue(after - before > 5)
-        self.assertTrue(after - before < 6)
+        self.assertTrue(2 <= after - before <= 3)
