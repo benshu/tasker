@@ -10,7 +10,8 @@ class EventsTestTask(task.Task):
     name = 'events_test_task'
 
     compression = 'dummy'
-    timeout = 2.0
+    soft_timeout = 2.0
+    hard_timeout = 0.0
     max_tasks_per_run = 1
     max_retries = 1
     log_level = logging.CRITICAL + 10
@@ -112,7 +113,7 @@ class TaskTestCase(unittest.TestCase):
         )
 
     def test_time_out_event(self):
-        self.events_test_task.timeout = 2.0
+        self.events_test_task.soft_timeout = 2.0
         self.events_test_task.max_tasks_per_run = 1
         self.events_test_task.max_retries = 3
         self.events_test_task.task_queue.flush()
@@ -185,7 +186,7 @@ class TaskTestCase(unittest.TestCase):
         )
 
     def test_completion_report(self):
-        self.events_test_task.timeout = 10
+        self.events_test_task.soft_timeout = 10
         self.events_test_task.max_retries = 2
         self.events_test_task.task_queue.flush()
         task = self.events_test_task.apply_async_one(

@@ -92,9 +92,9 @@ class Task:
 
         self.killer = devices.killer.Killer(
             soft_timeout=self.soft_timeout,
-            soft_timeout_signal=signal.SIGINT,
+            soft_timeout_signal=signal.SIGABRT,
             hard_timeout=self.hard_timeout,
-            hard_timeout_signal=signal.SIGTERM,
+            hard_timeout_signal=signal.SIGINT,
         )
         signal.signal(signal.SIGABRT, self.sigabrt_handler)
         signal.signal(signal.SIGINT, self.sigint_handler)
@@ -289,6 +289,7 @@ class Task:
                 return [task]
 
     def sigabrt_handler(self, signal_num, frame):
+        print('abrt')
         raise TimeoutError()
 
     def sigint_handler(self, signal_num, frame):
