@@ -48,7 +48,7 @@ class Task(tasker.task.Task):
 def main():
     worker = tasker.worker.Worker(
         task_class=Task,
-        concurrent_workers=2,
+        concurrent_workers=4,
     )
     worker.start()
 
