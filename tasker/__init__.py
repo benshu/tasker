@@ -1,5 +1,5 @@
 from . import scheduler
-from . import task
+from . import supervisor
 from . import worker
 
 from . import connector

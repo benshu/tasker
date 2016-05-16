@@ -2,8 +2,8 @@ import tasker
 import time
 
 
-class Task(tasker.task.Task):
-    name = 'test_task'
+class Worker(tasker.worker.Worker):
+    name = 'test_worker'
 
     compressor = 'dummy'
     serializer = 'pickle'
@@ -46,11 +46,11 @@ class Task(tasker.task.Task):
 
 
 def main():
-    worker = tasker.worker.Worker(
-        task_class=Task,
+    supervisor = tasker.supervisor.Supervisor(
+        worker_class=Worker,
         concurrent_workers=4,
     )
-    worker.start()
+    supervisor.start()
 
 if __name__ == '__main__':
     try:
