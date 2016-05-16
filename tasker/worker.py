@@ -398,14 +398,14 @@ class Worker:
                     if not self.run_forever:
                         self.tasks_left -= 1
         except Exception as exception:
-            self.logger.error(
-                msg=exception,
-            )
-            self.logger.error(
-                msg=traceback.format_exc(),
-            )
-            self.logger.error(
-                msg=self.current_task,
+            exception_traceback = traceback.format_exc()
+            self.logger.log_task_failure(
+                failure_reason='Task Execution Exception',
+                task_name=self.name,
+                args=self.current_task['args'],
+                kwargs=self.current_task['kwargs'],
+                exception=exception,
+                exception_traceback=exception_traceback,
             )
         finally:
             self.end_task()
@@ -432,8 +432,10 @@ class Worker:
 
             return 'success'
         except TimeoutError as exception:
+            exception_traceback = traceback.format_exc()
             self._on_timeout(
                 exception=exception,
+                exception_traceback=exception_traceback,
                 args=task['args'],
                 kwargs=task['kwargs'],
             )
@@ -447,15 +449,20 @@ class Worker:
 
             return 'retry'
         except WorkerMaxRetriesException as exception:
+            exception_traceback = traceback.format_exc()
             self._on_max_retries(
+                exception=exception,
+                exception_traceback=exception_traceback,
                 args=task['args'],
                 kwargs=task['kwargs'],
             )
 
             return 'max_retries'
         except Exception as exception:
+            exception_traceback = traceback.format_exc()
             self._on_failure(
                 exception=exception,
+                exception_traceback=exception_traceback,
                 args=task['args'],
                 kwargs=task['kwargs'],
             )
@@ -489,13 +496,11 @@ class Worker:
         if self.monitoring:
             self.monitor_client.send_success()
 
-        self.logger.info(
-            'task {task_name} reported a success:\n\tvalue: {value}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
-                task_name=self.name,
-                value=returned_value,
-                args=args,
-                kwargs=kwargs,
-            )
+        self.logger.log_task_success(
+            task_name=self.name,
+            args=args,
+            kwargs=kwargs,
+            returned_value=returned_value,
         )
 
         try:
@@ -505,34 +510,47 @@ class Worker:
                 kwargs=kwargs,
             )
         except Exception as exception:
-            self.logger.error(
-                msg=exception,
+            exception_traceback = traceback.format_exc()
+            self.logger.log_task_failure(
+                failure_reason='Exception during on_success',
+                task_name=self.name,
+                args=args,
+                kwargs=kwargs,
+                exception=exception,
+                exception_traceback=exception_traceback,
             )
 
-    def _on_failure(self, exception, args, kwargs):
+    def _on_failure(self, exception, exception_traceback, args, kwargs):
         '''
         '''
         if self.monitoring:
             self.monitor_client.send_failure()
 
-        self.logger.error(
-            'task {task_name} reported a failure:\n\texception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
-                task_name=self.name,
-                exception=exception,
-                args=args,
-                kwargs=kwargs,
-            )
+        self.logger.log_task_failure(
+            failure_reason='Failue',
+            task_name=self.name,
+            args=args,
+            kwargs=kwargs,
+            exception=exception,
+            exception_traceback=exception_traceback,
         )
 
         try:
             self.on_failure(
                 exception=exception,
+                exception_traceback=exception_traceback,
                 args=args,
                 kwargs=kwargs,
             )
         except Exception as exception:
-            self.logger.error(
-                msg=exception,
+            exception_traceback = traceback.format_exc()
+            self.logger.log_task_failure(
+                failure_reason='Exception during on_failure',
+                task_name=self.name,
+                args=args,
+                kwargs=kwargs,
+                exception=exception,
+                exception_traceback=exception_traceback,
             )
 
     def _on_retry(self, args, kwargs):
@@ -541,12 +559,10 @@ class Worker:
         if self.monitoring:
             self.monitor_client.send_retry()
 
-        self.logger.warning(
-            'task {task_name} asked for a retry:\n\targs: {args}\n\tkwargs: {kwargs}'.format(
-                task_name=self.name,
-                args=args,
-                kwargs=kwargs,
-            )
+        self.logger.log_task_retry(
+            task_name=self.name,
+            args=args,
+            kwargs=kwargs,
         )
 
         try:
@@ -555,58 +571,80 @@ class Worker:
                 kwargs=kwargs,
             )
         except Exception as exception:
-            self.logger.error(
-                msg=exception,
+            exception_traceback = traceback.format_exc()
+            self.logger.log_task_failure(
+                failure_reason='Exception during on_retry',
+                task_name=self.name,
+                args=args,
+                kwargs=kwargs,
+                exception=exception,
+                exception_traceback=exception_traceback,
             )
 
-    def _on_timeout(self, exception, args, kwargs):
+    def _on_timeout(self, exception, exception_traceback, args, kwargs):
         '''
         '''
         if self.monitoring:
             self.monitor_client.send_failure()
 
-        self.logger.error(
-            'task {task_name} raised a timeout exception: {exception}\n\targs: {args}\n\tkwargs: {kwargs}'.format(
-                task_name=self.name,
-                exception=str(exception),
-                args=args,
-                kwargs=kwargs,
-            )
+        self.logger.log_task_failure(
+            failure_reason='Timeout',
+            task_name=self.name,
+            args=args,
+            kwargs=kwargs,
+            exception=exception,
+            exception_traceback=exception_traceback,
         )
 
         try:
             self.on_timeout(
                 exception=exception,
+                exception_traceback=exception_traceback,
                 args=args,
                 kwargs=kwargs,
             )
         except Exception as exception:
-            self.logger.error(
-                msg=exception,
+            exception_traceback = traceback.format_exc()
+            self.logger.log_task_failure(
+                failure_reason='Exception during on_timeout',
+                task_name=self.name,
+                args=args,
+                kwargs=kwargs,
+                exception=exception,
+                exception_traceback=exception_traceback,
             )
 
-    def _on_max_retries(self, args, kwargs):
+    def _on_max_retries(self, exception, exception_traceback, args, kwargs):
         '''
         '''
         if self.monitoring:
             self.monitor_client.send_failure()
 
-        self.logger.error(
-            'task {task_name} has reached the max retries:\n\targs: {args}\n\tkwargs: {kwargs}'.format(
-                task_name=self.name,
-                args=args,
-                kwargs=kwargs,
-            )
+        self.logger.log_task_failure(
+            failure_reason='Max Retries',
+            task_name=self.name,
+            args=args,
+            kwargs=kwargs,
+            exception=exception,
+            exception_traceback=exception_traceback,
         )
 
         try:
             self.on_max_retries(
+                exception=exception,
+                exception_traceback=exception_traceback,
                 args=args,
                 kwargs=kwargs,
             )
         except Exception as exception:
-            self.logger.error(
-                msg=exception,
+            exception_traceback = traceback.format_exc()
+            self.logger.log_task_failure(
+                failure_reason='Exception during on_max_retries',
+                task_name=self.name,
+                args=args,
+                kwargs=kwargs,
+                exception=exception,
+                exception_traceback=exception_traceback,
             )
 
     def init(self):
@@ -624,7 +662,7 @@ class Worker:
         '''
         pass
 
-    def on_failure(self, exception, args, kwargs):
+    def on_failure(self, exception, exception_traceback, args, kwargs):
         '''
         '''
         pass
@@ -634,12 +672,12 @@ class Worker:
         '''
         pass
 
-    def on_max_retries(self, args, kwargs):
+    def on_max_retries(self, exception, exception_traceback, args, kwargs):
         '''
         '''
         pass
 
-    def on_timeout(self, exception, args, kwargs):
+    def on_timeout(self, exception, exception_traceback, args, kwargs):
         '''
         '''
         pass

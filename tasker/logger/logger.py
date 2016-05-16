@@ -42,7 +42,7 @@ class Logger:
         )
 
         formatter = logging.Formatter(
-            fmt='%(asctime)s %(name)-12s %(levelname)-8s %(funcName)-16s -> %(message)s',
+            fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S',
         )
 
@@ -88,6 +88,90 @@ class Logger:
         '''
         self.logger.error(
             msg=msg,
+        )
+
+    def log_task_failure(
+        self,
+        failure_reason,
+        task_name,
+        args,
+        kwargs,
+        exception,
+        exception_traceback,
+    ):
+        '''
+        '''
+        traceback_formatted = exception_traceback.split('\n')
+        traceback_formatted = [
+            '\t\t\t | ' + line
+            for line in traceback_formatted
+        ]
+        traceback_formatted = '\n'.join(traceback_formatted)
+        traceback_formatted = '\n' + traceback_formatted
+
+        self.error(
+            '''
+                --------------------------------------------
+                {failure_reason}:
+                - task: {task_name}
+                - args: {args}
+                - kwargs: {kwargs}
+                - exception: {exception}
+                - traceback: {traceback}
+                --------------------------------------------
+            '''.format(
+                failure_reason=failure_reason,
+                task_name=task_name,
+                args=args,
+                kwargs=kwargs,
+                exception=exception,
+                traceback=traceback_formatted,
+            )
+        )
+
+    def log_task_success(
+        self,
+        task_name,
+        args,
+        kwargs,
+        returned_value,
+    ):
+        '''
+        '''
+        self.info(
+            '''
+                Success:
+                - task: {task_name}
+                - args: {args}
+                - kwargs: {kwargs}
+                - returned_value: {returned_value}
+            '''.format(
+                task_name=task_name,
+                args=args,
+                kwargs=kwargs,
+                returned_value=returned_value,
+            )
+        )
+
+    def log_task_retry(
+        self,
+        task_name,
+        args,
+        kwargs,
+    ):
+        '''
+        '''
+        self.logger.warning(
+            '''
+                Retry:
+                - task: {task_name}
+                - args: {args}
+                - kwargs: {kwargs}
+            '''.format(
+                task_name=self.name,
+                args=args,
+                kwargs=kwargs,
+            )
         )
 
     def __getstate__(self):

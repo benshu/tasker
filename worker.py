@@ -42,7 +42,7 @@ class Worker(tasker.worker.Worker):
             self.logger.error(time.time())
         if num == 6:
             self.logger.error('end')
-            self.logger.error(time.time())
+            self.logger.error(time.time())z
 
 
 def main():
