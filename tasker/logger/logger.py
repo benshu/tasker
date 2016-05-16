@@ -168,7 +168,7 @@ class Logger:
                 - args: {args}
                 - kwargs: {kwargs}
             '''.format(
-                task_name=self.name,
+                task_name=task_name,
                 args=args,
                 kwargs=kwargs,
             )
