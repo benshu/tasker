@@ -262,6 +262,17 @@ class Task:
     def sigint_handler(self, signal_num, frame):
         '''
         '''
+        try:
+            self.tasks_to_finish.remove(self.current_task)
+
+            self._on_timeout(
+                exception=TimeoutError('hard timeout'),
+                args=self.current_task['args'],
+                kwargs=self.current_task['kwargs'],
+            )
+        except:
+            pass
+
         self.end_task()
 
         os.kill(os.getpid(), signal.SIGTERM)

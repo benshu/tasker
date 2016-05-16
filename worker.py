@@ -22,7 +22,7 @@ class Task(tasker.task.Task):
             'database': 0,
         },
     }
-    soft_timeout = 30.0
+    soft_timeout = 3.0
     hard_timeout = 35.0
     global_timeout = 0.0
     max_tasks_per_run = 25000
