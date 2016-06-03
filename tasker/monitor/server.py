@@ -91,7 +91,7 @@ class StatisticsWebServer:
     def handle_get_main(self, request):
         '''
         '''
-        statistics = self.statistics_obj.all
+        statistics = self.statistics_obj.statistics
         templates_dir = '{current_path}/interface/templates'.format(
             current_path=os.path.dirname(os.path.realpath(__file__)),
         )
