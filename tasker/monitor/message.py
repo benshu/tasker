@@ -7,7 +7,8 @@ class MessageStruct(enum.Enum):
     hostname = 0
     worker_name = 1
     message_type = 2
-    date = 3
+    message_value = 3
+    date = 4
 
 
 class MessageType(enum.Enum):
@@ -19,12 +20,13 @@ class MessageType(enum.Enum):
 
 
 class Message:
-    def __init__(self, hostname, worker_name, message_type, date):
+    def __init__(self, hostname, worker_name, message_type, message_value, date):
         '''
         '''
         self.hostname = hostname
         self.worker_name = worker_name
         self.message_type = message_type
+        self.message_value = message_value
         self.date = date
 
     def serialize(self):
@@ -34,6 +36,7 @@ class Message:
             MessageStruct.hostname.value: self.hostname,
             MessageStruct.worker_name.value: self.worker_name,
             MessageStruct.message_type.value: self.message_type.value,
+            MessageStruct.message_value.value: self.message_value,
             MessageStruct.date.value: self.date.timestamp(),
         }
 
@@ -50,12 +53,14 @@ class Message:
         hostname = unserialized_message[MessageStruct.hostname.value]
         worker_name = unserialized_message[MessageStruct.worker_name.value]
         message_type = MessageType(unserialized_message[MessageStruct.message_type.value])
+        message_value = unserialized_message[MessageStruct.message_value.value]
         date = datetime.datetime.utcfromtimestamp(unserialized_message[MessageStruct.date.value])
 
         message = Message(
             hostname=hostname,
             worker_name=worker_name,
             message_type=message_type,
+            message_value=message_value,
             date=date,
         )
 

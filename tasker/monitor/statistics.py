@@ -12,233 +12,106 @@ class Statistics:
     def __init__(self):
         self.hosts = []
 
-    def ensure_host(self, host_obj):
+    def ensure_host(self, host):
         for current_host in self.hosts:
-            if host_obj == current_host:
+            if host == current_host:
                 break
         else:
-            self.hosts.append(host_obj)
+            self.hosts.append(host)
 
-    def ensure_worker(self, host_obj, worker_obj):
+    def ensure_worker(self, host, worker):
         report_time = datetime.datetime.utcnow()
 
         for current_host in self.hosts:
-            if host_obj == current_host:
+            if host == current_host:
                 for current_worker in current_host.workers:
-                    if current_worker == worker_obj:
+                    if current_worker == worker:
                         current_worker.last_seen = report_time
 
                         break
                 else:
-                    current_host.workers.append(worker_obj)
-                    worker_obj.last_seen = report_time
+                    current_host.workers.append(worker)
+                    worker.last_seen = report_time
 
-    def report_worker(self, host_obj, worker_obj, message_obj):
+    def report_worker(self, host, worker, message):
         for current_host in self.hosts:
-            if host_obj == current_host:
+            if host == current_host:
                 for current_worker in current_host.workers:
-                    if current_worker == worker_obj:
+                    if current_worker == worker:
                         current_worker.report(
-                            message_obj=message_obj,
+                            message=message,
                         )
 
     @property
-    def online_hosts(self):
-        online_hosts = []
+    def workers(self):
+        workers = []
 
-        for host_obj in self.hosts:
-            if host_obj.last_seen + self.online_host_timedelta > datetime.datetime.utcnow():
-                online_hosts.append(host_obj)
+        for host in self.hosts:
+            for worker in host.workers:
+                workers.append(
+                    {
+                        'host': host,
+                        'worker': worker,
+                    }
+                )
 
-        return online_hosts
+        return workers
 
-    @property
-    def online_workers(self):
-        online_workers = []
+    def get_statistics(self, statistics_type):
+        value = 0
 
-        for host_obj in self.hosts:
-            for worker_obj in host_obj.workers:
-                if worker_obj.last_seen + self.online_worker_timedelta > datetime.datetime.utcnow():
-                    online_workers.append(
-                        {
-                            'host': host_obj,
-                            'worker': worker_obj,
-                        }
-                    )
+        for host in self.hosts:
+            value += host.get_statistics(
+                statistics_type=statistics_type,
+            )
 
-        return online_workers
-
-    @property
-    def success(self):
-        success = 0
-
-        for host_obj in self.hosts:
-            success += host_obj.success
-
-        return success
+        return value
 
     @property
-    def success_per_second(self):
-        success_per_second = 0
-
-        for host_obj in self.hosts:
-            success_per_second += host_obj.success_per_second
-
-        return success_per_second
-
-    @property
-    def success_per_minute(self):
-        success_per_minute = 0
-
-        for host_obj in self.hosts:
-            success_per_minute += host_obj.success_per_minute
-
-        return success_per_minute
-
-    @property
-    def failure(self):
-        failure = 0
-
-        for host_obj in self.hosts:
-            failure += host_obj.failure
-
-        return failure
-
-    @property
-    def failure_per_second(self):
-        failure_per_second = 0
-
-        for host_obj in self.hosts:
-            failure_per_second += host_obj.failure_per_second
-
-        return failure_per_second
-
-    @property
-    def failure_per_minute(self):
-        failure_per_minute = 0
-
-        for host_obj in self.hosts:
-            failure_per_minute += host_obj.failure_per_minute
-
-        return failure_per_minute
-
-    @property
-    def retry(self):
-        retry = 0
-
-        for host_obj in self.hosts:
-            retry += host_obj.retry
-
-        return retry
-
-    @property
-    def retry_per_second(self):
-        retry_per_second = 0
-
-        for host_obj in self.hosts:
-            retry_per_second += host_obj.retry_per_second
-
-        return retry_per_second
-
-    @property
-    def retry_per_minute(self):
-        retry_per_minute = 0
-
-        for host_obj in self.hosts:
-            retry_per_minute += host_obj.retry_per_minute
-
-        return retry_per_minute
-
-    @property
-    def process(self):
-        process = 0
-
-        for host_obj in self.hosts:
-            process += host_obj.process
-
-        return process
-
-    @property
-    def process_per_second(self):
-        process_per_second = 0
-
-        for host_obj in self.hosts:
-            process_per_second += host_obj.process_per_second
-
-        return process_per_second
-
-    @property
-    def process_per_minute(self):
-        process_per_minute = 0
-
-        for host_obj in self.hosts:
-            process_per_minute += host_obj.process_per_minute
-
-        return process_per_minute
-
-    @property
-    def heartbeat(self):
-        heartbeat = 0
-
-        for host_obj in self.hosts:
-            heartbeat += host_obj.heartbeat
-
-        return heartbeat
-
-    @property
-    def heartbeat_per_second(self):
-        heartbeat_per_second = 0
-
-        for host_obj in self.hosts:
-            heartbeat_per_second += host_obj.heartbeat_per_second
-
-        return heartbeat_per_second
-
-    @property
-    def heartbeat_per_minute(self):
-        heartbeat_per_minute = 0
-
-        for host_obj in self.hosts:
-            heartbeat_per_minute += host_obj.heartbeat_per_minute
-
-        return heartbeat_per_minute
-
-    @property
-    def all(self):
-        online_hosts = [
-            host_obj.name
-            for host_obj in self.online_hosts
+    def statistics(self):
+        hosts = [
+            {
+                'name': host.name,
+                'status': host.status,
+            }
+            for host in self.hosts
         ]
 
-        online_workers = [
+        workers = [
             {
-                'hostname': worker_obj['host'].name,
-                'worker_name': worker_obj['worker'].name,
-                'failure': worker_obj['worker'].failure,
-                'retry': worker_obj['worker'].retry,
-                'success': worker_obj['worker'].success,
+                'hostname': worker['host'].name,
+                'name': worker['worker'].name,
+                'status': worker['worker'].name,
+                'metrics': {
+                    'failure': worker['worker'].get_statistics('failure'),
+                    'retry': worker['worker'].get_statistics('retry'),
+                    'success': worker['worker'].get_statistics('success'),
+                    'process': worker['worker'].get_statistics('process'),
+                }
             }
-            for worker_obj in self.online_workers
+            for worker in self.workers
         ]
 
         statistics = {
-            'online_hosts': online_hosts,
-            'online_workers': online_workers,
-            'success': self.success,
-            'failure': self.failure,
-            'retry': self.retry,
-            'process': self.process,
-            'heartbeat': self.heartbeat,
-            'success_per_minute': self.success_per_minute,
-            'failure_per_minute': self.failure_per_minute,
-            'retry_per_minute': self.retry_per_minute,
-            'process_per_minute': self.process_per_minute,
-            'heartbeat_per_minute': self.heartbeat_per_minute,
-            'success_per_second': self.success_per_second,
-            'failure_per_second': self.failure_per_second,
-            'retry_per_second': self.retry_per_second,
-            'process_per_second': self.process_per_second,
-            'heartbeat_per_second': self.heartbeat_per_second,
+            'hosts': hosts,
+            'workers': workers,
+            'metrics': {
+                'success': self.get_statistics(
+                    statistics_type='success',
+                ),
+                'failure': self.get_statistics(
+                    statistics_type='failure',
+                ),
+                'retry': self.get_statistics(
+                    statistics_type='retry',
+                ),
+                'process': self.get_statistics(
+                    statistics_type='process',
+                ),
+                'heartbeat': self.get_statistics(
+                    statistics_type='heartbeat',
+                ),
+            },
         }
 
         return statistics

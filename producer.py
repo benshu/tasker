@@ -1,8 +1,8 @@
-import worker
+import consumer
 import time
 
 
-worker = worker.Worker()
+worker = consumer.Worker()
 
 before = time.time()
 worker.apply_async_one(num=4)

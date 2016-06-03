@@ -17,11 +17,12 @@ class StatisticsClient:
             type=socket.SOCK_DGRAM,
         )
 
-    def send_stats(self, message_type):
+    def increment_stats(self, message_type, message_value):
         message_obj = message.Message(
             hostname=self.host_name,
             worker_name=self.worker_name,
             message_type=message_type,
+            message_value=message_value,
             date=datetime.datetime.utcnow(),
         )
         message_data = message_obj.serialize()
@@ -34,29 +35,34 @@ class StatisticsClient:
             ),
         )
 
-    def send_success(self):
-        self.send_stats(
+    def increment_success(self, value=1):
+        self.increment_stats(
             message_type=message.MessageType.success,
+            message_value=value,
         )
 
-    def send_failure(self):
-        self.send_stats(
+    def increment_failure(self, value=1):
+        self.increment_stats(
             message_type=message.MessageType.failure,
+            message_value=value,
         )
 
-    def send_retry(self):
-        self.send_stats(
+    def increment_retry(self, value=1):
+        self.increment_stats(
             message_type=message.MessageType.retry,
+            message_value=value,
         )
 
-    def send_process(self):
-        self.send_stats(
+    def increment_process(self, value=1):
+        self.increment_stats(
             message_type=message.MessageType.process,
+            message_value=value,
         )
 
-    def send_heartbeat(self):
-        self.send_stats(
+    def increment_heartbeat(self, value=1):
+        self.increment_stats(
             message_type=message.MessageType.heartbeat,
+            message_value=value,
         )
 
     def __getstate__(self):

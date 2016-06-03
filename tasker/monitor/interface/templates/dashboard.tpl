@@ -26,15 +26,15 @@
             <div class="row">
                 <div class="col s4">
                     <h4 style="text-align: center; font-weight: bold;">Success</h4>
-                    <h5 style="color: #009688; text-align: center; font-weight: bold;">{{ '{:,}'.format(statistics['success']) }}</h5>
+                    <h5 style="color: #009688; text-align: center; font-weight: bold;">{{ '{:,}'.format(statistics['metrics']['success']) }}</h5>
                 </div>
                 <div class="col s4">
                     <h4 style="text-align: center; font-weight: bold;">Retry</h4>
-                    <h5 style="color: #03A9F4; text-align: center; font-weight: bold;">{{ '{:,}'.format(statistics['retry']) }}</h5>
+                    <h5 style="color: #03A9F4; text-align: center; font-weight: bold;">{{ '{:,}'.format(statistics['metrics']['retry']) }}</h5>
                 </div>
                 <div class="col s4">
                     <h4 style="text-align: center; font-weight: bold;">Failure</h4>
-                    <h5 style="color: #E53935; text-align: center; font-weight: bold;">{{ '{:,}'.format(statistics['failure']) }}</h5>
+                    <h5 style="color: #E53935; text-align: center; font-weight: bold;">{{ '{:,}'.format(statistics['metrics']['failure']) }}</h5>
                 </div>
             </div>
             <hr>
@@ -46,19 +46,23 @@
                                 <tr>
                                     <th>Hostname</th>
                                     <th>Worker</th>
+                                    <th>Status</th>
+                                    <th>Process</th>
                                     <th>Success</th>
                                     <th>Retry</th>
                                     <th>Fail</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for worker in statistics['online_workers'] | sort(attribute='worker_name') %}
+                                {% for worker in statistics['workers'] | sort(attribute='name') %}
                                     <tr>
                                         <td style="font-weight: bold;">{{ worker['hostname'] }}</td>
-                                        <td style="font-weight: bold;">{{ worker['worker_name'] }}</td>
-                                        <td style="color: #009688; font-weight: bold;">{{ worker['success'] }}</td>
-                                        <td style="color: #03A9F4; font-weight: bold;">{{ worker['retry'] }}</td>
-                                        <td style="color: #E53935; font-weight: bold;">{{ worker['failure'] }}</td>
+                                        <td style="font-weight: bold;">{{ worker['name'] }}</td>
+                                        <td style="font-weight: bold;">{{ worker['status'] }}</td>
+                                        <td style="color: #009688; font-weight: bold;">{{ worker['metrics']['process'] }}</td>
+                                        <td style="color: #009688; font-weight: bold;">{{ worker['metrics']['success'] }}</td>
+                                        <td style="color: #03A9F4; font-weight: bold;">{{ worker['metrics']['retry'] }}</td>
+                                        <td style="color: #E53935; font-weight: bold;">{{ worker['metrics']['failure'] }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>

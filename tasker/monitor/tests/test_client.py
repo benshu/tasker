@@ -79,20 +79,21 @@ class MonitorClientTest(unittest.TestCase):
             current_stats = self.get_stats()
 
             self.assertEqual(
-                first=current_stats[message_type.name],
+                first=current_stats['metrics'][message_type.name],
                 second=0,
                 msg='statistics server {message_type} rate is not cleaned up'.format(
                     message_type=message_type.name,
                 ),
             )
 
-            self.client.send_stats(
+            self.client.increment_stats(
                 message_type=message_type,
+                message_value=1,
             )
             current_stats = self.get_stats()
 
             self.assertEqual(
-                first=current_stats[message_type.name],
+                first=current_stats['metrics'][message_type.name],
                 second=1,
                 msg='statistics server {message_type} rate is not correct'.format(
                     message_type=message_type.name,
@@ -101,13 +102,14 @@ class MonitorClientTest(unittest.TestCase):
 
             for i in range(10):
                 time.sleep(0.1)
-                self.client.send_stats(
+                self.client.increment_stats(
                     message_type=message_type,
+                    message_value=1,
                 )
 
             current_stats = self.get_stats()
             self.assertEqual(
-                first=current_stats[message_type.name],
+                first=current_stats['metrics'][message_type.name],
                 second=11,
                 msg='statistics server {message_type} rate is not correct'.format(
                     message_type=message_type.name,

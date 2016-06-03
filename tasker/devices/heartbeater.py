@@ -35,7 +35,7 @@ class Heartbeater(threading.Thread):
                 continue
 
             try:
-                self.monitor_client.send_heartbeat()
+                self.monitor_client.increment_heartbeat()
 
                 sleep_duration = 0
             except Exception as exception:

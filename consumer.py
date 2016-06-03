@@ -1,5 +1,6 @@
 import tasker
 import time
+import socket
 
 
 class Worker(tasker.worker.Worker):
@@ -8,9 +9,9 @@ class Worker(tasker.worker.Worker):
     compressor = 'dummy'
     serializer = 'pickle'
     monitoring = {
-        'host_name': '',
+        'host_name': socket.gethostname(),
         'stats_server': {
-            'host': '127.0.0.1',
+            'host': 'localhost',
             'port': 9999,
         }
     }

@@ -310,11 +310,11 @@ class Worker:
         except:
             pass
 
-        self.end_task()
+        self.end_working()
 
         os.kill(os.getpid(), signal.SIGTERM)
 
-    def begin_task(self):
+    def begin_working(self):
         '''
         '''
         self.monitor_client = None
@@ -353,7 +353,7 @@ class Worker:
 
         self.killer.create()
 
-    def end_task(self):
+    def end_working(self):
         '''
         '''
         if self.tasks_to_finish:
@@ -371,13 +371,17 @@ class Worker:
         '''
         '''
         try:
-            self.begin_task()
+            self.begin_working()
 
             self.tasks_left = self.max_tasks_per_run
             while self.tasks_left > 0 or self.run_forever is True:
                 tasks = self.get_next_tasks(
                     tasks_left=self.tasks_left,
                 )
+                if self.monitoring:
+                    self.monitor_client.increment_process(
+                        value=len(tasks),
+                    )
 
                 self.tasks_to_finish = tasks.copy()
                 for task in tasks:
@@ -408,7 +412,7 @@ class Worker:
                 exception_traceback=exception_traceback,
             )
         finally:
-            self.end_task()
+            self.end_working()
 
     def execute_task(self, task):
         '''
@@ -494,7 +498,7 @@ class Worker:
         '''
         '''
         if self.monitoring:
-            self.monitor_client.send_success()
+            self.monitor_client.increment_success()
 
         self.logger.log_task_success(
             task_name=self.name,
@@ -524,7 +528,7 @@ class Worker:
         '''
         '''
         if self.monitoring:
-            self.monitor_client.send_failure()
+            self.monitor_client.increment_failure()
 
         self.logger.log_task_failure(
             failure_reason='Failue',
@@ -557,7 +561,7 @@ class Worker:
         '''
         '''
         if self.monitoring:
-            self.monitor_client.send_retry()
+            self.monitor_client.increment_retry()
 
         self.logger.log_task_retry(
             task_name=self.name,
@@ -585,7 +589,7 @@ class Worker:
         '''
         '''
         if self.monitoring:
-            self.monitor_client.send_failure()
+            self.monitor_client.increment_failure()
 
         self.logger.log_task_failure(
             failure_reason='Timeout',
@@ -618,7 +622,7 @@ class Worker:
         '''
         '''
         if self.monitoring:
-            self.monitor_client.send_failure()
+            self.monitor_client.increment_failure()
 
         self.logger.log_task_failure(
             failure_reason='Max Retries',

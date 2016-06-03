@@ -1,5 +1,4 @@
 import unittest
-import time
 import datetime
 
 from .. import host
@@ -15,28 +14,6 @@ class HostTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         pass
-
-    def test_run_time(self):
-        host_obj = host.Host(
-            name='test_host_name',
-        )
-        worker_obj_one = worker.Worker(
-            name='test_worker_one_name',
-        )
-
-        self.assertEqual(
-            first=host_obj.run_time,
-            second=0,
-        )
-
-        host_obj.workers.append(worker_obj_one)
-
-        time.sleep(0.5)
-
-        self.assertLess(
-            a=abs(host_obj.run_time - worker_obj_one.run_time),
-            b=0.1,
-        )
 
     def test_last_seen(self):
         host_obj = host.Host(
@@ -84,76 +61,27 @@ class HostTest(unittest.TestCase):
             worker_obj_one = worker.Worker(
                 name='test_worker_one_name',
             )
-            setattr(worker_obj_one, report_type, 10)
+            worker_obj_one.statistics[report_type] = 10
             worker_obj_two = worker.Worker(
                 name='test_worker_two_name',
             )
-            setattr(worker_obj_two, report_type, 10)
+            worker_obj_two.statistics[report_type] = 10
 
             self.assertEqual(
-                first=getattr(host_obj, report_type),
+                first=host_obj.get_statistics(report_type),
                 second=0,
             )
 
             host_obj.workers.append(worker_obj_one)
 
             self.assertEqual(
-                first=getattr(host_obj, report_type),
+                first=host_obj.get_statistics(report_type),
                 second=10,
             )
 
             host_obj.workers.append(worker_obj_two)
 
             self.assertEqual(
-                first=getattr(host_obj, report_type),
+                first=host_obj.get_statistics(report_type),
                 second=20,
-            )
-
-    def test_reports_per_second(self):
-        for benchmark_type in (
-            ('success_per_second', message.MessageType.success,),
-            ('failure_per_second', message.MessageType.failure,),
-            ('retry_per_second', message.MessageType.retry,),
-            ('process_per_second', message.MessageType.process,),
-            ('heartbeat_per_second', message.MessageType.heartbeat,),
-        ):
-            host_obj = host.Host(
-                name='test_host_name',
-            )
-            worker_obj = worker.Worker(
-                name='test_worker_one_name',
-            )
-
-            self.assertEqual(
-                first=getattr(host_obj, benchmark_type[0]),
-                second=0,
-            )
-
-            host_obj.workers.append(worker_obj)
-
-            self.assertEqual(
-                first=getattr(host_obj, benchmark_type[0]),
-                second=0,
-            )
-
-            for i in range(3):
-                worker_obj.last_reports.append(
-                    message.Message(
-                        hostname=host_obj.name,
-                        worker_name=worker_obj.name,
-                        message_type=benchmark_type[1],
-                        date=datetime.datetime.utcnow(),
-                    ),
-                )
-
-            self.assertEqual(
-                first=getattr(host_obj, benchmark_type[0]),
-                second=3,
-            )
-
-            time.sleep(1.1)
-
-            self.assertEqual(
-                first=getattr(host_obj, benchmark_type[0]),
-                second=0,
             )

@@ -45,18 +45,18 @@ class StatisticsUDPServer:
         )
 
         self.statistics_obj.ensure_host(
-            host_obj=host_obj,
+            host=host_obj,
         )
 
         self.statistics_obj.ensure_worker(
-            host_obj=host_obj,
-            worker_obj=worker_obj,
+            host=host_obj,
+            worker=worker_obj,
         )
 
         self.statistics_obj.report_worker(
-            host_obj=host_obj,
-            worker_obj=worker_obj,
-            message_obj=message_obj,
+            host=host_obj,
+            worker=worker_obj,
+            message=message_obj,
         )
 
 
@@ -113,7 +113,7 @@ class StatisticsWebServer:
     def handle_get_statistics(self, request):
         '''
         '''
-        statistics = self.statistics_obj.all
+        statistics = self.statistics_obj.statistics
 
         return aiohttp.web.json_response(
             data=statistics,
