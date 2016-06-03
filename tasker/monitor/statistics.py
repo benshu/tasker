@@ -81,7 +81,7 @@ class Statistics:
             {
                 'hostname': worker['host'].name,
                 'name': worker['worker'].name,
-                'status': worker['worker'].name,
+                'status': worker['worker'].status,
                 'metrics': {
                     'failure': worker['worker'].get_statistics('failure'),
                     'retry': worker['worker'].get_statistics('retry'),
