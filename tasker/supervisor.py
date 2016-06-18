@@ -46,10 +46,10 @@ class Supervisor:
                 self.workers_processes.append(process)
 
                 run_time = 0.0
-                time_to_heartbeat = self.task.soft_timeout + 5
+                time_to_heartbeat = self.task.soft_timeout + 30
                 while process.is_alive():
                     if heartbeat_pipe_parent.poll(0):
-                        time_to_heartbeat = self.task.soft_timeout + 5
+                        time_to_heartbeat = self.task.soft_timeout + 30
 
                     if self.task.global_timeout != 0.0 and run_time > self.task.global_timeout:
                         raise TimeoutError('global timeout has reached')
