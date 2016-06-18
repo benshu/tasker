@@ -6,22 +6,23 @@ class Queue:
     '''
     name = 'Queue'
 
-    def __init__(self, connector, encoder):
+    def __init__(self, queue_name, connector, encoder):
         '''
         '''
         self.logger = logger.logger.Logger(
             logger_name=self.name,
         )
 
+        self.queue_name = queue_name
+
         self.connector = connector
         self.encoder = encoder
 
-    def dequeue(self, queue_name, timeout=0):
+    def dequeue(self, timeout=0):
         '''
         '''
         try:
             value = self._dequeue(
-                queue_name=queue_name,
                 timeout=timeout,
             )
             if not value:
@@ -39,19 +40,18 @@ class Queue:
 
             raise exception
 
-    def _dequeue(self, queue_name, timeout):
+    def _dequeue(self, timeout):
         '''
         '''
         raise NotImplemented()
 
-    def dequeue_bulk(self, queue_name, count):
+    def dequeue_bulk(self, count):
         '''
         '''
         try:
             decoded_values = []
 
             values = self._dequeue_bulk(
-                queue_name=queue_name,
                 count=count,
             )
 
@@ -70,12 +70,12 @@ class Queue:
 
             raise exception
 
-    def _dequeue_bulk(self, queue_name, count):
+    def _dequeue_bulk(self, count):
         '''
         '''
         raise NotImplemented()
 
-    def enqueue(self, queue_name, value):
+    def enqueue(self, value):
         '''
         '''
         try:
@@ -84,7 +84,6 @@ class Queue:
             )
 
             self._enqueue(
-                queue_name=queue_name,
                 value=encoded_value,
             )
         except Exception as exception:
@@ -94,12 +93,12 @@ class Queue:
 
             raise exception
 
-    def _enqueue(self, queue_name, timeout):
+    def _enqueue(self, timeout):
         '''
         '''
         raise NotImplemented()
 
-    def enqueue_bulk(self, queue_name, values):
+    def enqueue_bulk(self, values):
         '''
         '''
         try:
@@ -113,7 +112,6 @@ class Queue:
                 encoded_values.append(encoded_value)
 
             self._enqueue_bulk(
-                queue_name=queue_name,
                 values=encoded_values,
             )
         except Exception as exception:
@@ -123,17 +121,16 @@ class Queue:
 
             raise exception
 
-    def _enqueue_bulk(self, queue_name, count):
+    def _enqueue_bulk(self, count):
         '''
         '''
         raise NotImplemented()
 
-    def add_result(self, queue_name, value):
+    def add_result(self, value):
         '''
         '''
         try:
             return self._add_result(
-                queue_name=queue_name,
                 value=value,
             )
         except Exception as exception:
@@ -143,17 +140,16 @@ class Queue:
 
             raise exception
 
-    def _add_result(self, queue_name, value):
+    def _add_result(self, value):
         '''
         '''
         raise NotImplemented()
 
-    def remove_result(self, queue_name, value):
+    def remove_result(self, value):
         '''
         '''
         try:
             return self._remove_result(
-                queue_name=queue_name,
                 value=value,
             )
         except Exception as exception:
@@ -163,17 +159,16 @@ class Queue:
 
             raise exception
 
-    def _remove_result(self, queue_name, value):
+    def _remove_result(self, value):
         '''
         '''
         raise NotImplemented()
 
-    def has_result(self, queue_name, value):
+    def has_result(self, value):
         '''
         '''
         try:
             return self._has_result(
-                queue_name=queue_name,
                 value=value,
             )
         except Exception as exception:
@@ -183,18 +178,16 @@ class Queue:
 
             raise exception
 
-    def _has_result(self, queue_name, value):
+    def _has_result(self, value):
         '''
         '''
         raise NotImplemented()
 
-    def len(self, queue_name):
+    def len(self):
         '''
         '''
         try:
-            return self._len(
-                queue_name=queue_name,
-            )
+            return self._len()
         except Exception as exception:
             self.logger.error(
                 msg=exception,
@@ -202,18 +195,16 @@ class Queue:
 
             raise exception
 
-    def _len(self, queue_name):
+    def _len(self):
         '''
         '''
         raise NotImplemented()
 
-    def flush(self, queue_name):
+    def flush(self):
         '''
         '''
         try:
-            return self._flush(
-                queue_name=queue_name,
-            )
+            return self._flush()
         except Exception as exception:
             self.logger.error(
                 msg=exception,
@@ -221,7 +212,7 @@ class Queue:
 
             raise exception
 
-    def _flush(self, queue_name):
+    def _flush(self):
         '''
         '''
         raise NotImplemented()
@@ -230,6 +221,7 @@ class Queue:
         '''
         '''
         state = {
+            'queue_name': self.queue_name,
             'connector': self.connector,
             'encoder': self.encoder,
         }
@@ -240,6 +232,7 @@ class Queue:
         '''
         '''
         self.__init__(
+            queue_name=value['queue_name'],
             connector=value['connector'],
             encoder=value['encoder'],
         )

@@ -42,16 +42,16 @@ class EventsTestWorker(worker.Worker):
     def on_success(self, returned_value, args, kwargs):
         self.succeeded = True
 
-    def on_failure(self, exception, args, kwargs):
+    def on_failure(self, exception, exception_traceback, args, kwargs):
         self.failed = True
 
-    def on_timeout(self, exception, args, kwargs):
+    def on_timeout(self, exception, exception_traceback, args, kwargs):
         self.timed_out = True
 
     def on_retry(self, args, kwargs):
         self.retried = True
 
-    def on_max_retries(self, args, kwargs):
+    def on_max_retries(self, exception, exception_traceback, args, kwargs):
         self.max_retried = True
 
 

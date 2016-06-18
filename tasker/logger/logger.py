@@ -32,6 +32,8 @@ class Logger:
         )
 
         for handler in self.logger.handlers:
+            handler.flush()
+            handler.close()
             self.logger.removeHandler(handler)
 
         stream_handler = logging.StreamHandler()

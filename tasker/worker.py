@@ -69,6 +69,7 @@ class Worker:
         queue_connector_obj = connector.__connectors__[self.connector['type']]
         queue_connector = queue_connector_obj(**self.connector['params'])
         self.task_queue = queue.regular.Queue(
+            queue_name=self.name,
             connector=queue_connector,
             encoder=encoder.encoder.Encoder(
                 compressor_name=self.compressor,
@@ -81,7 +82,6 @@ class Worker:
         '''
         try:
             self.task_queue.enqueue(
-                queue_name=self.name,
                 value=task,
             )
 
@@ -100,7 +100,6 @@ class Worker:
         '''
         try:
             self.task_queue.enqueue_bulk(
-                queue_name=self.name,
                 values=tasks,
             )
 
@@ -119,7 +118,6 @@ class Worker:
         '''
         try:
             task = self.task_queue.dequeue(
-                queue_name=self.name,
                 timeout=0,
             )
 
@@ -138,7 +136,6 @@ class Worker:
         '''
         try:
             tasks = self.task_queue.dequeue_bulk(
-                queue_name=self.name,
                 count=count,
             )
 
@@ -156,9 +153,7 @@ class Worker:
         '''
         '''
         try:
-            self.task_queue.flush(
-                queue_name=self.name,
-            )
+            self.task_queue.flush()
         except Exception as exception:
             self.logger.error(
                 msg='could not purge tasks: {exception}'.format(
@@ -170,9 +165,7 @@ class Worker:
         '''
         '''
         try:
-            number_of_enqueued_tasks = self.task_queue.len(
-                queue_name=self.name,
-            )
+            number_of_enqueued_tasks = self.task_queue.len()
 
             return number_of_enqueued_tasks
         except Exception as exception:
@@ -208,7 +201,6 @@ class Worker:
         while not added:
             completion_key = random.randint(0, 9999999999999)
             added = self.task_queue.add_result(
-                queue_name=self.name,
                 value=completion_key,
             )
 
@@ -221,7 +213,6 @@ class Worker:
 
         if completion_key:
             removed = self.task_queue.remove_result(
-                queue_name=self.name,
                 value=completion_key,
             )
 
@@ -236,12 +227,10 @@ class Worker:
 
         if completion_key:
             has_result = self.task_queue.has_result(
-                queue_name=self.name,
                 value=completion_key,
             )
             while has_result:
                 has_result = self.task_queue.has_result(
-                    queue_name=self.name,
                     value=completion_key,
                 )
 
@@ -319,6 +308,7 @@ class Worker:
         '''
         self.monitor_client = None
         self.heartbeater = None
+        self.supervisor_reporter = None
 
         self.run_forever = False
         if self.max_tasks_per_run == 0:
@@ -339,6 +329,12 @@ class Worker:
                 interval=self.heartbeat_interval,
             )
             self.heartbeater.start()
+
+        if self.supervisor_report_pipe:
+            self.supervisor_reporter = devices.reporter.Reporter(
+                pipe=self.supervisor_report_pipe,
+                interval=self.soft_timeout,
+            )
 
         self.killer = devices.killer.Killer(
             soft_timeout=self.soft_timeout,
@@ -367,10 +363,15 @@ class Worker:
         if self.heartbeater:
             self.heartbeater.stop()
 
-    def work_loop(self):
+        if self.supervisor_reporter:
+            self.supervisor_reporter.stop()
+            self.supervisor_report_pipe.close()
+
+    def work_loop(self, supervisor_report_pipe=None):
         '''
         '''
         try:
+            self.supervisor_report_pipe = supervisor_report_pipe
             self.begin_working()
 
             self.tasks_left = self.max_tasks_per_run

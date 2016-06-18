@@ -2,11 +2,11 @@ import unittest
 import datetime
 import time
 
-from .. import task
+from .. import worker
 from .. import scheduler
 
 
-class DummyTask(task.Task):
+class DummyTask(worker.Worker):
     name = 'dummy_test_task'
 
 
