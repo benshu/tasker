@@ -35,32 +35,20 @@ class Supervisor:
                 context = multiprocessing.get_context(
                     method='spawn',
                 )
-                heartbeat_pipe_parent, heartbeat_pipe_child = context.Pipe()
                 process = context.Process(
                     target=function,
-                    kwargs={
-                        'supervisor_report_pipe': heartbeat_pipe_child,
-                    },
+                    kwargs={},
                 )
                 process.start()
                 self.workers_processes.append(process)
 
-                run_time = 0.0
-                time_to_heartbeat = self.task.soft_timeout + 30
-                while process.is_alive():
-                    if heartbeat_pipe_parent.poll(0):
-                        time_to_heartbeat = self.task.soft_timeout + 30
-
-                    if self.task.global_timeout != 0.0 and run_time > self.task.global_timeout:
-                        raise TimeoutError('global timeout has reached')
-
-                    if time_to_heartbeat == 0:
-                        raise TimeoutError('task stopped respond to heartbeats')
-                    else:
-                        time_to_heartbeat -= 1
-
+                if self.task.global_timeout != 0.0:
                     process.join(
-                        timeout=1.0,
+                        timeout=self.task.global_timeout,
+                    )
+                else:
+                    process.join(
+                        timeout=None,
                     )
             except Exception as exception:
                 self.logger.error(

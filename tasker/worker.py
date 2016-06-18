@@ -308,7 +308,6 @@ class Worker:
         '''
         self.monitor_client = None
         self.heartbeater = None
-        self.supervisor_reporter = None
 
         self.run_forever = False
         if self.max_tasks_per_run == 0:
@@ -329,12 +328,6 @@ class Worker:
                 interval=self.heartbeat_interval,
             )
             self.heartbeater.start()
-
-        if self.supervisor_report_pipe:
-            self.supervisor_reporter = devices.reporter.Reporter(
-                pipe=self.supervisor_report_pipe,
-                interval=self.soft_timeout,
-            )
 
         self.killer = devices.killer.Killer(
             soft_timeout=self.soft_timeout,
@@ -363,15 +356,10 @@ class Worker:
         if self.heartbeater:
             self.heartbeater.stop()
 
-        if self.supervisor_reporter:
-            self.supervisor_reporter.stop()
-            self.supervisor_report_pipe.close()
-
-    def work_loop(self, supervisor_report_pipe=None):
+    def work_loop(self):
         '''
         '''
         try:
-            self.supervisor_report_pipe = supervisor_report_pipe
             self.begin_working()
 
             self.tasks_left = self.max_tasks_per_run
