@@ -380,9 +380,6 @@ class Worker:
                     )
                     self.tasks_to_finish.remove(task)
 
-                    if task_execution_result == 'timeout':
-                        return
-
                     if task_execution_result != 'retry':
                         self.report_complete(
                             task=task,
