@@ -220,21 +220,28 @@ class Worker:
         else:
             return True
 
-    def wait_task_finished(self, task):
+    def wait_task_finished(self, task, timeout=0):
         '''
         '''
         completion_key = task['completion_key']
+        elapsed_time = timeout
 
-        if completion_key:
+        if not completion_key:
+            return
+
+        has_result = self.task_queue.has_result(
+            value=completion_key,
+        )
+        while has_result:
+            if timeout and elapsed_time <= 0:
+                return
+
             has_result = self.task_queue.has_result(
                 value=completion_key,
             )
-            while has_result:
-                has_result = self.task_queue.has_result(
-                    value=completion_key,
-                )
 
-                time.sleep(0.2)
+            time.sleep(0.2)
+            elapsed_time -= 0.2
 
     def apply_async_one(self, *args, **kwargs):
         '''
