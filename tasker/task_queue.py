@@ -2,12 +2,17 @@ import time
 import datetime
 import random
 
+from . import logger
+
 
 class TaskQueue:
     '''
     '''
     def __init__(self, queue):
         self.queue = queue
+        self.logger = logger.logger.Logger(
+            logger_name='TaskQueue',
+        )
 
     def purge_tasks(self, task_name):
         '''
@@ -142,7 +147,7 @@ class TaskQueue:
         task_name_to_tasks = {}
         for task in tasks:
             if task['name'] in task_name_to_tasks:
-                task_name_to_tasks[task['name']] += task
+                task_name_to_tasks[task['name']] += [task]
             else:
                 task_name_to_tasks[task['name']] = [task]
 

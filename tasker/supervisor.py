@@ -42,7 +42,7 @@ class Supervisor:
                 process.start()
                 self.workers_processes.append(process)
 
-                if self.task.global_timeout != 0.0:
+                if self.task.config['global_timeout'] != 0.0:
                     process.join(
                         timeout=self.task.global_timeout,
                     )

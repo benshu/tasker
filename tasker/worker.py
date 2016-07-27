@@ -121,16 +121,22 @@ class Worker:
         '''
         '''
         return self.task_queue.apply_async_many(
-            tasks=self.tasks_to_finish,
+            tasks=tasks,
         )
 
     def get_next_tasks(self, tasks_left):
         '''
         '''
-        return self.task_queue.get_tasks(
-            task_name=self.name,
-            num_of_tasks=tasks_left,
-        )
+        if tasks_left > self.config['tasks_per_transaction']:
+            return self.task_queue.get_tasks(
+                task_name=self.name,
+                num_of_tasks=self.config['tasks_per_transaction'],
+            )
+        else:
+            return self.task_queue.get_tasks(
+                task_name=self.name,
+                num_of_tasks=tasks_left,
+            )
 
     def sigabrt_handler(self, signal_num, frame):
         '''
@@ -212,11 +218,12 @@ class Worker:
         try:
             self.begin_working()
 
-            self.tasks_left = self.max_tasks_per_run
+            self.tasks_left = self.config['max_tasks_per_run']
             while self.tasks_left > 0 or self.run_forever is True:
                 tasks = self.get_next_tasks(
                     tasks_left=self.tasks_left,
                 )
+
                 self.monitor_client.increment_process(
                     value=len(tasks),
                 )
