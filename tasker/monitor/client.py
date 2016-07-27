@@ -84,3 +84,50 @@ class StatisticsClient:
             host_name=value['host_name'],
             worker_name=value['worker_name'],
         )
+
+
+class StatisticsDummyClient:
+    '''
+    '''
+    def __init__(self, stats_server, host_name, worker_name):
+        self.stats_server = stats_server
+        self.host_name = host_name
+        self.worker_name = worker_name
+
+    def increment_stats(self, message_type, message_value):
+        pass
+
+    def increment_success(self, value=1):
+        pass
+
+    def increment_failure(self, value=1):
+        pass
+
+    def increment_retry(self, value=1):
+        pass
+
+    def increment_process(self, value=1):
+        pass
+
+    def increment_heartbeat(self, value=1):
+        pass
+
+    def __getstate__(self):
+        '''
+        '''
+        state = {
+            'stats_server': self.stats_server,
+            'host_name': self.host_name,
+            'worker_name': self.worker_name,
+        }
+
+        return state
+
+    def __setstate__(self, value):
+        '''
+        '''
+        self.__init__(
+            stats_server=value['stats_server'],
+            host_name=value['host_name'],
+            worker_name=value['worker_name'],
+        )

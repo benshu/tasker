@@ -22,6 +22,8 @@ class Killer:
         self.stop_event = threading.Event()
         self.stop_event.clear()
 
+        self.created = False
+
     def killing_loop(self):
         '''
         '''
@@ -35,18 +37,18 @@ class Killer:
             time.sleep(self.sleep_interval)
             self.time_elapsed += self.sleep_interval
 
-    def create(self):
-        '''
-        '''
-        self.killing_loop_thread = threading.Thread(
-            target=self.killing_loop,
-        )
-        self.killing_loop_thread.daemon = True
-        self.killing_loop_thread.start()
-
     def start(self):
         '''
         '''
+        if not self.created:
+            self.killing_loop_thread = threading.Thread(
+                target=self.killing_loop,
+            )
+            self.killing_loop_thread.daemon = True
+            self.killing_loop_thread.start()
+
+            self.created = True
+
         self.stop_event.set()
 
     def stop(self):

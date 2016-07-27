@@ -21,12 +21,11 @@ class Connector(_connector.Connector):
             socket_timeout=60,
         )
 
-    def pop(self, key, timeout=0):
+    def pop(self, key):
         '''
         '''
         value = self.connection.blpop(
             keys=[key],
-            timeout=timeout,
         )
 
         if value is None:

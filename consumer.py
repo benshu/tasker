@@ -5,32 +5,33 @@ import socket
 
 class Worker(tasker.worker.Worker):
     name = 'test_worker'
-
-    compressor = 'dummy'
-    serializer = 'pickle'
-    monitoring = {
-        'host_name': socket.gethostname(),
-        'stats_server': {
-            'host': 'localhost',
-            'port': 9999,
-        }
-    }
-    connector = {
-        'type': 'redis',
-        'params': {
-            'host': 'localhost',
-            'port': 6379,
-            'database': 0,
+    config = {
+        'compressor': 'dummy',
+        'serializer': 'pickle',
+        'monitoring': {
+            'host_name': socket.gethostname(),
+            'stats_server': {
+                'host': 'localhost',
+                'port': 9999,
+            }
         },
+        'connector': {
+            'type': 'redis',
+            'params': {
+                'host': 'localhost',
+                'port': 6379,
+                'database': 0,
+            },
+        },
+        'soft_timeout': 3.0,
+        'hard_timeout': 35.0,
+        'global_timeout': 0.0,
+        'max_tasks_per_run': 25000,
+        'tasks_per_transaction': 1000,
+        'max_retries': 3,
+        'report_completion': False,
+        'heartbeat_interval': 10.0,
     }
-    soft_timeout = 3.0
-    hard_timeout = 35.0
-    global_timeout = 0.0
-    max_tasks_per_run = 25000
-    tasks_per_transaction = 1000
-    max_retries = 3
-    report_completion = False
-    heartbeat_interval = 10.0
 
     def init(self):
         self.a = 0
