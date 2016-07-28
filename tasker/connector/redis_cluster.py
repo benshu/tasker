@@ -25,7 +25,7 @@ class Connector(_connector.Connector):
         '''
         '''
         value = self.connection.blpop(
-            keys=[key],
+            name=key,
         )
 
         if value is None:

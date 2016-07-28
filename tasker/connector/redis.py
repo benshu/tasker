@@ -29,13 +29,13 @@ class Connector(_connector.Connector):
         '''
         '''
         value = self.connection.lpop(
-            keys=[key],
+            name=key,
         )
 
         if value is None:
             return None
         else:
-            return value[1]
+            return value
 
     def pop_bulk(self, key, count):
         '''

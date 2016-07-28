@@ -1,22 +1,41 @@
 import unittest
 import time
-import logging
+import socket
 import multiprocessing
+import logging
 
 from .. import worker
 
 
 class EventsTestWorker(worker.Worker):
     name = 'events_test_worker'
-
-    compression = 'dummy'
-    soft_timeout = 2.0
-    hard_timeout = 0.0
-    max_tasks_per_run = 1
-    max_retries = 1
-    log_level = logging.CRITICAL + 10
-    report_completion = True
-    monitoring = {}
+    config = {
+        'compressor': 'dummy',
+        'serializer': 'pickle',
+        'monitoring': {
+            'host_name': socket.gethostname(),
+            'stats_server': {
+                'host': '',
+                'port': 9999,
+            }
+        },
+        'connector': {
+            'type': 'redis',
+            'params': {
+                'host': 'localhost',
+                'port': 6379,
+                'database': 0,
+            },
+        },
+        'soft_timeout': 2.0,
+        'hard_timeout': 0.0,
+        'global_timeout': 0.0,
+        'max_tasks_per_run': 1,
+        'max_retries': 1,
+        'tasks_per_transaction': 10,
+        'report_completion': True,
+        'heartbeat_interval': 10.0,
+    }
 
     def init(self):
         self.succeeded = False
@@ -24,6 +43,8 @@ class EventsTestWorker(worker.Worker):
         self.timed_out = False
         self.retried = False
         self.max_retried = False
+
+        self.logger.logger.setLevel(logging.CRITICAL + 10)
 
     def work(self, action):
         if action == 'succeeded':
@@ -113,9 +134,9 @@ class TaskTestCase(unittest.TestCase):
         )
 
     def test_time_out_event(self):
-        self.events_test_worker.soft_timeout = 2.0
-        self.events_test_worker.max_tasks_per_run = 1
-        self.events_test_worker.max_retries = 3
+        self.events_test_worker.config['soft_timeout'] = 2.0
+        self.events_test_worker.config['max_tasks_per_run'] = 1
+        self.events_test_worker.config['max_retries'] = 3
         self.events_test_worker.purge_tasks()
         self.events_test_worker.apply_async_one(
             action='timed_out',
@@ -138,8 +159,8 @@ class TaskTestCase(unittest.TestCase):
         )
 
     def test_retry_event(self):
-        self.events_test_worker.max_tasks_per_run = 1
-        self.events_test_worker.max_retries = 3
+        self.events_test_worker.config['max_tasks_per_run'] = 1
+        self.events_test_worker.config['max_retries'] = 3
         self.events_test_worker.purge_tasks()
         self.events_test_worker.apply_async_one(
             action='retried',
@@ -162,8 +183,8 @@ class TaskTestCase(unittest.TestCase):
         )
 
     def test_max_retries_event(self):
-        self.events_test_worker.max_tasks_per_run = 3
-        self.events_test_worker.max_retries = 2
+        self.events_test_worker.config['max_tasks_per_run'] = 3
+        self.events_test_worker.config['max_retries'] = 2
         self.events_test_worker.purge_tasks()
         self.events_test_worker.apply_async_one(
             action='max_retried',

@@ -72,7 +72,9 @@ class Worker:
     def purge_tasks(self):
         '''
         '''
-        return self.task_queue.purge_tasks()
+        return self.task_queue.purge_tasks(
+            task_name=self.name,
+        )
 
     def number_of_enqueued_tasks(self):
         '''
@@ -113,9 +115,11 @@ class Worker:
         '''
         task = self.craft_task(*args, **kwargs)
 
-        return self.task_queue.apply_async_one(
+        self.task_queue.apply_async_one(
             task=task,
         )
+
+        return task
 
     def apply_async_many(self, tasks):
         '''
