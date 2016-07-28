@@ -9,7 +9,7 @@ class Killer:
     def __init__(self, soft_timeout, soft_timeout_signal, hard_timeout, hard_timeout_signal):
         super().__init__()
 
-        self.sleep_interval = 1.0
+        self.sleep_interval = 0.1
 
         self.soft_timeout = soft_timeout
         self.hard_timeout = hard_timeout
