@@ -22,7 +22,13 @@ class DevicesTestCase(unittest.TestCase):
             interval=1.0,
         )
 
-        self.killer = devices.killer.Killer(
+        self.local_killer = devices.killer.LocalKiller(
+            soft_timeout=1.0,
+            soft_timeout_signal=signal.SIGINT,
+            hard_timeout=3.0,
+            hard_timeout_signal=signal.SIGABRT,
+        )
+        self.remote_killer = devices.killer.RemoteKiller(
             soft_timeout=1.0,
             soft_timeout_signal=signal.SIGINT,
             hard_timeout=3.0,
@@ -53,8 +59,8 @@ class DevicesTestCase(unittest.TestCase):
         time.sleep(1.2)
         self.assertEqual(self.monitor_client.counter, 2)
 
-    def test_killer(self):
-        self.killer.start()
+    def test_local_killer(self):
+        self.local_killer.start()
         self.assertFalse(self.sigabrt_fired)
         self.assertFalse(self.sigint_fired)
         time.sleep(1.2)
@@ -66,7 +72,7 @@ class DevicesTestCase(unittest.TestCase):
         time.sleep(1.2)
         self.assertTrue(self.sigabrt_fired)
         self.assertTrue(self.sigint_fired)
-        self.killer.stop()
+        self.local_killer.stop()
 
         self.sigint_fired = False
         self.sigabrt_fired = False
@@ -77,26 +83,74 @@ class DevicesTestCase(unittest.TestCase):
         self.assertFalse(self.sigabrt_fired)
         self.assertFalse(self.sigint_fired)
 
-        self.killer.reset()
-        self.killer.start()
+        self.local_killer.reset()
+        self.local_killer.start()
         self.assertFalse(self.sigabrt_fired)
         self.assertFalse(self.sigint_fired)
         time.sleep(0.5)
         self.assertFalse(self.sigabrt_fired)
         self.assertFalse(self.sigint_fired)
-        self.killer.reset()
+        self.local_killer.reset()
         time.sleep(0.5)
         self.assertFalse(self.sigabrt_fired)
         self.assertFalse(self.sigint_fired)
-        self.killer.reset()
+        self.local_killer.reset()
         time.sleep(0.5)
         self.assertFalse(self.sigabrt_fired)
         self.assertFalse(self.sigint_fired)
-        self.killer.reset()
+        self.local_killer.reset()
         time.sleep(0.5)
         self.assertFalse(self.sigabrt_fired)
         self.assertFalse(self.sigint_fired)
-        self.killer.reset()
-        self.killer.stop()
+        self.local_killer.reset()
+        self.local_killer.stop()
+        self.assertFalse(self.sigabrt_fired)
+        self.assertFalse(self.sigint_fired)
+
+    def test_remote_killer(self):
+        self.remote_killer.start()
+        self.assertFalse(self.sigabrt_fired)
+        self.assertFalse(self.sigint_fired)
+        time.sleep(1.2)
+        self.assertFalse(self.sigabrt_fired)
+        self.assertTrue(self.sigint_fired)
+        time.sleep(1.2)
+        self.assertFalse(self.sigabrt_fired)
+        self.assertTrue(self.sigint_fired)
+        time.sleep(1.2)
+        self.assertTrue(self.sigabrt_fired)
+        self.assertTrue(self.sigint_fired)
+        self.remote_killer.stop()
+
+        self.sigint_fired = False
+        self.sigabrt_fired = False
+        time.sleep(1.2)
+        self.assertFalse(self.sigabrt_fired)
+        self.assertFalse(self.sigint_fired)
+        time.sleep(1.2)
+        self.assertFalse(self.sigabrt_fired)
+        self.assertFalse(self.sigint_fired)
+
+        self.remote_killer.reset()
+        self.remote_killer.start()
+        self.assertFalse(self.sigabrt_fired)
+        self.assertFalse(self.sigint_fired)
+        time.sleep(0.5)
+        self.assertFalse(self.sigabrt_fired)
+        self.assertFalse(self.sigint_fired)
+        self.remote_killer.reset()
+        time.sleep(0.5)
+        self.assertFalse(self.sigabrt_fired)
+        self.assertFalse(self.sigint_fired)
+        self.remote_killer.reset()
+        time.sleep(0.5)
+        self.assertFalse(self.sigabrt_fired)
+        self.assertFalse(self.sigint_fired)
+        self.remote_killer.reset()
+        time.sleep(0.5)
+        self.assertFalse(self.sigabrt_fired)
+        self.assertFalse(self.sigint_fired)
+        self.remote_killer.reset()
+        self.remote_killer.stop()
         self.assertFalse(self.sigabrt_fired)
         self.assertFalse(self.sigint_fired)

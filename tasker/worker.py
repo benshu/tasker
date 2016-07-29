@@ -195,7 +195,7 @@ class Worker:
             )
             self.heartbeater = devices.heartbeater.DummyHeartbeater()
 
-        self.killer = devices.killer.Killer(
+        self.killer = devices.killer.LocalKiller(
             soft_timeout=self.config['timeouts']['soft_timeout'],
             soft_timeout_signal=signal.SIGINT,
             hard_timeout=self.config['timeouts']['hard_timeout'],
