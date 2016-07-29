@@ -10,8 +10,10 @@ from .. import worker
 class EventsTestWorker(worker.Worker):
     name = 'events_test_worker'
     config = {
-        'compressor': 'dummy',
-        'serializer': 'pickle',
+        'encoder': {
+            'compressor': 'dummy',
+            'serializer': 'pickle',
+        },
         'monitoring': {
             'host_name': socket.gethostname(),
             'stats_server': {
@@ -27,9 +29,11 @@ class EventsTestWorker(worker.Worker):
                 'database': 0,
             },
         },
-        'soft_timeout': 2.0,
-        'hard_timeout': 0.0,
-        'global_timeout': 0.0,
+        'timeouts': {
+            'soft_timeout': 2.0,
+            'hard_timeout': 0.0,
+            'global_timeout': 0.0,
+        },
         'max_tasks_per_run': 1,
         'max_retries': 1,
         'tasks_per_transaction': 10,

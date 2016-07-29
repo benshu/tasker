@@ -17,8 +17,10 @@ class Worker:
     '''
     name = 'worker_name'
     config = {
-        'compressor': 'dummy',
-        'serializer': 'pickle',
+        'encoder': {
+            'compressor': 'dummy',
+            'serializer': 'pickle',
+        },
         'monitoring': {
             'host_name': socket.gethostname(),
             'stats_server': {
@@ -34,9 +36,11 @@ class Worker:
                 'database': 0,
             },
         },
-        'soft_timeout': 30.0,
-        'hard_timeout': 35.0,
-        'global_timeout': 0.0,
+        'timeouts': {
+            'soft_timeout': 30.0,
+            'hard_timeout': 35.0,
+            'global_timeout': 0.0,
+        },
         'max_tasks_per_run': 10,
         'max_retries': 3,
         'tasks_per_transaction': 10,
@@ -61,8 +65,8 @@ class Worker:
         queue_obj = queue.regular.Queue(
             connector=queue_connector,
             encoder=encoder.encoder.Encoder(
-                compressor_name=self.config['compressor'],
-                serializer_name=self.config['serializer'],
+                compressor_name=self.config['encoder']['compressor'],
+                serializer_name=self.config['encoder']['serializer'],
             ),
         )
         self.task_queue = task_queue.TaskQueue(
@@ -192,9 +196,9 @@ class Worker:
             self.heartbeater = devices.heartbeater.DummyHeartbeater()
 
         self.killer = devices.killer.Killer(
-            soft_timeout=self.config['soft_timeout'],
+            soft_timeout=self.config['timeouts']['soft_timeout'],
             soft_timeout_signal=signal.SIGINT,
-            hard_timeout=self.config['hard_timeout'],
+            hard_timeout=self.config['timeouts']['hard_timeout'],
             hard_timeout_signal=signal.SIGABRT,
         )
         signal.signal(signal.SIGABRT, self.sigabrt_handler)

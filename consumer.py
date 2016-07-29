@@ -6,8 +6,10 @@ import socket
 class Worker(tasker.worker.Worker):
     name = 'test_worker'
     config = {
-        'compressor': 'dummy',
-        'serializer': 'pickle',
+        'encoder': {
+            'compressor': 'dummy',
+            'serializer': 'pickle',
+        },
         'monitoring': {
             'host_name': socket.gethostname(),
             'stats_server': {
@@ -23,9 +25,11 @@ class Worker(tasker.worker.Worker):
                 'database': 0,
             },
         },
-        'soft_timeout': 3.0,
-        'hard_timeout': 35.0,
-        'global_timeout': 0.0,
+        'timeouts': {
+            'soft_timeout': 3.0,
+            'hard_timeout': 35.0,
+            'global_timeout': 0.0,
+        },
         'max_tasks_per_run': 25000,
         'tasks_per_transaction': 1000,
         'max_retries': 3,
