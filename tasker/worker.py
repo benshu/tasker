@@ -39,6 +39,7 @@ class Worker:
         'timeouts': {
             'soft_timeout': 30.0,
             'hard_timeout': 35.0,
+            'critical_timeout': 0.0,
             'global_timeout': 0.0,
         },
         'max_tasks_per_run': 10,
@@ -195,12 +196,26 @@ class Worker:
             )
             self.heartbeater = devices.heartbeater.DummyHeartbeater()
 
-        self.killer = devices.killer.LocalKiller(
-            soft_timeout=self.config['timeouts']['soft_timeout'],
-            soft_timeout_signal=signal.SIGINT,
-            hard_timeout=self.config['timeouts']['hard_timeout'],
-            hard_timeout_signal=signal.SIGABRT,
-        )
+        if self.config['timeouts']['critical_timeout'] != 0:
+            self.killer = devices.killer.LocalKiller(
+                pid=os.getpid(),
+                soft_timeout=self.config['timeouts']['soft_timeout'],
+                soft_timeout_signal=signal.SIGINT,
+                hard_timeout=self.config['timeouts']['hard_timeout'],
+                hard_timeout_signal=signal.SIGABRT,
+                critical_timeout=self.config['timeouts']['critical_timeout'],
+                critical_timeout_signal=signal.SIGTERM,
+            )
+        else:
+            self.killer = devices.killer.RemoteKiller(
+                pid=os.getpid(),
+                soft_timeout=self.config['timeouts']['soft_timeout'],
+                soft_timeout_signal=signal.SIGINT,
+                hard_timeout=self.config['timeouts']['hard_timeout'],
+                hard_timeout_signal=signal.SIGABRT,
+                critical_timeout=self.config['timeouts']['critical_timeout'],
+                critical_timeout_signal=signal.SIGTERM,
+            )
         signal.signal(signal.SIGABRT, self.sigabrt_handler)
         signal.signal(signal.SIGINT, self.sigint_handler)
 
