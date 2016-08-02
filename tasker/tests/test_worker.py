@@ -35,6 +35,9 @@ class EventsTestWorker(worker.Worker):
             'critical_timeout': 0.0,
             'global_timeout': 0.0,
         },
+        'executor': {
+            'type': 'serial',
+        },
         'max_tasks_per_run': 1,
         'max_retries': 1,
         'tasks_per_transaction': 10,

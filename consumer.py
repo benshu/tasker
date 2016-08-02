@@ -28,7 +28,13 @@ class Worker(tasker.worker.Worker):
         'timeouts': {
             'soft_timeout': 3.0,
             'hard_timeout': 35.0,
+            'critical_timeout': 0.0,
             'global_timeout': 0.0,
+        },
+        'executor': {
+            'type': 'serial',
+            # 'type': 'threaded',
+            # 'concurrency': 50,
         },
         'max_tasks_per_run': 25000,
         'tasks_per_transaction': 1000,
@@ -42,10 +48,10 @@ class Worker(tasker.worker.Worker):
 
     def work(self, num):
         self.a += num
-
         if num == 4:
             self.logger.error('start')
             self.logger.error(time.time())
+            time.sleep(1)
         if num == 6:
             self.logger.error('end')
             self.logger.error(time.time())

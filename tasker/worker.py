@@ -2,6 +2,7 @@ import os
 import signal
 import traceback
 import socket
+import concurrent.futures
 
 from . import connector
 from . import devices
@@ -42,6 +43,11 @@ class Worker:
             'critical_timeout': 0.0,
             'global_timeout': 0.0,
         },
+        'executor': {
+            'type': 'serial',
+            # 'type': 'threaded',
+            # 'concurrency': 50,
+        },
         'max_tasks_per_run': 10,
         'max_retries': 3,
         'tasks_per_transaction': 10,
@@ -73,6 +79,25 @@ class Worker:
         self.task_queue = task_queue.TaskQueue(
             queue=queue_obj,
         )
+
+        if self.config['monitoring']:
+            self.monitor_client = monitor.client.StatisticsClient(
+                stats_server=self.config['monitoring']['stats_server'],
+                host_name=self.config['monitoring']['host_name'],
+                worker_name=self.name,
+            )
+            self.heartbeater = devices.heartbeater.Heartbeater(
+                monitor_client=self.monitor_client,
+                interval=self.config['heartbeat_interval'],
+            )
+            self.heartbeater.start()
+        else:
+            self.monitor_client = monitor.client.StatisticsDummyClient(
+                stats_server=self.config['monitoring']['stats_server'],
+                host_name=self.config['monitoring']['host_name'],
+                worker_name=self.name,
+            )
+            self.heartbeater = devices.heartbeater.DummyHeartbeater()
 
     def purge_tasks(self):
         '''
@@ -147,220 +172,57 @@ class Worker:
                 num_of_tasks=tasks_left,
             )
 
-    def sigabrt_handler(self, signal_num, frame):
-        '''
-        '''
-        try:
-            self.tasks_to_finish.remove(self.current_task)
-
-            self._on_timeout(
-                exception=TimeoutError('hard timeout'),
-                exception_traceback=''.join(traceback.format_stack()),
-                args=self.current_task['args'],
-                kwargs=self.current_task['kwargs'],
-            )
-        except:
-            pass
-
-        self.end_working()
-
-        os.kill(os.getpid(), signal.SIGTERM)
-
-    def sigint_handler(self, signal_num, frame):
-        '''
-        '''
-        raise WorkerTimedout()
-
-    def begin_working(self):
-        '''
-        '''
-        self.tasks_to_finish = []
-        self.current_task = None
-        self.tasks_left = 0
-
-        if self.config['monitoring']:
-            self.monitor_client = monitor.client.StatisticsClient(
-                stats_server=self.config['monitoring']['stats_server'],
-                host_name=self.config['monitoring']['host_name'],
-                worker_name=self.name,
-            )
-            self.heartbeater = devices.heartbeater.Heartbeater(
-                monitor_client=self.monitor_client,
-                interval=self.config['heartbeat_interval'],
-            )
-            self.heartbeater.start()
-        else:
-            self.monitor_client = monitor.client.StatisticsDummyClient(
-                stats_server=self.config['monitoring']['stats_server'],
-                host_name=self.config['monitoring']['host_name'],
-                worker_name=self.name,
-            )
-            self.heartbeater = devices.heartbeater.DummyHeartbeater()
-
-        if self.config['timeouts']['critical_timeout'] == 0:
-            self.killer = devices.killer.LocalKiller(
-                pid=os.getpid(),
-                soft_timeout=self.config['timeouts']['soft_timeout'],
-                soft_timeout_signal=signal.SIGINT,
-                hard_timeout=self.config['timeouts']['hard_timeout'],
-                hard_timeout_signal=signal.SIGABRT,
-                critical_timeout=self.config['timeouts']['critical_timeout'],
-                critical_timeout_signal=signal.SIGTERM,
-            )
-        else:
-            self.killer = devices.killer.RemoteKiller(
-                pid=os.getpid(),
-                soft_timeout=self.config['timeouts']['soft_timeout'],
-                soft_timeout_signal=signal.SIGINT,
-                hard_timeout=self.config['timeouts']['hard_timeout'],
-                hard_timeout_signal=signal.SIGABRT,
-                critical_timeout=self.config['timeouts']['critical_timeout'],
-                critical_timeout_signal=signal.SIGTERM,
-            )
-        signal.signal(signal.SIGABRT, self.sigabrt_handler)
-        signal.signal(signal.SIGINT, self.sigint_handler)
-
-        self.init()
-
-    def end_working(self):
-        '''
-        '''
-        if self.tasks_to_finish:
-            self.task_queue.apply_async_many(
-                tasks=self.tasks_to_finish,
-            )
-
-        signal.signal(signal.SIGABRT, signal.SIG_DFL)
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-        self.heartbeater.stop()
-        self.killer.stop()
-
     def work_loop(self):
         '''
         '''
         try:
-            self.begin_working()
+            if self.config['executor']['type'] == 'serial':
+                self.executor = SerialExecutor(
+                    worker=self,
+                )
+            elif self.config['executor']['type'] == 'threaded':
+                self.executor = ThreadedExecutor(
+                    worker=self,
+                    concurrency=self.config['executor']['concurrency'],
+                )
 
-            self.tasks_left = self.config['max_tasks_per_run']
-            while self.tasks_left > 0 or self.run_forever is True:
+            self.executor.begin_working()
+
+            tasks_left = self.config['max_tasks_per_run']
+            while tasks_left > 0 or self.run_forever is True:
                 tasks = self.get_next_tasks(
-                    tasks_left=self.tasks_left,
+                    tasks_left=tasks_left,
                 )
 
                 self.monitor_client.increment_process(
                     value=len(tasks),
                 )
 
-                self.tasks_to_finish = tasks.copy()
-                for task in tasks:
-                    self.current_task = task
-                    task_execution_result = self.execute_task(
-                        task=task,
-                    )
-                    self.tasks_to_finish.remove(task)
+                self.executor.execute_tasks(
+                    tasks=tasks,
+                )
 
-                    if task_execution_result != 'retry':
-                        self.report_complete(
-                            task=task,
-                        )
-
-                    if not self.run_forever:
-                        self.tasks_left -= 1
+                if not self.run_forever:
+                    tasks_left -= len(tasks)
         except Exception as exception:
             exception_traceback = traceback.format_exc()
             self.logger.log_task_failure(
                 failure_reason='Task Execution Exception',
                 task_name=self.name,
-                args=self.current_task['args'],
-                kwargs=self.current_task['kwargs'],
+                args=(),
+                kwargs={},
                 exception=exception,
                 exception_traceback=exception_traceback,
             )
         finally:
-            self.end_working()
-
-    def execute_task(self, task):
-        '''
-        '''
-        try:
-            self.killer.reset()
-            self.killer.start()
-
-            returned_value = self.work(
-                *task['args'],
-                **task['kwargs']
-            )
-
-            self.killer.stop()
-
-            self._on_success(
-                returned_value=returned_value,
-                args=task['args'],
-                kwargs=task['kwargs'],
-            )
-
-            return 'success'
-        except WorkerTimedout as exception:
-            exception_traceback = traceback.format_exc()
-            self._on_timeout(
-                exception=exception,
-                exception_traceback=exception_traceback,
-                args=task['args'],
-                kwargs=task['kwargs'],
-            )
-
-            return 'timeout'
-        except WorkerRetry as exception:
-            exception_traceback = traceback.format_exc()
-            self._on_retry(
-                exception=exception,
-                exception_traceback=exception_traceback,
-                args=task['args'],
-                kwargs=task['kwargs'],
-            )
-
-            return 'retry'
-        except WorkerMaxRetries as exception:
-            exception_traceback = traceback.format_exc()
-            self._on_max_retries(
-                exception=exception,
-                exception_traceback=exception_traceback,
-                args=task['args'],
-                kwargs=task['kwargs'],
-            )
-
-            return 'max_retries'
-        except Exception as exception:
-            exception_traceback = traceback.format_exc()
-            self._on_failure(
-                exception=exception,
-                exception_traceback=exception_traceback,
-                args=task['args'],
-                kwargs=task['kwargs'],
-            )
-
-            return 'failure'
-        finally:
-            self.killer.stop()
+            self.executor.end_working()
 
     def retry(self):
         '''
         '''
-        if self.config['max_retries'] <= self.current_task['run_count']:
-            raise WorkerMaxRetries(
-                'max retries of: {max_retries}, exceeded'.format(
-                    max_retries=self.config['max_retries'],
-                )
-            )
-
-        self.task_queue.retry(
-            task=self.current_task,
-        )
-
         raise WorkerRetry
 
-    def _on_success(self, returned_value, args, kwargs):
+    def _on_success(self, task, returned_value, args, kwargs):
         '''
         '''
         self.monitor_client.increment_success()
@@ -389,7 +251,7 @@ class Worker:
                 exception_traceback=exception_traceback,
             )
 
-    def _on_failure(self, exception, exception_traceback, args, kwargs):
+    def _on_failure(self, task, exception, exception_traceback, args, kwargs):
         '''
         '''
         self.monitor_client.increment_failure()
@@ -421,7 +283,7 @@ class Worker:
                 exception_traceback=exception_traceback,
             )
 
-    def _on_retry(self, exception, exception_traceback, args, kwargs):
+    def _on_retry(self, task, exception, exception_traceback, args, kwargs):
         '''
         '''
         self.monitor_client.increment_retry()
@@ -453,7 +315,11 @@ class Worker:
                 exception_traceback=exception_traceback,
             )
 
-    def _on_timeout(self, exception, exception_traceback, args, kwargs):
+        self.task_queue.retry(
+            task=task,
+        )
+
+    def _on_timeout(self, task, exception, exception_traceback, args, kwargs):
         '''
         '''
         self.monitor_client.increment_failure()
@@ -485,7 +351,7 @@ class Worker:
                 exception_traceback=exception_traceback,
             )
 
-    def _on_max_retries(self, exception, exception_traceback, args, kwargs):
+    def _on_max_retries(self, task, exception, exception_traceback, args, kwargs):
         '''
         '''
         self.monitor_client.increment_failure()
@@ -537,7 +403,7 @@ class Worker:
         '''
         pass
 
-    def on_retry(self, exception, exception_traceback,args, kwargs):
+    def on_retry(self, exception, exception_traceback, args, kwargs):
         '''
         '''
         pass
@@ -573,15 +439,271 @@ class Worker:
         )
 
 
+class SerialExecutor:
+    '''
+    '''
+    def __init__(self, worker):
+        self.worker = worker
+
+    def sigabrt_handler(self, signal_num, frame):
+        '''
+        '''
+        try:
+            self.tasks_to_finish.remove(self.current_task)
+
+            self.worker._on_timeout(
+                task=self.current_task,
+                exception=TimeoutError('hard timeout'),
+                exception_traceback=''.join(traceback.format_stack()),
+                args=self.current_task['args'],
+                kwargs=self.current_task['kwargs'],
+            )
+        except Exception as exception:
+            exception_traceback = traceback.format_exc()
+            self.logger.log_task_failure(
+                failure_reason='Exception during sigabrt_handler',
+                task_name=self.name,
+                args=self.current_task['args'],
+                kwargs=self.current_task['kwargs'],
+                exception=exception,
+                exception_traceback=exception_traceback,
+            )
+
+        self.end_working()
+
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    def sigint_handler(self, signal_num, frame):
+        '''
+        '''
+        raise WorkerTimedout()
+
+    def begin_working(self):
+        '''
+        '''
+        if self.worker.config['timeouts']['critical_timeout'] == 0:
+            self.killer = devices.killer.LocalKiller(
+                pid=os.getpid(),
+                soft_timeout=self.worker.config['timeouts']['soft_timeout'],
+                soft_timeout_signal=signal.SIGINT,
+                hard_timeout=self.worker.config['timeouts']['hard_timeout'],
+                hard_timeout_signal=signal.SIGABRT,
+                critical_timeout=self.worker.config['timeouts']['critical_timeout'],
+                critical_timeout_signal=signal.SIGTERM,
+            )
+        else:
+            self.killer = devices.killer.RemoteKiller(
+                pid=os.getpid(),
+                soft_timeout=self.worker.config['timeouts']['soft_timeout'],
+                soft_timeout_signal=signal.SIGINT,
+                hard_timeout=self.worker.config['timeouts']['hard_timeout'],
+                hard_timeout_signal=signal.SIGABRT,
+                critical_timeout=self.worker.config['timeouts']['critical_timeout'],
+                critical_timeout_signal=signal.SIGTERM,
+            )
+        signal.signal(signal.SIGABRT, self.sigabrt_handler)
+        signal.signal(signal.SIGINT, self.sigint_handler)
+
+        self.worker.init()
+
+    def end_working(self):
+        '''
+        '''
+        if self.tasks_to_finish:
+            self.worker.task_queue.apply_async_many(
+                tasks=self.tasks_to_finish,
+            )
+
+        signal.signal(signal.SIGABRT, signal.SIG_DFL)
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+        self.worker.heartbeater.stop()
+        self.killer.stop()
+
+    def execute_tasks(self, tasks):
+        '''
+        '''
+        self.tasks_to_finish = tasks.copy()
+
+        for task in tasks:
+            self.current_task = task
+            status = self.execute_task(
+                task=task,
+            )
+            self.tasks_to_finish.remove(task)
+            if status != 'retry':
+                self.worker.report_complete(
+                    task=task,
+                )
+
+    def execute_task(self, task):
+        '''
+        '''
+        try:
+            self.killer.reset()
+            self.killer.start()
+
+            returned_value = self.worker.work(
+                *task['args'],
+                **task['kwargs']
+            )
+
+            self.killer.stop()
+
+            self.worker._on_success(
+                task=task,
+                returned_value=returned_value,
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+
+            return 'success'
+        except WorkerTimedout as exception:
+            exception_traceback = traceback.format_exc()
+            self.worker._on_timeout(
+                task=task,
+                exception=exception,
+                exception_traceback=exception_traceback,
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+
+            return 'timeout'
+        except WorkerRetry as exception:
+            exception_traceback = traceback.format_exc()
+
+            if self.worker.config['max_retries'] <= task['run_count']:
+                self.worker._on_max_retries(
+                    task=task,
+                    exception=exception,
+                    exception_traceback=exception_traceback,
+                    args=task['args'],
+                    kwargs=task['kwargs'],
+                )
+
+                return 'max_retries'
+            else:
+                self.worker._on_retry(
+                    task=task,
+                    exception=exception,
+                    exception_traceback=exception_traceback,
+                    args=task['args'],
+                    kwargs=task['kwargs'],
+                )
+
+                return 'retry'
+        except Exception as exception:
+            exception_traceback = traceback.format_exc()
+            self.worker._on_failure(
+                task=task,
+                exception=exception,
+                exception_traceback=exception_traceback,
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+
+            return 'failure'
+        finally:
+            self.killer.reset()
+            self.killer.stop()
+
+
+class ThreadedExecutor:
+    '''
+    '''
+    def __init__(self, worker, concurrency):
+        self.worker = worker
+        self.concurrency = concurrency
+
+    def begin_working(self):
+        '''
+        '''
+        self.worker.init()
+
+    def end_working(self):
+        '''
+        '''
+        self.worker.heartbeater.stop()
+
+    def execute_tasks(self, tasks):
+        '''
+        '''
+        future_to_task = {}
+
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.concurrency,
+        ) as executor:
+            for task in tasks:
+                future = executor.submit(self.execute_task, task)
+                future_to_task[future] = task
+
+        for future in concurrent.futures.as_completed(future_to_task):
+            task = future_to_task[future]
+
+            status = future.result()
+            if status != 'retry':
+                self.worker.report_complete(
+                    task=task,
+                )
+
+    def execute_task(self, task):
+        '''
+        '''
+        try:
+            returned_value = self.worker.work(
+                *task['args'],
+                **task['kwargs']
+            )
+
+            self.worker._on_success(
+                task=task,
+                returned_value=returned_value,
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+
+            return 'success'
+        except WorkerRetry as exception:
+            exception_traceback = traceback.format_exc()
+
+            if self.worker.config['max_retries'] <= task['run_count']:
+                self.worker._on_max_retries(
+                    task=task,
+                    exception=exception,
+                    exception_traceback=exception_traceback,
+                    args=task['args'],
+                    kwargs=task['kwargs'],
+                )
+
+                return 'max_retries'
+            else:
+                self.worker._on_retry(
+                    task=task,
+                    exception=exception,
+                    exception_traceback=exception_traceback,
+                    args=task['args'],
+                    kwargs=task['kwargs'],
+                )
+
+                return 'retry'
+        except Exception as exception:
+            exception_traceback = traceback.format_exc()
+            self.worker._on_failure(
+                task=task,
+                exception=exception,
+                exception_traceback=exception_traceback,
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+
+            return 'failure'
+
+
 class WorkerException(Exception):
     pass
 
 
 class WorkerTimedout(WorkerException):
-    pass
-
-
-class WorkerMaxRetries(WorkerException):
     pass
 
 

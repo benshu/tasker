@@ -48,6 +48,11 @@ class Heartbeater(threading.Thread):
         '''
         self._stop_event.clear()
 
+    def __del__(self):
+        '''
+        '''
+        self.stop()
+
 
 class DummyHeartbeater:
     '''
