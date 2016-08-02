@@ -32,6 +32,7 @@ class EventsTestWorker(worker.Worker):
         'timeouts': {
             'soft_timeout': 2.0,
             'hard_timeout': 0.0,
+            'critical_timeout': 0.0,
             'global_timeout': 0.0,
         },
         'max_tasks_per_run': 1,
@@ -73,7 +74,7 @@ class EventsTestWorker(worker.Worker):
     def on_timeout(self, exception, exception_traceback, args, kwargs):
         self.timed_out = True
 
-    def on_retry(self, args, kwargs):
+    def on_retry(self, exception, exception_traceback, args, kwargs):
         self.retried = True
 
     def on_max_retries(self, exception, exception_traceback, args, kwargs):

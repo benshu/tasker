@@ -168,7 +168,7 @@ class Worker:
     def sigint_handler(self, signal_num, frame):
         '''
         '''
-        raise TimeoutError()
+        raise WorkerTimedout()
 
     def begin_working(self):
         '''
@@ -300,7 +300,7 @@ class Worker:
             )
 
             return 'success'
-        except TimeoutError as exception:
+        except WorkerTimedout as exception:
             exception_traceback = traceback.format_exc()
             self._on_timeout(
                 exception=exception,
@@ -310,14 +310,17 @@ class Worker:
             )
 
             return 'timeout'
-        except WorkerRetryException as exception:
+        except WorkerRetry as exception:
+            exception_traceback = traceback.format_exc()
             self._on_retry(
+                exception=exception,
+                exception_traceback=exception_traceback,
                 args=task['args'],
                 kwargs=task['kwargs'],
             )
 
             return 'retry'
-        except WorkerMaxRetriesException as exception:
+        except WorkerMaxRetries as exception:
             exception_traceback = traceback.format_exc()
             self._on_max_retries(
                 exception=exception,
@@ -336,7 +339,7 @@ class Worker:
                 kwargs=task['kwargs'],
             )
 
-            return 'exception'
+            return 'failure'
         finally:
             self.killer.stop()
 
@@ -344,7 +347,7 @@ class Worker:
         '''
         '''
         if self.config['max_retries'] <= self.current_task['run_count']:
-            raise WorkerMaxRetriesException(
+            raise WorkerMaxRetries(
                 'max retries of: {max_retries}, exceeded'.format(
                     max_retries=self.config['max_retries'],
                 )
@@ -354,7 +357,7 @@ class Worker:
             task=self.current_task,
         )
 
-        raise WorkerRetryException
+        raise WorkerRetry
 
     def _on_success(self, returned_value, args, kwargs):
         '''
@@ -391,7 +394,7 @@ class Worker:
         self.monitor_client.increment_failure()
 
         self.logger.log_task_failure(
-            failure_reason='Failue',
+            failure_reason='Failure',
             task_name=self.name,
             args=args,
             kwargs=kwargs,
@@ -417,19 +420,24 @@ class Worker:
                 exception_traceback=exception_traceback,
             )
 
-    def _on_retry(self, args, kwargs):
+    def _on_retry(self, exception, exception_traceback, args, kwargs):
         '''
         '''
         self.monitor_client.increment_retry()
 
-        self.logger.log_task_retry(
+        self.logger.log_task_failure(
+            failure_reason='Retry',
             task_name=self.name,
             args=args,
             kwargs=kwargs,
+            exception=exception,
+            exception_traceback=exception_traceback,
         )
 
         try:
             self.on_retry(
+                exception=exception,
+                exception_traceback=exception_traceback,
                 args=args,
                 kwargs=kwargs,
             )
@@ -528,7 +536,7 @@ class Worker:
         '''
         pass
 
-    def on_retry(self, args, kwargs):
+    def on_retry(self, exception, exception_traceback,args, kwargs):
         '''
         '''
         pass
@@ -568,9 +576,13 @@ class WorkerException(Exception):
     pass
 
 
-class WorkerMaxRetriesException(WorkerException):
+class WorkerTimedout(WorkerException):
     pass
 
 
-class WorkerRetryException(WorkerException):
+class WorkerMaxRetries(WorkerException):
+    pass
+
+
+class WorkerRetry(WorkerException):
     pass

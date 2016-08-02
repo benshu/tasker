@@ -155,27 +155,6 @@ class Logger:
             )
         )
 
-    def log_task_retry(
-        self,
-        task_name,
-        args,
-        kwargs,
-    ):
-        '''
-        '''
-        self.logger.warning(
-            '''
-                Retry:
-                - task: {task_name}
-                - args: {args}
-                - kwargs: {kwargs}
-            '''.format(
-                task_name=task_name,
-                args=args,
-                kwargs=kwargs,
-            )
-        )
-
     def __getstate__(self):
         '''
         '''
