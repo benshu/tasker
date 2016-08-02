@@ -155,6 +155,7 @@ class Worker:
 
             self._on_timeout(
                 exception=TimeoutError('hard timeout'),
+                exception_traceback=''.join(traceback.format_stack()),
                 args=self.current_task['args'],
                 kwargs=self.current_task['kwargs'],
             )
