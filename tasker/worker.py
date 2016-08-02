@@ -196,7 +196,7 @@ class Worker:
             )
             self.heartbeater = devices.heartbeater.DummyHeartbeater()
 
-        if self.config['timeouts']['critical_timeout'] != 0:
+        if self.config['timeouts']['critical_timeout'] == 0:
             self.killer = devices.killer.LocalKiller(
                 pid=os.getpid(),
                 soft_timeout=self.config['timeouts']['soft_timeout'],
