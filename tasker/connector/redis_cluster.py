@@ -54,6 +54,7 @@ class Connector(_connector.Connector):
     def pop_bulk(self, key, count):
         '''
         '''
+        values = []
         connections = self.connections
 
         for connection in connections:
@@ -65,11 +66,14 @@ class Connector(_connector.Connector):
             value = pipeline.execute()
 
             if len(value) != 1:
-                return value[0]
+                values += value[0]
             else:
                 self.rotate_connections()
 
-        return []
+            if len(values) < count:
+                count -= len(values)
+
+        return values
 
     def push(self, key, value):
         '''

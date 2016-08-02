@@ -13,6 +13,11 @@ class RedisConnectorTestCase(unittest.TestCase):
                     'port': 6379,
                     'database': 0,
                 },
+                {
+                    'host': '127.0.0.1',
+                    'port': 6380,
+                    'database': 0,
+                },
             ]
         )
         self.test_key = 'test_key'
