@@ -98,7 +98,7 @@ class TaskQueue:
         '''
         '''
         completion_key = task['completion_key']
-        elapsed_time = timeout
+        remaining_time = timeout
 
         if not completion_key:
             return
@@ -108,7 +108,7 @@ class TaskQueue:
             value=completion_key,
         )
         while has_result:
-            if timeout and elapsed_time <= 0:
+            if timeout and remaining_time <= 0:
                 return
 
             has_result = self.queue.has_result(
@@ -116,8 +116,25 @@ class TaskQueue:
                 value=completion_key,
             )
 
-            time.sleep(0.2)
-            elapsed_time -= 0.2
+            time.sleep(0.5)
+            remaining_time -= 0.5
+
+    def wait_queue_empty(self, task_name, timeout=0):
+        '''
+        '''
+        remaining_time = timeout
+
+        not_empty = True
+        while not_empty:
+            if timeout and remaining_time <= 0:
+                return
+
+            not_empty = self.number_of_enqueued_tasks(
+                task_name=task_name,
+            ) != 0
+
+            time.sleep(1.0)
+            remaining_time -= 1.0
 
     def apply_async_one(self, task):
         '''
