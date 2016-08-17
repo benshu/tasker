@@ -453,7 +453,7 @@ class SerialExecutor:
 
             self.worker._on_timeout(
                 task=self.current_task,
-                exception=TimeoutError('hard timeout'),
+                exception=WorkerHardTimedout(),
                 exception_traceback=''.join(traceback.format_stack()),
                 args=self.current_task['args'],
                 kwargs=self.current_task['kwargs'],
@@ -476,7 +476,7 @@ class SerialExecutor:
     def sigint_handler(self, signal_num, frame):
         '''
         '''
-        raise WorkerTimedout()
+        raise WorkerSoftTimedout()
 
     def begin_working(self):
         '''
@@ -558,7 +558,10 @@ class SerialExecutor:
             )
 
             return 'success'
-        except WorkerTimedout as exception:
+        except (
+            WorkerSoftTimedout,
+            WorkerHardTimedout,
+        ) as exception:
             exception_traceback = traceback.format_exc()
             self.worker._on_timeout(
                 task=task,
@@ -703,7 +706,11 @@ class WorkerException(Exception):
     pass
 
 
-class WorkerTimedout(WorkerException):
+class WorkerSoftTimedout(WorkerException):
+    pass
+
+
+class WorkerHardTimedout(WorkerException):
     pass
 
 

@@ -94,8 +94,6 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_worker.purge_tasks()
 
     def test_success_event(self):
-        self.events_test_worker.max_tasks_per_run = 1
-        self.events_test_worker.max_retries = 3
         self.events_test_worker.purge_tasks()
         self.events_test_worker.apply_async_one(
             action='succeeded',
@@ -118,8 +116,6 @@ class TaskTestCase(unittest.TestCase):
         )
 
     def test_failure_event(self):
-        self.events_test_worker.max_tasks_per_run = 1
-        self.events_test_worker.max_retries = 3
         self.events_test_worker.purge_tasks()
         self.events_test_worker.apply_async_one(
             action='failed',
@@ -215,8 +211,6 @@ class TaskTestCase(unittest.TestCase):
         )
 
     def test_completion_report(self):
-        self.events_test_worker.soft_timeout = 10
-        self.events_test_worker.max_retries = 2
         self.events_test_worker.purge_tasks()
         task = self.events_test_worker.apply_async_one(
             action='report_completion',
@@ -239,4 +233,4 @@ class TaskTestCase(unittest.TestCase):
         self.events_test_worker.wait_task_finished(task)
 
         after = time.time()
-        self.assertTrue(2 <= after - before <= 3)
+        self.assertTrue(2.0 <= after - before <= 3.2)
