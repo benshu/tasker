@@ -15,18 +15,6 @@ from . import monitor
 from . import queue
 
 
-class WorkerException(Exception):
-    pass
-
-
-class WorkerMaxRetriesException(WorkerException):
-    pass
-
-
-class WorkerRetryException(WorkerException):
-    pass
-
-
 class Worker:
     '''
     '''
@@ -290,7 +278,7 @@ class Worker:
                 return [task]
 
     def sigabrt_handler(self, signal_num, frame):
-        raise TimeoutError()
+        raise WorkerTimeoutException()
 
     def sigint_handler(self, signal_num, frame):
         '''
@@ -299,7 +287,7 @@ class Worker:
             self.tasks_to_finish.remove(self.current_task)
 
             self._on_timeout(
-                exception=TimeoutError('hard timeout'),
+                exception=WorkerTimeoutException('hard timeout'),
                 args=self.current_task['args'],
                 kwargs=self.current_task['kwargs'],
             )
@@ -428,7 +416,7 @@ class Worker:
             )
 
             return 'success'
-        except TimeoutError as exception:
+        except WorkerTimeoutException as exception:
             exception_traceback = traceback.format_exc()
             self._on_timeout(
                 exception=exception,
@@ -718,3 +706,19 @@ class Worker:
         self.__init__(
             abstract=False,
         )
+
+
+class WorkerException(Exception):
+    pass
+
+
+class WorkerMaxRetriesException(WorkerException):
+    pass
+
+
+class WorkerRetryException(WorkerException):
+    pass
+
+
+class WorkerTimeoutException(WorkerException):
+    pass
