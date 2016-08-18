@@ -12,7 +12,10 @@ class Serializer(_serializer.Serializer):
     def serialize(data):
         '''
         '''
-        serialized_object = pickle.dumps(data)
+        serialized_object = pickle.dumps(
+            obj=data,
+            protocol=pickle.HIGHEST_PROTOCOL,
+        )
 
         return serialized_object
 
