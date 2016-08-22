@@ -32,7 +32,7 @@ TaskerDashboard.config(
                 {
                     redirectTo: '/dashboard'
                 }
-            )
+            );
         }
     ]
 );
