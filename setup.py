@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='tasker',
-    version='0.2.5',
+    version='0.3.0',
     author='gal@intsights.com',
     author_email='gal@intsights.com',
     description=('A fast, simple, task distribution library'),
@@ -12,8 +12,6 @@ setuptools.setup(
         'redis',
         # 'hiredis',
         'msgpack-python',
-        'aiohttp',
-        'jinja2',
         'psutil',
     ],
     packages=setuptools.find_packages(),

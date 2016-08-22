@@ -1,0 +1,35 @@
+<div class="container" ng-controller="WorkersController">
+    <div class="row">
+    </div>
+    <div class="row">
+        <div class="col s6">
+            <input placeholder="search..." id="search" type="text" class="validate" ng-model="workers_search">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col s12">
+            <table id="queues-table" class="bordered stripped highlight">
+                <thead>
+                    <tr>
+                        <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'hostname'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Hostname</th>
+                        <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'name'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Worker</th>
+                        <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'process'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Process</th>
+                        <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'success'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Success</th>
+                        <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'retry'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Retry</th>
+                        <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'fail'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Fail</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="worker in workers | filter: workers_search | orderBy: workers_table_sort_by : workers_table_sort_by_reverse | limitTo: 20" ng-class="worker.status == 'online' ? 'teal lighten-2' : 'red lighten-2'">
+                        <td style="font-weight: bold;">{{worker.hostname}}</td>
+                        <td style="font-weight: bold;">{{worker.name}}</td>
+                        <td style="font-weight: bold;">{{worker.process}}</td>
+                        <td style="font-weight: bold;">{{worker.success}}</td>
+                        <td style="font-weight: bold;">{{worker.retry}}</td>
+                        <td style="font-weight: bold;">{{worker.failure}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

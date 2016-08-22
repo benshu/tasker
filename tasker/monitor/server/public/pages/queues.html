@@ -1,0 +1,36 @@
+<div class="container" ng-controller="QueuesController">
+    <div class="row">
+        <div class="col s6">
+            <table id="queues-table" class="bordered stripped highlight">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="queue in queues | orderBy: 'name'" ng-if="queue.name.indexOf('results') === -1">
+                        <td style="font-weight: bold;">{{queue.name}}</td>
+                        <td style="font-weight: bold;">{{queue.length}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col s6">
+            <table id="queues-table" class="bordered stripped highlight">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="queue in queues | orderBy: 'name'" ng-if="queue.name.indexOf('results') > -1">
+                        <td style="font-weight: bold;">{{queue.name}}</td>
+                        <td style="font-weight: bold;">{{queue.length}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

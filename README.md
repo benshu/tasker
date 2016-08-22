@@ -53,11 +53,14 @@ docker run \
     --interactive \
     --tty \
     --rm \
+    --net=host \
     --log-driver=json-file --log-opt=max-size=10m \
     --publish=9999:9999/udp \
     --publish=8080:8080 \
-    python bash -c " \
-        pip3 install git+https://github.com/wavenator/tasker.git; \
-        python -m tasker.monitor.server; \
+    node bash -c " \
+        git clone -b improved_version https://github.com/wavenator/tasker.git; \
+        cd tasker/tasker/monitor/server; \
+        npm install; \
+        node server.js; \
     "
 ```

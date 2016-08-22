@@ -1,0 +1,18 @@
+{
+    "name": "tasker_monitor",
+    "version": "0.0.1",
+    "description": "Tasker Nodejs Monitor Server",
+    "main": "server.js",
+    "private": true,
+    "dependencies": {
+        "bluebird": "latest",
+        "body-parser": "latest",
+        "socket.io": "latest",
+        "express": "latest",
+        "redis": "latest",
+        "msgpack-lite": "latest"
+    },
+    "devDependencies": {
+    },
+    "author": "Gal Ben David <gal@intsights.com>"
+}
