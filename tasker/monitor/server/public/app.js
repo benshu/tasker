@@ -146,15 +146,12 @@ TaskerDashboard.controller(
                 }
             );
 
-            $interval(
-                function() {
-                    websocket.emit(
-                        'workers',
-                        {}
-                    );
-                },
-                2000
-            );
+            $scope.update_workers = function() {
+                websocket.emit(
+                    'workers',
+                    {}
+                );
+            };
         }
     ]
 );
