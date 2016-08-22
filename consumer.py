@@ -63,7 +63,7 @@ class Worker(tasker.worker.Worker):
 def main():
     supervisor = tasker.supervisor.Supervisor(
         worker_class=Worker,
-        concurrent_workers=4,
+        concurrent_workers=2,
     )
     supervisor.start()
 

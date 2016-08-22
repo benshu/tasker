@@ -114,7 +114,7 @@ var Statistics = function () {
         this.workers[worker_key].name = worker_name;
         this.workers[worker_key].status = 'online';
         this.workers[worker_key].last_seen = new Date();
-        this.workers[worker_key][message_type_value] += 1;
+        this.workers[worker_key][message_type_value] += amount;
     };
 };
 

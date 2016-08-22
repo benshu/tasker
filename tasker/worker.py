@@ -1,5 +1,6 @@
 import os
 import signal
+import time
 import traceback
 import socket
 import concurrent.futures
@@ -196,6 +197,9 @@ class Worker:
                 tasks = self.get_next_tasks(
                     tasks_left=tasks_left,
                 )
+                if not tasks:
+                    time.sleep(1)
+                    continue
 
                 self.monitor_client.increment_process(
                     value=len(tasks),
