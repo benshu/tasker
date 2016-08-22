@@ -31,6 +31,9 @@ class Worker(tasker.worker.Worker):
             'critical_timeout': 0.0,
             'global_timeout': 0.0,
         },
+        'limits': {
+            'memory': 0,
+        },
         'executor': {
             'type': 'serial',
             # 'type': 'threaded',

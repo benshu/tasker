@@ -43,6 +43,9 @@ class Worker:
             'critical_timeout': 0.0,
             'global_timeout': 0.0,
         },
+        'limits': {
+            'memory': 0,
+        },
         'executor': {
             'type': 'serial',
             # 'type': 'threaded',
@@ -490,6 +493,8 @@ class SerialExecutor:
                 hard_timeout_signal=signal.SIGABRT,
                 critical_timeout=self.worker.config['timeouts']['critical_timeout'],
                 critical_timeout_signal=signal.SIGTERM,
+                memory_limit=self.worker.config['limits']['memory'],
+                memory_limit_signal=signal.SIGABRT,
             )
         else:
             self.killer = devices.killer.RemoteKiller(
@@ -500,6 +505,8 @@ class SerialExecutor:
                 hard_timeout_signal=signal.SIGABRT,
                 critical_timeout=self.worker.config['timeouts']['critical_timeout'],
                 critical_timeout_signal=signal.SIGTERM,
+                memory_limit=self.worker.config['limits']['memory'],
+                memory_limit_signal=signal.SIGABRT,
             )
         signal.signal(signal.SIGABRT, self.sigabrt_handler)
         signal.signal(signal.SIGINT, self.sigint_handler)
