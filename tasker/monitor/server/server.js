@@ -5,23 +5,27 @@ var http = require('http');
 var socket_io = require('socket.io');
 var msgpack = require('msgpack-lite');
 var redis = require('redis');
+var yargs = require('yargs');
 
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
 
 
+var argv = yargs.argv;
+
 var redis_client = redis.createClient(
     {
-        'host': '127.0.0.1',
-        'port': 6380,
+        'host': argv.redis_host,
+        'port': argv.redis_port,
     }
 );
 
-var udp_server_port = 9999;
-var udp_server_host = '0.0.0.0';
+var udp_server_port = argv.udp_server_bind_port;
+var udp_server_host = argv.udp_server_bind_host;
 var udp_server = dgram.createSocket('udp4');
 
-var web_server_port = 8080;
+var web_server_port = argv.web_server_bind_port;
+var web_server_host = argv.web_server_bind_host;
 var web_server = express();
 
 var websockets_http_server = http.Server(web_server);
@@ -256,6 +260,7 @@ web_server.use(
 
 websockets_http_server.listen(
     web_server_port,
+    web_server_host,
     function () {
     }
 );

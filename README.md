@@ -61,6 +61,12 @@ docker run \
         git clone -b improved_version https://github.com/wavenator/tasker.git; \
         cd tasker/tasker/monitor/server; \
         npm install; \
-        node server.js; \
+        node server.js \
+            --redis_host=127.0.0.1 \
+            --redis_port=6380 \
+            --udp_server_bind_port=9999 \
+            --udp_server_bind_host=0.0.0.0 \
+            --web_server_bind_port=8080 \
+            --web_server_bind_host=0.0.0.0
     "
 ```
