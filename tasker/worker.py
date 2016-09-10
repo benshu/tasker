@@ -35,6 +35,7 @@ class Worker:
             'params': {
                 'host': 'localhost',
                 'port': 6379,
+                'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
                 'database': 0,
             },
         },

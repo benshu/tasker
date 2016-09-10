@@ -9,24 +9,8 @@ from .. import queue
 from .. import encoder
 
 
-class RedisTaskQueueTestCase(unittest.TestCase):
-    def setUp(self):
-        redis_connector = connector.redis.Connector(
-            host='127.0.0.1',
-            port=6379,
-            database=0,
-        )
-
-        test_queue = queue.regular.Queue(
-            connector=redis_connector,
-            encoder=encoder.encoder.Encoder(
-                compressor_name='dummy',
-                serializer_name='pickle',
-            ),
-        )
-        self.test_task_queue = task_queue.TaskQueue(
-            queue=test_queue,
-        )
+class RedisTaskQueueTestCase:
+    order_matters = True
 
     def test_purge_tasks(self):
         self.test_task_queue.purge_tasks(
@@ -278,22 +262,53 @@ class RedisTaskQueueTestCase(unittest.TestCase):
         task_three_test = self.test_task_queue.queue.dequeue(
             queue_name='test_task',
         )
-        self.assertEqual(task_one, task_one_test)
-        self.assertEqual(task_two, task_two_test)
-        self.assertEqual(task_three, task_three_test)
+        if self.order_matters:
+            self.assertEqual(task_one, task_one_test)
+            self.assertEqual(task_two, task_two_test)
+            self.assertEqual(task_three, task_three_test)
+        else:
+            self.assertIn(
+                task_one,
+                [task_one_test, task_two_test, task_three_test],
+            )
+            self.assertIn(
+                task_two,
+                [task_one_test, task_two_test, task_three_test],
+            )
+            self.assertIn(
+                task_three,
+                [task_one_test, task_two_test, task_three_test],
+            )
 
-        self.assertTrue(
-            self.test_task_queue.queue.has_result(
-                queue_name='test_task',
-                value=task_two['completion_key'],
+        if self.order_matters:
+            self.assertTrue(
+                self.test_task_queue.queue.has_result(
+                    queue_name='test_task',
+                    value=task_two['completion_key'],
+                )
             )
-        )
-        self.assertTrue(
-            self.test_task_queue.queue.has_result(
-                queue_name='test_task',
-                value=task_three['completion_key'],
+            self.assertTrue(
+                self.test_task_queue.queue.has_result(
+                    queue_name='test_task',
+                    value=task_three['completion_key'],
+                )
             )
-        )
+        else:
+            tasks_to_wait = [
+                task_to_wait
+                for task_to_wait in [task_one_test, task_two_test, task_three_test]
+                if task_to_wait['completion_key'] is not None
+            ]
+
+            self.assertEqual(len(tasks_to_wait), 2)
+
+            for task_to_wait in tasks_to_wait:
+                self.assertTrue(
+                    self.test_task_queue.queue.has_result(
+                        queue_name='test_task',
+                        value=task_to_wait['completion_key'],
+                    )
+                )
 
     def test_apply_async_many(self):
         self.test_task_queue.purge_tasks(
@@ -338,6 +353,52 @@ class RedisTaskQueueTestCase(unittest.TestCase):
         task_three_test = self.test_task_queue.queue.dequeue(
             queue_name='test_task_two',
         )
+
+        if self.order_matters:
+            self.assertEqual(task_one, task_one_test)
+            self.assertEqual(task_two, task_two_test)
+            self.assertEqual(task_three, task_three_test)
+        else:
+            self.assertIn(
+                task_one,
+                [task_one_test, task_two_test],
+            )
+            self.assertIn(
+                task_two,
+                [task_one_test, task_two_test],
+            )
+            self.assertEqual(task_three, task_three_test)
+
+        if self.order_matters:
+            self.assertTrue(
+                self.test_task_queue.queue.has_result(
+                    queue_name='test_task_one',
+                    value=task_two['completion_key'],
+                )
+            )
+            self.assertTrue(
+                self.test_task_queue.queue.has_result(
+                    queue_name='test_task_two',
+                    value=task_three['completion_key'],
+                )
+            )
+        else:
+            tasks_to_wait = [
+                task_to_wait
+                for task_to_wait in [task_one_test, task_two_test, task_three_test]
+                if task_to_wait['completion_key'] is not None
+            ]
+
+            self.assertEqual(len(tasks_to_wait), 2)
+
+            for task_to_wait in tasks_to_wait:
+                self.assertTrue(
+                    self.test_task_queue.queue.has_result(
+                        queue_name=task_to_wait['name'],
+                        value=task_to_wait['completion_key'],
+                    )
+                )
+
         self.assertEqual(task_one, task_one_test)
         self.assertEqual(task_two, task_two_test)
         self.assertEqual(task_three, task_three_test)
@@ -423,15 +484,87 @@ class RedisTaskQueueTestCase(unittest.TestCase):
         self.assertEqual(task_one['run_count'], 1)
 
 
-class RedisClusterTaskQueueTestCase(RedisTaskQueueTestCase):
+class RedisSingleServerTaskQueueTestCase(
+    RedisTaskQueueTestCase,
+    unittest.TestCase,
+):
+    order_matters = True
+
     def setUp(self):
         redis_cluster_connector = connector.redis_cluster.Connector(
             nodes=[
                 {
                     'host': '127.0.0.1',
                     'port': 6379,
+                    'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
                     'database': 0,
-                }
+                },
+            ]
+        )
+
+        test_queue = queue.regular.Queue(
+            connector=redis_cluster_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='dummy',
+                serializer_name='pickle',
+            ),
+        )
+        self.test_task_queue = task_queue.TaskQueue(
+            queue=test_queue,
+        )
+
+
+class RedisClusterSingleServerTaskQueueTestCase(
+    RedisTaskQueueTestCase,
+    unittest.TestCase,
+):
+    order_matters = True
+
+    def setUp(self):
+        redis_cluster_connector = connector.redis_cluster.Connector(
+            nodes=[
+                {
+                    'host': '127.0.0.1',
+                    'port': 6379,
+                    'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
+                    'database': 0,
+                },
+            ]
+        )
+
+        test_queue = queue.regular.Queue(
+            connector=redis_cluster_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='dummy',
+                serializer_name='pickle',
+            ),
+        )
+        self.test_task_queue = task_queue.TaskQueue(
+            queue=test_queue,
+        )
+
+
+class RedisClusterMultipleServerTaskQueueTestCase(
+    RedisTaskQueueTestCase,
+    unittest.TestCase,
+):
+    order_matters = False
+
+    def setUp(self):
+        redis_cluster_connector = connector.redis_cluster.Connector(
+            nodes=[
+                {
+                    'host': '127.0.0.1',
+                    'port': 6379,
+                    'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
+                    'database': 0,
+                },
+                {
+                    'host': '127.0.0.1',
+                    'port': 6380,
+                    'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
+                    'database': 0,
+                },
             ]
         )
 

@@ -18,6 +18,7 @@ class Connector(_connector.Connector):
             redis.StrictRedis(
                 host=node['host'],
                 port=node['port'],
+                password=node['password'],
                 db=node['database'],
                 retry_on_timeout=True,
                 socket_keepalive=True,

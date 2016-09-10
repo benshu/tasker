@@ -23,6 +23,7 @@ docker run \
             --maxmemory-policy noeviction \
             --protected-mode no \
             --bind 0.0.0.0 \
+            --requirepass e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97 \
     "
 docker run \
     --interactive \
@@ -44,6 +45,7 @@ docker run \
             --maxmemory-policy noeviction \
             --protected-mode no \
             --bind 0.0.0.0 \
+            --requirepass e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97 \
     "
 ```
 
@@ -64,6 +66,7 @@ docker run \
         node server.js \
             --redis_host=127.0.0.1 \
             --redis_port=6379 \
+            --redis_password=e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97 \
             --udp_server_bind_port=9999 \
             --udp_server_bind_host=0.0.0.0 \
             --web_server_bind_port=8080 \
