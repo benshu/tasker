@@ -187,7 +187,6 @@ class Worker:
             elif self.config['executor']['type'] == 'threaded':
                 self.executor = ThreadedExecutor(
                     worker=self,
-                    concurrency=self.config['executor']['concurrency'],
                 )
 
             self.executor.begin_working()
@@ -625,9 +624,9 @@ class SerialExecutor:
 class ThreadedExecutor:
     '''
     '''
-    def __init__(self, worker, concurrency):
+    def __init__(self, worker):
         self.worker = worker
-        self.concurrency = concurrency
+        self.concurrency = worker.config['executor']['concurrency']
 
     def begin_working(self):
         '''
