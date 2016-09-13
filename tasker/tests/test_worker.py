@@ -1,6 +1,5 @@
 import unittest
 import time
-import socket
 import multiprocessing
 import logging
 
@@ -9,45 +8,26 @@ from .. import worker
 
 class EventsTestWorker(worker.Worker):
     name = 'events_test_worker'
-    config = {
-        'encoder': {
-            'compressor': 'dummy',
-            'serializer': 'pickle',
-        },
-        'monitoring': {
-            'host_name': socket.gethostname(),
-            'stats_server': {
-                'host': '',
-                'port': 9999,
-            }
-        },
-        'connector': {
-            'type': 'redis',
-            'params': {
-                'host': 'localhost',
-                'port': 6379,
-                'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
-                'database': 0,
+
+    config = worker.Worker.config.copy()
+    config.update(
+        {
+            'timeouts': {
+                'soft_timeout': 2.0,
+                'hard_timeout': 0.0,
+                'critical_timeout': 0.0,
+                'global_timeout': 0.0,
             },
-        },
-        'timeouts': {
-            'soft_timeout': 2.0,
-            'hard_timeout': 0.0,
-            'critical_timeout': 0.0,
-            'global_timeout': 0.0,
-        },
-        'limits': {
-            'memory': 0,
-        },
-        'executor': {
-            'type': 'serial',
-        },
-        'max_tasks_per_run': 1,
-        'max_retries': 1,
-        'tasks_per_transaction': 10,
-        'report_completion': True,
-        'heartbeat_interval': 10.0,
-    }
+            'executor': {
+                'type': 'serial',
+            },
+            'max_tasks_per_run': 1,
+            'max_retries': 1,
+            'tasks_per_transaction': 1,
+            'report_completion': True,
+            'heartbeat_interval': 0.0,
+        }
+    )
 
     def init(self):
         self.succeeded = False
@@ -88,15 +68,78 @@ class EventsTestWorker(worker.Worker):
         self.max_retried = True
 
 
-class TaskTestCase(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.events_test_worker = EventsTestWorker()
+class SingleServerEventsTestWorker(EventsTestWorker):
+    name = 'events_test_worker'
 
-    @classmethod
-    def tearDownClass(self):
-        self.events_test_worker.purge_tasks()
+    config = EventsTestWorker.config.copy()
+    config.update(
+        {
+            'connector': {
+                'type': 'redis',
+                'params': {
+                    'host': 'localhost',
+                    'port': 6379,
+                    'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
+                    'database': 0,
+                },
+            },
+        }
+    )
 
+
+class SingleServerClusterEventsTestWorker(EventsTestWorker):
+    name = 'events_test_worker'
+
+    config = EventsTestWorker.config.copy()
+    config.update(
+        {
+            'connector': {
+                'type': 'redis_cluster',
+                'params': {
+                    'nodes': [
+                        {
+                            'host': '127.0.0.1',
+                            'port': 6379,
+                            'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
+                            'database': 0,
+                        },
+                    ],
+                },
+            },
+        }
+    )
+
+
+class MultiServerClusterEventsTestWorker(EventsTestWorker):
+    name = 'events_test_worker'
+
+    config = EventsTestWorker.config.copy()
+    config.update(
+        {
+            'connector': {
+                'type': 'redis_cluster',
+                'params': {
+                    'nodes': [
+                        {
+                            'host': '127.0.0.1',
+                            'port': 6379,
+                            'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
+                            'database': 0,
+                        },
+                        {
+                            'host': '127.0.0.1',
+                            'port': 6380,
+                            'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
+                            'database': 0,
+                        },
+                    ],
+                },
+            },
+        }
+    )
+
+
+class WorkerTestCase:
     def test_success_event(self):
         self.events_test_worker.purge_tasks()
         self.events_test_worker.apply_async_one(
@@ -238,3 +281,45 @@ class TaskTestCase(unittest.TestCase):
 
         after = time.time()
         self.assertTrue(2.0 <= after - before <= 3.2)
+
+
+class SingleServerWorkerTestCase(
+    WorkerTestCase,
+    unittest.TestCase,
+):
+    @classmethod
+    def setUpClass(self):
+        self.events_test_worker = SingleServerEventsTestWorker()
+        self.events_test_worker.purge_tasks()
+
+    @classmethod
+    def tearDownClass(self):
+        self.events_test_worker.purge_tasks()
+
+
+class SingleServerClusterWorkerTestCase(
+    WorkerTestCase,
+    unittest.TestCase,
+):
+    @classmethod
+    def setUpClass(self):
+        self.events_test_worker = SingleServerClusterEventsTestWorker()
+        self.events_test_worker.purge_tasks()
+
+    @classmethod
+    def tearDownClass(self):
+        self.events_test_worker.purge_tasks()
+
+
+class MultipleServerClusterWorkerTestCase(
+    WorkerTestCase,
+    unittest.TestCase,
+):
+    @classmethod
+    def setUpClass(self):
+        self.events_test_worker = MultiServerClusterEventsTestWorker()
+        self.events_test_worker.purge_tasks()
+
+    @classmethod
+    def tearDownClass(self):
+        self.events_test_worker.purge_tasks()
