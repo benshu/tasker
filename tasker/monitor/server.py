@@ -107,8 +107,10 @@ class StatisticsWebServer:
 
         response = aiohttp.web.Response(
             body=html.encode('utf-8'),
+            headers={
+                'Content-Type': 'text/html',
+            }
         )
-        response.add_header('Content-Type', 'text/html')
 
         return response
 
