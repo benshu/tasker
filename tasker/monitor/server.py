@@ -105,9 +105,12 @@ class StatisticsWebServer:
             statistics=statistics,
         )
 
-        return aiohttp.web.Response(
+        response = aiohttp.web.Response(
             body=html.encode('utf-8'),
         )
+        response.add_header('Content-Type', 'text/html')
+
+        return response
 
     @asyncio.coroutine
     def handle_get_statistics(self, request):
