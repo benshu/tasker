@@ -18,6 +18,9 @@ var redis_client = redis.createClient(
         'host': argv.redis_host,
         'port': argv.redis_port,
         'password': argv.redis_password,
+        'retry_strategy': function (options) {
+            return 3000;
+        }
     }
 );
 

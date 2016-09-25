@@ -70,6 +70,6 @@ docker run \
             --udp_server_bind_port=9999 \
             --udp_server_bind_host=0.0.0.0 \
             --web_server_bind_port=8080 \
-            --web_server_bind_host=0.0.0.0
+            --web_server_bind_host=0.0.0.0 \
     "
 ```
