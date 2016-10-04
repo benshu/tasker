@@ -290,6 +290,7 @@ class SingleServerWorkerTestCase(
     @classmethod
     def setUpClass(self):
         self.events_test_worker = SingleServerEventsTestWorker()
+        self.events_test_worker.init_worker()
         self.events_test_worker.purge_tasks()
 
     @classmethod
@@ -304,6 +305,7 @@ class SingleServerClusterWorkerTestCase(
     @classmethod
     def setUpClass(self):
         self.events_test_worker = SingleServerClusterEventsTestWorker()
+        self.events_test_worker.init_worker()
         self.events_test_worker.purge_tasks()
 
     @classmethod
@@ -318,6 +320,7 @@ class MultipleServerClusterWorkerTestCase(
     @classmethod
     def setUpClass(self):
         self.events_test_worker = MultiServerClusterEventsTestWorker()
+        self.events_test_worker.init_worker()
         self.events_test_worker.purge_tasks()
 
     @classmethod

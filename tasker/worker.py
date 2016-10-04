@@ -60,17 +60,16 @@ class Worker:
         'heartbeat_interval': 10.0,
     }
 
-    def __init__(self, abstract=False):
+    def __init__(self):
         self.logger = logger.logger.Logger(
             logger_name=self.name,
         )
 
-        if abstract is True:
-            return
+        self.worker_initialized = False
 
-        self.run_forever = False
-        if self.config['max_tasks_per_run'] == 0:
-            self.run_forever = True
+    def init_worker(self):
+        if self.worker_initialized:
+            return
 
         queue_connector_obj = connector.__connectors__[self.config['connector']['type']]
         queue_connector = queue_connector_obj(**self.config['connector']['params'])
@@ -103,6 +102,8 @@ class Worker:
                 worker_name=self.name,
             )
             self.heartbeater = devices.heartbeater.DummyHeartbeater()
+
+        self.worker_initialized = True
 
     def purge_tasks(self):
         '''
@@ -181,6 +182,8 @@ class Worker:
         '''
         '''
         try:
+            self.init_worker()
+
             if self.config['executor']['type'] == 'serial':
                 self.executor = SerialExecutor(
                     worker=self,
@@ -192,8 +195,10 @@ class Worker:
 
             self.executor.begin_working()
 
+            run_forever = self.config['max_tasks_per_run'] == 0
+
             tasks_left = self.config['max_tasks_per_run']
-            while tasks_left > 0 or self.run_forever is True:
+            while tasks_left > 0 or run_forever is True:
                 tasks = self.get_next_tasks(
                     tasks_left=tasks_left,
                 )
@@ -209,7 +214,7 @@ class Worker:
                     tasks=tasks,
                 )
 
-                if not self.run_forever:
+                if not run_forever:
                     tasks_left -= len(tasks)
         except Exception as exception:
             exception_traceback = traceback.format_exc()
@@ -441,9 +446,7 @@ class Worker:
         self.name = value['name']
         self.config = value['config']
 
-        self.__init__(
-            abstract=False,
-        )
+        self.__init__()
 
 
 class SerialExecutor:

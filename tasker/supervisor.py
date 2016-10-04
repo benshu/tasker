@@ -18,9 +18,7 @@ class Supervisor:
         self.worker_class = worker_class
         self.concurrent_workers = concurrent_workers
 
-        self.task = self.worker_class(
-            abstract=True,
-        )
+        self.task = self.worker_class()
 
         self.workers_processes = []
 
