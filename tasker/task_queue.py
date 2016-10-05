@@ -48,7 +48,7 @@ class TaskQueue:
         '''
         '''
         if report_completion:
-            completion_key = self._create_completion_key(
+            completion_key = self.create_completion_key(
                 task_name=task_name,
             )
         else:
@@ -65,7 +65,7 @@ class TaskQueue:
 
         return task
 
-    def _create_completion_key(self, task_name):
+    def create_completion_key(self, task_name):
         '''
         '''
         added = False

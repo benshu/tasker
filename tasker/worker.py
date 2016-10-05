@@ -455,6 +455,8 @@ class SerialExecutor:
     def __init__(self, worker):
         self.worker = worker
 
+        self.tasks_to_finish = []
+
     def sigabrt_handler(self, signal_num, frame):
         '''
         '''
@@ -515,6 +517,7 @@ class SerialExecutor:
                 memory_limit=self.worker.config['limits']['memory'],
                 memory_limit_signal=signal.SIGABRT,
             )
+
         signal.signal(signal.SIGABRT, self.sigabrt_handler)
         signal.signal(signal.SIGINT, self.sigint_handler)
 
