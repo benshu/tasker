@@ -472,9 +472,9 @@ class SerialExecutor:
             )
         except Exception as exception:
             exception_traceback = traceback.format_exc()
-            self.logger.log_task_failure(
+            self.worker.logger.log_task_failure(
                 failure_reason='Exception during sigabrt_handler',
-                task_name=self.name,
+                task_name=self.worker.name,
                 args=self.current_task['args'],
                 kwargs=self.current_task['kwargs'],
                 exception=exception,
@@ -544,14 +544,10 @@ class SerialExecutor:
 
         for task in tasks:
             self.current_task = task
-            status = self.execute_task(
+            self.execute_task(
                 task=task,
             )
             self.tasks_to_finish.remove(task)
-            if status != 'retry':
-                self.worker.report_complete(
-                    task=task,
-                )
 
     def execute_task(self, task):
         '''
@@ -574,7 +570,7 @@ class SerialExecutor:
                 kwargs=task['kwargs'],
             )
 
-            return 'success'
+            status = 'success'
         except (
             WorkerSoftTimedout,
             WorkerHardTimedout,
@@ -588,7 +584,7 @@ class SerialExecutor:
                 kwargs=task['kwargs'],
             )
 
-            return 'timeout'
+            status = 'timeout'
         except WorkerRetry as exception:
             exception_traceback = traceback.format_exc()
 
@@ -601,7 +597,7 @@ class SerialExecutor:
                     kwargs=task['kwargs'],
                 )
 
-                return 'max_retries'
+                status = 'max_retries'
             else:
                 self.worker._on_retry(
                     task=task,
@@ -611,7 +607,7 @@ class SerialExecutor:
                     kwargs=task['kwargs'],
                 )
 
-                return 'retry'
+                status = 'retry'
         except Exception as exception:
             exception_traceback = traceback.format_exc()
             self.worker._on_failure(
@@ -622,10 +618,17 @@ class SerialExecutor:
                 kwargs=task['kwargs'],
             )
 
-            return 'failure'
+            status = 'failure'
         finally:
             self.killer.reset()
             self.killer.stop()
+
+            if status != 'retry':
+                self.worker.report_complete(
+                    task=task,
+                )
+
+            return status
 
 
 class ThreadedExecutor:
@@ -658,13 +661,7 @@ class ThreadedExecutor:
                 future_to_task[future] = task
 
         for future in concurrent.futures.as_completed(future_to_task):
-            task = future_to_task[future]
-
-            status = future.result()
-            if status != 'retry':
-                self.worker.report_complete(
-                    task=task,
-                )
+            pass
 
     def execute_task(self, task):
         '''
@@ -682,7 +679,7 @@ class ThreadedExecutor:
                 kwargs=task['kwargs'],
             )
 
-            return 'success'
+            status = 'success'
         except WorkerRetry as exception:
             exception_traceback = traceback.format_exc()
 
@@ -695,7 +692,7 @@ class ThreadedExecutor:
                     kwargs=task['kwargs'],
                 )
 
-                return 'max_retries'
+                status = 'max_retries'
             else:
                 self.worker._on_retry(
                     task=task,
@@ -705,7 +702,7 @@ class ThreadedExecutor:
                     kwargs=task['kwargs'],
                 )
 
-                return 'retry'
+                status = 'retry'
         except Exception as exception:
             exception_traceback = traceback.format_exc()
             self.worker._on_failure(
@@ -716,7 +713,14 @@ class ThreadedExecutor:
                 kwargs=task['kwargs'],
             )
 
-            return 'failure'
+            status = 'failure'
+        finally:
+            if status != 'retry':
+                self.worker.report_complete(
+                    task=task,
+                )
+
+            return status
 
 
 class WorkerException(Exception):
