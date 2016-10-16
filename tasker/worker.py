@@ -164,18 +164,18 @@ class Worker:
             tasks=tasks,
         )
 
-    def get_next_tasks(self, tasks_left):
+    def get_next_tasks(self, number_of_tasks):
         '''
         '''
-        if tasks_left > self.config['tasks_per_transaction']:
+        if number_of_tasks > self.config['tasks_per_transaction']:
             return self.task_queue.get_tasks(
                 task_name=self.name,
-                num_of_tasks=self.config['tasks_per_transaction'],
+                number_of_tasks=self.config['tasks_per_transaction'],
             )
         else:
             return self.task_queue.get_tasks(
                 task_name=self.name,
-                num_of_tasks=tasks_left,
+                number_of_tasks=number_of_tasks,
             )
 
     def work_loop(self):
@@ -200,7 +200,7 @@ class Worker:
             tasks_left = self.config['max_tasks_per_run']
             while tasks_left > 0 or run_forever is True:
                 tasks = self.get_next_tasks(
-                    tasks_left=tasks_left,
+                    number_of_tasks=tasks_left,
                 )
                 if not tasks:
                     time.sleep(1)

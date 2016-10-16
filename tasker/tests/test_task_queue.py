@@ -452,11 +452,11 @@ class RedisTaskQueueTestCase:
         )
         tasks_one = self.test_task_queue.get_tasks(
             task_name='test_task_one',
-            num_of_tasks=3,
+            number_of_tasks=3,
         )
         tasks_two = self.test_task_queue.get_tasks(
             task_name='test_task_two',
-            num_of_tasks=1,
+            number_of_tasks=1,
         )
         self.assertTrue(task_one in tasks_one)
         self.assertTrue(task_two in tasks_one)

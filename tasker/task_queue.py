@@ -185,11 +185,11 @@ class TaskQueue:
 
             return False
 
-    def get_tasks(self, task_name, num_of_tasks):
+    def get_tasks(self, task_name, number_of_tasks):
         '''
         '''
         try:
-            if num_of_tasks == 1:
+            if number_of_tasks == 1:
                 task = self.queue.dequeue(
                     queue_name=task_name,
                 )
@@ -201,7 +201,7 @@ class TaskQueue:
             else:
                 tasks = self.queue.dequeue_bulk(
                     queue_name=task_name,
-                    count=num_of_tasks,
+                    count=number_of_tasks,
                 )
 
                 return tasks
