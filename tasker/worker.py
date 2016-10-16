@@ -1,8 +1,11 @@
 import os
+import sys
+import functools
 import signal
 import time
 import traceback
 import socket
+import threading
 import concurrent.futures
 
 from . import connector
@@ -663,14 +666,38 @@ class ThreadedExecutor:
         for future in concurrent.futures.as_completed(future_to_task):
             pass
 
+    def _trace_function(self, frame, event, arg, timeout_event):
+        '''
+        '''
+        if timeout_event.is_set():
+            raise WorkerSoftTimedout()
+
     def execute_task(self, task):
         '''
         '''
         try:
+            timeout_event = threading.Event()
+            timeout_event.clear()
+
+            sys.settrace(
+                functools.partial(
+                    self._trace_function,
+                    timeout_event=timeout_event,
+                ),
+            )
+
+            timeout_timer = threading.Timer(
+                interval=self.worker.config['timeouts']['soft_timeout'],
+                function=timeout_event.set,
+            )
+            timeout_timer.start()
+
             returned_value = self.worker.work(
                 *task['args'],
                 **task['kwargs']
             )
+
+            timeout_timer.cancel()
 
             self.worker._on_success(
                 task=task,
@@ -680,6 +707,17 @@ class ThreadedExecutor:
             )
 
             status = 'success'
+        except WorkerSoftTimedout as exception:
+            exception_traceback = traceback.format_exc()
+            self.worker._on_timeout(
+                task=task,
+                exception=exception,
+                exception_traceback=exception_traceback,
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+
+            status = 'timeout'
         except WorkerRetry as exception:
             exception_traceback = traceback.format_exc()
 
@@ -715,6 +753,8 @@ class ThreadedExecutor:
 
             status = 'failure'
         finally:
+            timeout_timer.cancel()
+
             if status != 'retry':
                 self.worker.report_complete(
                     task=task,

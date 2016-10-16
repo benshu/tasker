@@ -87,6 +87,29 @@ class SingleServerEventsTestWorker(EventsTestWorker):
     )
 
 
+class SingleServerThreadedEventsTestWorker(EventsTestWorker):
+    name = 'events_test_worker'
+
+    config = EventsTestWorker.config.copy()
+    config.update(
+        {
+            'connector': {
+                'type': 'redis',
+                'params': {
+                    'host': 'localhost',
+                    'port': 6379,
+                    'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
+                    'database': 0,
+                },
+            },
+            'executor': {
+                'type': 'threaded',
+                'concurrency': 1,
+            },
+        }
+    )
+
+
 class SingleServerClusterEventsTestWorker(EventsTestWorker):
     name = 'events_test_worker'
 
@@ -290,6 +313,21 @@ class SingleServerWorkerTestCase(
     @classmethod
     def setUpClass(self):
         self.events_test_worker = SingleServerEventsTestWorker()
+        self.events_test_worker.init_worker()
+        self.events_test_worker.purge_tasks()
+
+    @classmethod
+    def tearDownClass(self):
+        self.events_test_worker.purge_tasks()
+
+
+class SingleServerThreadedWorkerTestCase(
+    WorkerTestCase,
+    unittest.TestCase,
+):
+    @classmethod
+    def setUpClass(self):
+        self.events_test_worker = SingleServerThreadedEventsTestWorker()
         self.events_test_worker.init_worker()
         self.events_test_worker.purge_tasks()
 
