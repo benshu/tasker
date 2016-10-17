@@ -1,6 +1,5 @@
 import os
-import sys
-import functools
+import ctypes
 import signal
 import time
 import traceback
@@ -666,29 +665,17 @@ class ThreadedExecutor:
         for future in concurrent.futures.as_completed(future_to_task):
             pass
 
-    def _trace_function(self, frame, event, arg, timeout_event):
-        '''
-        '''
-        if timeout_event.is_set():
-            raise WorkerSoftTimedout()
-
     def execute_task(self, task):
         '''
         '''
         try:
-            timeout_event = threading.Event()
-            timeout_event.clear()
-
-            sys.settrace(
-                functools.partial(
-                    self._trace_function,
-                    timeout_event=timeout_event,
-                ),
-            )
-
             timeout_timer = threading.Timer(
                 interval=self.worker.config['timeouts']['soft_timeout'],
-                function=timeout_event.set,
+                function=ctypes.pythonapi.PyThreadState_SetAsyncExc,
+                args=(
+                    ctypes.c_long(threading.get_ident()),
+                    ctypes.py_object(WorkerSoftTimedout),
+                )
             )
             timeout_timer.start()
 
