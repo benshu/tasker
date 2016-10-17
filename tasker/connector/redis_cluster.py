@@ -57,12 +57,13 @@ class Connector(_connector.Connector):
         '''
         values = []
         connections = self.connections
+        current_count = count
 
         for connection in connections:
             pipeline = connection.pipeline()
 
-            pipeline.lrange(key, 0, count - 1)
-            pipeline.ltrim(key, count, -1)
+            pipeline.lrange(key, 0, current_count - 1)
+            pipeline.ltrim(key, current_count, -1)
 
             value = pipeline.execute()
 
@@ -71,8 +72,12 @@ class Connector(_connector.Connector):
             else:
                 self.rotate_connections()
 
-            if len(values) < count:
-                count -= len(values)
+                continue
+
+            if len(values) == count:
+                return values
+
+            current_count = count - len(values)
 
         return values
 
