@@ -198,11 +198,16 @@ class Worker:
             self.executor.begin_working()
 
             run_forever = self.config['max_tasks_per_run'] == 0
-
             tasks_left = self.config['max_tasks_per_run']
+
             while tasks_left > 0 or run_forever is True:
+                if run_forever:
+                    number_of_tasks = self.config['tasks_per_transaction']
+                else:
+                    number_of_tasks = tasks_left
+
                 tasks = self.get_next_tasks(
-                    number_of_tasks=tasks_left,
+                    number_of_tasks=number_of_tasks,
                 )
                 if not tasks:
                     time.sleep(1)

@@ -73,3 +73,8 @@ docker run \
             --web_server_bind_host=0.0.0.0 \
     "
 ```
+
+## Run tests
+```shell
+python3 -m unittest discover tasker.tests
+```
