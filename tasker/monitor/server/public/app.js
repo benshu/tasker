@@ -152,6 +152,16 @@ TaskerDashboard.controller(
                     {}
                 );
             };
+
+            $interval(
+                function() {
+                    websocket.emit(
+                        'workers',
+                        {}
+                    );
+                },
+                2000
+            );
         }
     ]
 );
