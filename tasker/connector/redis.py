@@ -8,16 +8,18 @@ class Connector(_connector.Connector):
     '''
     name = 'redis'
 
-    def __init__(self, host, port, database):
+    def __init__(self, host, port, password, database):
         super().__init__()
 
         self.host = host
         self.port = port
+        self.password = password
         self.database = database
 
         self.connection = redis.StrictRedis(
             host=self.host,
             port=self.port,
+            password=self.password,
             db=self.database,
             retry_on_timeout=True,
             socket_keepalive=True,
@@ -25,18 +27,17 @@ class Connector(_connector.Connector):
             socket_timeout=60,
         )
 
-    def pop(self, key, timeout=0):
+    def pop(self, key):
         '''
         '''
-        value = self.connection.blpop(
-            keys=[key],
-            timeout=timeout,
+        value = self.connection.lpop(
+            name=key,
         )
 
         if value is None:
             return None
         else:
-            return value[1]
+            return value
 
     def pop_bulk(self, key, count):
         '''
@@ -105,6 +106,7 @@ class Connector(_connector.Connector):
         state = {
             'host': self.host,
             'port': self.port,
+            'password': self.password,
             'database': self.database,
         }
 
@@ -116,5 +118,6 @@ class Connector(_connector.Connector):
         self.__init__(
             host=value['host'],
             port=value['port'],
+            password=value['password'],
             database=value['database'],
         )

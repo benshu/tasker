@@ -166,3 +166,9 @@ class Scheduler:
             time_delta=time_delta,
             repeatedly=True,
         )
+
+    def __del__(self):
+        '''
+        '''
+        self.event_loop.stop()
+        self.event_loop.close()

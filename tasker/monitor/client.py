@@ -65,6 +65,11 @@ class StatisticsClient:
             message_value=value,
         )
 
+    def __del__(self):
+        '''
+        '''
+        self.statistics_socket.close()
+
     def __getstate__(self):
         '''
         '''
@@ -84,3 +89,28 @@ class StatisticsClient:
             host_name=value['host_name'],
             worker_name=value['worker_name'],
         )
+
+
+class StatisticsDummyClient:
+    '''
+    '''
+    def __init__(self, stats_server, host_name, worker_name):
+        pass
+
+    def increment_stats(self, message_type, message_value):
+        pass
+
+    def increment_success(self, value=1):
+        pass
+
+    def increment_failure(self, value=1):
+        pass
+
+    def increment_retry(self, value=1):
+        pass
+
+    def increment_process(self, value=1):
+        pass
+
+    def increment_heartbeat(self, value=1):
+        pass

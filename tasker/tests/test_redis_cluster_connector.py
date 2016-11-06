@@ -7,18 +7,18 @@ from .. import connector
 class RedisConnectorTestCase(unittest.TestCase):
     def setUp(self):
         self.redis_connector = connector.redis_cluster.Connector(
-            startup_nodes=[
+            nodes=[
                 {
                     'host': '127.0.0.1',
                     'port': 6379,
+                    'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
+                    'database': 0,
                 },
                 {
                     'host': '127.0.0.1',
                     'port': 6380,
-                },
-                {
-                    'host': '127.0.0.1',
-                    'port': 6381,
+                    'password': 'e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97',
+                    'database': 0,
                 },
             ]
         )

@@ -1,4 +1,5 @@
-import rediscluster
+import redis
+import random
 
 from . import _connector
 
@@ -8,75 +9,114 @@ class Connector(_connector.Connector):
     '''
     name = 'redis_cluster'
 
-    def __init__(self, startup_nodes):
+    def __init__(self, nodes):
         super().__init__()
 
-        self.startup_nodes = startup_nodes
+        self.nodes = nodes
 
-        self.connection = rediscluster.StrictRedisCluster(
-            startup_nodes=startup_nodes,
-            retry_on_timeout=True,
-            socket_keepalive=True,
-            socket_connect_timeout=10,
-            socket_timeout=60,
-        )
+        self.connections = [
+            redis.StrictRedis(
+                host=node['host'],
+                port=node['port'],
+                password=node['password'],
+                db=node['database'],
+                retry_on_timeout=True,
+                socket_keepalive=True,
+                socket_connect_timeout=10,
+                socket_timeout=60,
+            )
+            for node in nodes
+        ]
+        self.set_connection = self.connections[0]
+        random.shuffle(self.connections)
 
-    def pop(self, key, timeout=0):
+    def rotate_connections(self):
         '''
         '''
-        value = self.connection.blpop(
-            keys=[key],
-            timeout=timeout,
-        )
+        self.connections = self.connections[1:] + self.connections[:1]
 
-        if value is None:
-            return None
-        else:
-            return value[1]
+    def pop(self, key):
+        '''
+        '''
+        connections = self.connections
+
+        for connection in connections:
+            value = connection.lpop(
+                name=key,
+            )
+
+            if value:
+                return value
+            else:
+                self.rotate_connections()
+
+        return None
 
     def pop_bulk(self, key, count):
         '''
         '''
-        pipeline = self.connection.pipeline()
+        values = []
+        connections = self.connections
+        current_count = count
 
-        pipeline.lrange(key, 0, count - 1)
-        pipeline.ltrim(key, count, -1)
+        for connection in connections:
+            pipeline = connection.pipeline()
 
-        value = pipeline.execute()
+            pipeline.lrange(key, 0, current_count - 1)
+            pipeline.ltrim(key, current_count, -1)
 
-        if len(value) == 1:
-            return []
-        else:
-            return value[0]
+            value = pipeline.execute()
+
+            if len(value) != 1:
+                values += value[0]
+            else:
+                self.rotate_connections()
+
+                continue
+
+            if len(values) == count:
+                return values
+
+            current_count = count - len(values)
+
+        return values
 
     def push(self, key, value):
         '''
         '''
-        return self.connection.rpush(key, value)
+        push_returned_value = self.connections[0].rpush(key, value)
+
+        self.rotate_connections()
+
+        return push_returned_value
 
     def push_bulk(self, key, values):
         '''
         '''
-        return self.connection.rpush(key, *values)
+        push_returned_value = self.connections[0].rpush(key, *values)
+
+        self.rotate_connections()
+
+        return push_returned_value
 
     def add_to_set(self, set_name, value):
         '''
         '''
-        added = self.connection.sadd(set_name, value)
+        added = self.set_connection.sadd(set_name, value)
 
         return bool(added)
 
     def remove_from_set(self, set_name, value):
         '''
         '''
-        removed = self.connection.srem(set_name, value)
+        removed = self.set_connection.srem(set_name, value)
 
         return bool(removed)
 
     def is_member_of_set(self, set_name, value):
         '''
         '''
-        is_memeber = self.connection.sismember(
+        is_memeber = self.set_connection.sismember(
             name=set_name,
             value=value,
         )
@@ -86,20 +126,26 @@ class Connector(_connector.Connector):
     def len(self, key):
         '''
         '''
-        return self.connection.llen(
-            name=key,
-        )
+        total_len = 0
+
+        for connection in self.connections:
+            total_len += connection.llen(
+                name=key,
+            )
+
+        return total_len
 
     def delete(self, key):
         '''
         '''
-        return self.connection.delete(key)
+        for connection in self.connections:
+            connection.delete(key)
 
     def __getstate__(self):
         '''
         '''
         state = {
-            'startup_nodes': self.startup_nodes,
+            'nodes': self.nodes,
         }
 
         return state
@@ -108,5 +154,5 @@ class Connector(_connector.Connector):
         '''
         '''
         self.__init__(
-            startup_nodes=value['startup_nodes'],
+            nodes=value['nodes'],
         )
