@@ -7,32 +7,37 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,300,600">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.2.3/css/bulma.min.css">
 
-    <script src="https://code.jquery.com/jquery-3.0.0.min.js"></script>
-    <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
-    <script src="https://code.angularjs.org/1.5.7/angular.min.js"></script>
-    <script src="https://code.angularjs.org/1.5.7/angular-route.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-websocket/2.0.0/angular-websocket.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/js/materialize.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.5.1/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.8/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.8/angular-route.min.js"></script>
 
     <script src="app.js"></script>
 </head>
 
 <body>
     <div class="container">
-        <nav>
-            <div class="nav-wrapper">
-                <a href="#" class="brand-logo right">Tasker Monitor</a>
-                <ul id="" class="left hide-on-med-and-down">
-                    <li><a href="#/dashboard">dashboard</a></li>
-                    <li><a href="#/queues">queues</a></li>
-                    <li><a href="#/workers">workers</a></li>
-                </ul>
-            </div>
-        </nav>
+        <div>
+            <nav class="nav">
+                <div class="nav-left">
+                    <a class="nav-item is-brand" href="#">
+                        Tasker Monitor
+                    </a>
+                </div>
+
+                <div class="nav-right nav-menu">
+                    <a class="nav-item is-tab" href="#/dashboard">
+                        dashboard
+                    </a>
+                    <a class="nav-item is-tab" href="#/workers">
+                        workers
+                    </a>
+                </div>
+            </nav>
+        </div>
     </div>
 
     <div ng-view></div>

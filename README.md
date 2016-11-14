@@ -60,13 +60,12 @@ docker run \
     --publish=9999:9999/udp \
     --publish=8080:8080 \
     node bash -c " \
-        git clone -b improved_version https://github.com/wavenator/tasker.git; \
+        git clone -b master https://github.com/wavenator/tasker.git; \
         cd tasker/tasker/monitor/server; \
         npm install; \
         node server.js \
-            --redis_host=127.0.0.1 \
-            --redis_port=6379 \
-            --redis_password=e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97 \
+            --redis_node=redis://:e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97@127.0.0.1:6379/0 \
+            --redis_node=redis://:e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97@127.0.0.1:6380/0 \
             --udp_server_bind_port=9999 \
             --udp_server_bind_host=0.0.0.0 \
             --web_server_bind_port=8080 \

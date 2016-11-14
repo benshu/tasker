@@ -3,6 +3,7 @@ import time
 
 
 worker = consumer.Worker()
+worker.init_worker()
 
 before = time.time()
 worker.apply_async_one(num=4)

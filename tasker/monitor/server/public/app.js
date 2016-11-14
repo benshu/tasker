@@ -2,7 +2,6 @@ var TaskerDashboard = angular.module(
     'TaskerDashboard',
     [
         'ngRoute',
-        'ngWebSocket',
     ]
 );
 TaskerDashboard.config(
@@ -22,12 +21,6 @@ TaskerDashboard.config(
                     templateUrl: 'pages/workers.html'
                 }
             )
-            .when(
-                '/queues',
-                {
-                    templateUrl: 'pages/queues.html'
-                }
-            )
             .otherwise(
                 {
                     redirectTo: '/dashboard'
@@ -41,10 +34,9 @@ TaskerDashboard.controller(
     'DashboardController',
     [
         '$scope',
-        '$websocket',
         '$location',
         '$interval',
-        function DashboardController($scope, $websocket, $location, $interval) {
+        function DashboardController($scope, $location, $interval) {
             $scope.statistics = {
                 'counter': {
                     'process': 0,
@@ -82,24 +74,6 @@ TaskerDashboard.controller(
                 },
                 1000
             );
-        }
-    ]
-);
-
-TaskerDashboard.controller(
-    'QueuesController',
-    [
-        '$scope',
-        '$websocket',
-        '$location',
-        '$interval',
-        function QueuesController($scope, $websocket, $location, $interval) {
-            var host = $location.host();
-            var websocket = io(
-                {
-                    'port': 8000
-                }
-            );
 
             websocket.on(
                 'queues',
@@ -125,10 +99,9 @@ TaskerDashboard.controller(
     'WorkersController',
     [
         '$scope',
-        '$websocket',
         '$location',
         '$interval',
-        function WorkersController($scope, $websocket, $location, $interval) {
+        function WorkersController($scope, $location, $interval) {
             $scope.workers_table_sort_by = 'hostname';
             $scope.workers_table_sort_by_reverse = true;
 

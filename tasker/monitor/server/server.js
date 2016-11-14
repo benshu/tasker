@@ -1,11 +1,13 @@
-var bluebird = require('bluebird');
-var dgram = require('dgram');
-var express = require('express');
-var http = require('http');
-var socket_io = require('socket.io');
-var msgpack = require('msgpack-lite');
-var redis = require('redis');
-var yargs = require('yargs');
+const bluebird = require('bluebird');
+const dgram = require('dgram');
+const express = require('express');
+const http = require('http');
+const socket_io = require('socket.io');
+const msgpack = require('msgpack-lite');
+const redis = require('redis');
+const yargs = require('yargs');
+const url = require('url');
+
 
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
@@ -13,16 +15,42 @@ bluebird.promisifyAll(redis.Multi.prototype);
 
 var argv = yargs.argv;
 
-var redis_client = redis.createClient(
-    {
-        'host': argv.redis_host,
-        'port': argv.redis_port,
-        'password': argv.redis_password,
-        'retry_strategy': function (options) {
-            return 3000;
+var redis_clients = [];
+if (typeof argv.redis_node === 'string' || argv.redis_node instanceof String) {
+    var redis_url = argv.redis_node;
+    var redis_parsed_url = url.parse(redis_url);
+    var redis_client = redis.createClient(
+        {
+            'host': redis_parsed_url.hostname,
+            'port': redis_parsed_url.port,
+            'password': redis_parsed_url.auth.split(':')[1],
+            'db': redis_parsed_url.path.split('/')[1],
+            'retry_strategy': function (options) {
+                return 3000;
+            }
         }
+    );
+
+    redis_clients.push(redis_client);
+} else {
+    for (var i = 0; i < argv.redis_node.length; i++) {
+        var redis_url = argv.redis_node[i];
+        var redis_parsed_url = url.parse(redis_url);
+        var redis_client = redis.createClient(
+            {
+                'host': redis_parsed_url.hostname,
+                'port': redis_parsed_url.port,
+                'password': redis_parsed_url.auth.split(':')[1],
+                'db': redis_parsed_url.path.split('/')[1],
+                'retry_strategy': function (options) {
+                    return 3000;
+                }
+            }
+        );
+
+        redis_clients.push(redis_client);
     }
-);
+}
 
 var udp_server_port = argv.udp_server_bind_port;
 var udp_server_host = argv.udp_server_bind_host;
@@ -59,7 +87,7 @@ var Statistics = function () {
     };
     this.workers = {};
 
-    this.update_rate = function (rate) {
+    this.update_rate = function(rate) {
         var total_count = 0;
 
         this.statistics.last_log[rate].unshift(this.statistics.counter[rate]);
@@ -153,6 +181,7 @@ websockets_server.on(
                 for (var key in statistics.workers) {
                     workers.push(statistics.workers[key]);
                 }
+
                 socket.emit(
                     'workers',
                     workers
@@ -162,57 +191,39 @@ websockets_server.on(
         socket.on(
             'queues',
             function (data) {
-                redis_client
-                .multi()
-                .keys('*')
-                .execAsync()
-                .then(
-                    function(result) {
-                        var queues_names = result[0];
-                        var queues_len_promises = [];
+                var queues_length_promises = [];
 
-                        for (var i = 0; i < queues_names.length; i++) {
-                            var llen_promise = null;
-                            var queue_name = queues_names[i];
+                for (var redis_client_index = 0; redis_client_index < redis_clients.length; redis_client_index++) {
+                    redis_client = redis_clients[redis_client_index];
 
-                            if (queue_name.indexOf('.results') > -1) {
-                                llen_promise = redis_client.scardAsync(
-                                    queue_name
-                                );
-                            } else if (queue_name.indexOf(':') === -1) {
-                                llen_promise = redis_client.llenAsync(
-                                    queue_name
-                                );
-                            } else {
-                                continue;
-                            }
+                    queues_length_promises.push(
+                        get_redis_queues(redis_client)
+                    );
+                }
 
-                            queues_len_promises.push(
-                                new bluebird.Promise(
-                                    function(resolve, reject) {
-                                        return llen_promise.then(
-                                            function(queue_name) {
-                                                return function(length) {
-                                                    return resolve(
-                                                        {
-                                                            'name': queue_name,
-                                                            'length': length
-                                                        }
-                                                    );
-                                                };
-                                            }(queue_name)
-                                        );
-                                    }
-                                )
-                            );
-                        }
-
-                        return bluebird.all(queues_len_promises);
-                    }
-                )
+                bluebird.all(queues_length_promises)
                 .then(
                     function(results) {
-                        socket.emit('queues', results);
+                        var merged_results = {};
+
+                        for (var i = 0; i < results.length; i++) {
+                            var current_results = results[i];
+
+                            for (var j = 0; j < current_results.length; j++) {
+                                var current_result = current_results[j];
+
+                                if (current_result.name in merged_results) {
+                                    merged_results[current_result.name] += current_result.count;
+                                } else {
+                                    merged_results[current_result.name] = current_result.count;
+                                }
+                            }
+                        }
+
+                        socket.emit(
+                            'queues',
+                            merged_results
+                        );
                     }
                 );
             }
@@ -226,6 +237,58 @@ websockets_server.on(
     }
 );
 
+function get_redis_queues(redis_client) {
+    var results = redis_client
+    .multi()
+    .keys('*')
+    .execAsync()
+    .then(
+        function(result) {
+            var queues_names = result[0];
+            var queues_len_promises = [];
+
+            for (var i = 0; i < queues_names.length; i++) {
+                var llen_promise = null;
+                var queue_name = queues_names[i];
+
+                if (queue_name.indexOf('.results') > -1) {
+                    llen_promise = redis_client.scardAsync(
+                        queue_name
+                    );
+                } else if (queue_name.indexOf(':') === -1) {
+                    llen_promise = redis_client.llenAsync(
+                        queue_name
+                    );
+                } else {
+                    continue;
+                }
+
+                queues_len_promises.push(
+                    new bluebird.Promise(
+                        function(resolve, reject) {
+                            return llen_promise.then(
+                                function(queue_name) {
+                                    return function(count) {
+                                        return resolve(
+                                            {
+                                                'name': queue_name,
+                                                'count': count
+                                            }
+                                        );
+                                    };
+                                }(queue_name)
+                            );
+                        }
+                    )
+                );
+            }
+
+            return bluebird.all(queues_len_promises);
+        }
+    );
+
+    return results;
+}
 
 udp_server.on(
     'listening',

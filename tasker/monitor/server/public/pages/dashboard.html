@@ -1,43 +1,97 @@
 <div class="container" ng-controller="DashboardController">
-    <div class="row">
-        <div class="col s4">
-            <div class="card blue-grey">
-                <div class="card-content white-text">
-                    <span class="card-title">
-                        <h4 class='center-align'>Success</h4>
-                    </span>
-                    <h5 style="color: #009688; text-align: center; font-weight: bold;">{{statistics.counter.success}}</h5>
-                </div>
-                <div class="card-action">
-                    <h6 style="text-align: center; font-weight: bold;">{{statistics.rate.success}}</h5>
+    <div class="columns">
+        <div class="column">
+        </div>
+    </div>
+
+    <div class="columns">
+        <div class="column">
+            <div class="card is-fullwidth">
+                <header class="card-header">
+                    <p class="card-header-title">
+                      Success
+                    </p>
+                </header>
+                <div class="card-content">
+                    <div class="content">
+                        <h2 style="color: #009688; text-align: center; font-weight: bold;">{{statistics.counter.success.toLocaleString()}}</h2>
+                        <br>
+                        <h3 style="text-align: center; font-weight: bold;">{{statistics.rate.success.toLocaleString()}}</h3>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col s4">
-            <div class="card blue-grey">
-                <div class="card-content white-text">
-                    <span class="card-title">
-                        <h4 class='center-align'>Retry</h4>
-                    </span>
-                    <h5 style="color: #03A9F4; text-align: center; font-weight: bold;">{{statistics.counter.retry}}</h5>
-                </div>
-                <div class="card-action">
-                    <h6 style="text-align: center; font-weight: bold;">{{statistics.rate.retry}}</h5>
+        <div class="column">
+            <div class="card is-fullwidth">
+                <header class="card-header">
+                    <p class="card-header-title">
+                      Retry
+                    </p>
+                </header>
+                <div class="card-content">
+                    <div class="content">
+                        <h2 style="color: #03A9F4; text-align: center; font-weight: bold;">{{statistics.counter.retry.toLocaleString()}}</h2>
+                        <br>
+                        <h3 style="text-align: center; font-weight: bold;">{{statistics.rate.retry.toLocaleString()}}</h3>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col s4">
-            <div class="card blue-grey">
-                <div class="card-content white-text">
-                    <span class="card-title">
-                        <h4 class='center-align'>Failure</h4>
-                    </span>
-                    <h5 style="color: #E53935; text-align: center; font-weight: bold;">{{statistics.counter.failure}}</h5>
-                </div>
-                <div class="card-action">
-                    <h6 style="text-align: center; font-weight: bold;">{{statistics.rate.failure}}</h5>
+        <div class="column">
+            <div class="card is-fullwidth">
+                <header class="card-header">
+                    <p class="card-header-title">
+                      Failure
+                    </p>
+                </header>
+                <div class="card-content">
+                    <div class="content">
+                        <h2 style="color: #E53935; text-align: center; font-weight: bold;">{{statistics.counter.failure.toLocaleString()}}</h2>
+                        <br>
+                        <h3 style="text-align: center; font-weight: bold;">{{statistics.rate.failure.toLocaleString()}}</h3>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="columns">
+        <div class="column">
+        </div>
+    </div>
+
+    <div class="columns">
+        <div class="column">
+            <table id="queues-table" class="table is-bordered is-stripped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="(queue_name, queue_count) in queues" ng-if="queue_name.indexOf('results') === -1">
+                        <td style="font-weight: bold;">{{queue_name}}</td>
+                        <td style="font-weight: bold;">{{queue_count.toLocaleString()}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="column">
+            <table id="queues-table" class="table is-bordered is-stripped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="(queue_name, queue_count) in queues" ng-if="queue_name.indexOf('results') > -1">
+                        <td style="font-weight: bold;">{{queue_name}}</td>
+                        <td style="font-weight: bold;">{{queue_count.toLocaleString()}}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
