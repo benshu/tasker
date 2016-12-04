@@ -13,6 +13,7 @@ from . import encoder
 from . import logger
 from . import monitor
 from . import queue
+from . import storage
 from . import task_queue
 
 
@@ -73,17 +74,23 @@ class Worker:
         if self.worker_initialized:
             return
 
-        queue_connector_obj = connector.__connectors__[self.config['connector']['type']]
-        queue_connector = queue_connector_obj(**self.config['connector']['params'])
-        queue_obj = queue.regular.Queue(
-            connector=queue_connector,
-            encoder=encoder.encoder.Encoder(
-                compressor_name=self.config['encoder']['compressor'],
-                serializer_name=self.config['encoder']['serializer'],
-            ),
+        encoder_obj = encoder.encoder.Encoder(
+            compressor_name=self.config['encoder']['compressor'],
+            serializer_name=self.config['encoder']['serializer'],
         )
+        connector_class = connector.__connectors__[self.config['connector']['type']]
+        connector_obj = connector_class(**self.config['connector']['params'])
+        queue_obj = queue.regular.Queue(
+            connector=connector_obj,
+            encoder=encoder_obj,
+        )
+
         self.task_queue = task_queue.TaskQueue(
             queue=queue_obj,
+        )
+        self.storage = storage.storage.Storage(
+            connector=connector_obj,
+            encoder=encoder_obj,
         )
 
         if self.config['monitoring']:

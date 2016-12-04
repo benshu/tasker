@@ -4,7 +4,9 @@ import random
 from . import _connector
 
 
-class Connector(_connector.Connector):
+class Connector(
+    _connector.Connector,
+):
     '''
     '''
     name = 'redis_cluster'
@@ -27,13 +29,39 @@ class Connector(_connector.Connector):
             )
             for node in nodes
         ]
-        self.set_connection = self.connections[0]
+
+        self.master_connection = self.connections[0]
+
         random.shuffle(self.connections)
 
     def rotate_connections(self):
         '''
         '''
         self.connections = self.connections[1:] + self.connections[:1]
+
+    def key_set(self, key, value, ttl=None):
+        '''
+        '''
+        is_new = self.master_connection.set(
+            name=key,
+            value=value,
+            px=ttl,
+            nx=True,
+        )
+
+        return is_new is True
+
+    def key_get(self, key):
+        '''
+        '''
+        return self.master_connection.get(
+            name=key,
+        )
+
+    def key_del(self, keys):
+        '''
+        '''
+        return self.master_connection.delete(*keys)
 
     def pop(self, key):
         '''
@@ -102,21 +130,21 @@ class Connector(_connector.Connector):
     def add_to_set(self, set_name, value):
         '''
         '''
-        added = self.set_connection.sadd(set_name, value)
+        added = self.master_connection.sadd(set_name, value)
 
         return bool(added)
 
     def remove_from_set(self, set_name, value):
         '''
         '''
-        removed = self.set_connection.srem(set_name, value)
+        removed = self.master_connection.srem(set_name, value)
 
         return bool(removed)
 
     def is_member_of_set(self, set_name, value):
         '''
         '''
-        is_memeber = self.set_connection.sismember(
+        is_memeber = self.master_connection.sismember(
             name=set_name,
             value=value,
         )

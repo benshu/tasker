@@ -3,7 +3,9 @@ import redis
 from . import _connector
 
 
-class Connector(_connector.Connector):
+class Connector(
+    _connector.Connector,
+):
     '''
     '''
     name = 'redis'
@@ -26,6 +28,30 @@ class Connector(_connector.Connector):
             socket_connect_timeout=10,
             socket_timeout=60,
         )
+
+    def key_set(self, key, value, ttl=None):
+        '''
+        '''
+        is_new = self.connection.set(
+            name=key,
+            value=value,
+            px=ttl,
+            nx=True,
+        )
+
+        return is_new is True
+
+    def key_get(self, key):
+        '''
+        '''
+        return self.connection.get(
+            name=key,
+        )
+
+    def key_del(self, keys):
+        '''
+        '''
+        return self.connection.delete(*keys)
 
     def pop(self, key):
         '''

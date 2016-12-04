@@ -235,10 +235,10 @@ class Queue:
 
         return state
 
-    def __setstate__(self, value):
+    def __setstate__(self, state):
         '''
         '''
         self.__init__(
-            connector=value['connector'],
-            encoder=value['encoder'],
+            connector=state['connector'],
+            encoder=state['encoder'],
         )

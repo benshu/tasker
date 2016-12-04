@@ -91,11 +91,9 @@ var Statistics = function () {
         var total_count = 0;
 
         this.statistics.last_log[rate].unshift(this.statistics.counter[rate]);
-
-        for (var i = 0; i < this.statistics.last_log[rate].length - 1; i++) {
-            total_count += this.statistics.last_log[rate][i] - this.statistics.last_log[rate][i + 1];
-        }
         this.statistics.last_log[rate].pop();
+
+        total_count = this.statistics.last_log[rate][0] - this.statistics.last_log[rate][4];
 
         if (total_count > 0) {
             this.statistics.rate[rate] = total_count / 5.0;
