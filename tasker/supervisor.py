@@ -9,8 +9,11 @@ from . import logger
 class Supervisor:
     '''
     '''
-
-    def __init__(self, worker_class, concurrent_workers):
+    def __init__(
+        self,
+        worker_class,
+        concurrent_workers,
+    ):
         self.logger = logger.logger.Logger(
             logger_name='Supervisor',
         )
@@ -25,7 +28,10 @@ class Supervisor:
         self.should_work_event = threading.Event()
         self.should_work_event.set()
 
-    def worker_watchdog(self, function):
+    def worker_watchdog(
+        self,
+        function,
+    ):
         '''
         '''
         while self.should_work_event.is_set():
@@ -58,7 +64,9 @@ class Supervisor:
                 process.terminate()
                 self.workers_processes.remove(process)
 
-    def start(self):
+    def start(
+        self,
+    ):
         '''
         '''
         threads = []
@@ -86,7 +94,9 @@ class Supervisor:
                 worker_process.terminate()
             sys.exit(0)
 
-    def __getstate__(self):
+    def __getstate__(
+        self,
+    ):
         '''
         '''
         state = {
@@ -96,7 +106,10 @@ class Supervisor:
 
         return state
 
-    def __setstate__(self, value):
+    def __setstate__(
+        self,
+        value,
+    ):
         '''
         '''
         self.__init__(

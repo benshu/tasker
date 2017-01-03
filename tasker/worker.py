@@ -63,14 +63,18 @@ class Worker:
         'heartbeat_interval': 10.0,
     }
 
-    def __init__(self):
+    def __init__(
+        self,
+    ):
         self.logger = logger.logger.Logger(
             logger_name=self.name,
         )
 
         self.worker_initialized = False
 
-    def init_worker(self):
+    def init_worker(
+        self,
+    ):
         if self.worker_initialized:
             return
 
@@ -114,21 +118,29 @@ class Worker:
 
         self.worker_initialized = True
 
-    def purge_tasks(self):
+    def purge_tasks(
+        self,
+    ):
         '''
         '''
         return self.task_queue.purge_tasks(
             task_name=self.name,
         )
 
-    def number_of_enqueued_tasks(self):
+    def number_of_enqueued_tasks(
+        self,
+    ):
         '''
         '''
         return self.task_queue.number_of_enqueued_tasks(
             task_name=self.name,
         )
 
-    def craft_task(self, *args, **kwargs):
+    def craft_task(
+        self,
+        *args,
+        **kwargs
+    ):
         '''
         '''
         task = self.task_queue.craft_task(
@@ -140,14 +152,21 @@ class Worker:
 
         return task
 
-    def report_complete(self, task):
+    def report_complete(
+        self,
+        task,
+    ):
         '''
         '''
         return self.task_queue.report_complete(
             task=task,
         )
 
-    def wait_task_finished(self, task, timeout=0):
+    def wait_task_finished(
+        self,
+        task,
+        timeout=0,
+    ):
         '''
         '''
         self.task_queue.wait_task_finished(
@@ -155,7 +174,11 @@ class Worker:
             timeout=timeout,
         )
 
-    def apply_async_one(self, *args, **kwargs):
+    def apply_async_one(
+        self,
+        *args,
+        **kwargs
+    ):
         '''
         '''
         task = self.craft_task(*args, **kwargs)
@@ -166,14 +189,20 @@ class Worker:
 
         return task
 
-    def apply_async_many(self, tasks):
+    def apply_async_many(
+        self,
+        tasks,
+    ):
         '''
         '''
         return self.task_queue.apply_async_many(
             tasks=tasks,
         )
 
-    def get_next_tasks(self, number_of_tasks):
+    def get_next_tasks(
+        self,
+        number_of_tasks,
+    ):
         '''
         '''
         if number_of_tasks > self.config['tasks_per_transaction']:
@@ -187,7 +216,9 @@ class Worker:
                 number_of_tasks=number_of_tasks,
             )
 
-    def work_loop(self):
+    def work_loop(
+        self,
+    ):
         '''
         '''
         try:
@@ -218,6 +249,7 @@ class Worker:
                 )
                 if not tasks:
                     time.sleep(1)
+
                     continue
 
                 self.monitor_client.increment_process(
@@ -243,12 +275,24 @@ class Worker:
         finally:
             self.executor.end_working()
 
-    def retry(self):
+    def retry(
+        self,
+        count=1,
+    ):
         '''
         '''
-        raise WorkerRetry
+        retry_exception = WorkerRetry()
+        retry_exception.count = 1
 
-    def _on_success(self, task, returned_value, args, kwargs):
+        raise retry_exception
+
+    def _on_success(
+        self,
+        task,
+        returned_value,
+        args,
+        kwargs,
+    ):
         '''
         '''
         self.monitor_client.increment_success()
@@ -277,7 +321,14 @@ class Worker:
                 exception_traceback=exception_traceback,
             )
 
-    def _on_failure(self, task, exception, exception_traceback, args, kwargs):
+    def _on_failure(
+        self,
+        task,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         '''
         '''
         self.monitor_client.increment_failure()
@@ -309,10 +360,22 @@ class Worker:
                 exception_traceback=exception_traceback,
             )
 
-    def _on_retry(self, task, exception, exception_traceback, args, kwargs):
+    def _on_retry(
+        self,
+        task,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         '''
         '''
-        self.monitor_client.increment_retry()
+        count = exception.count
+
+        if count:
+            self.monitor_client.increment_retry(
+                value=count,
+            )
 
         self.logger.log_task_failure(
             failure_reason='Retry',
@@ -343,9 +406,17 @@ class Worker:
 
         self.task_queue.retry(
             task=task,
+            count=count,
         )
 
-    def _on_timeout(self, task, exception, exception_traceback, args, kwargs):
+    def _on_timeout(
+        self,
+        task,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         '''
         '''
         self.monitor_client.increment_failure()
@@ -377,7 +448,14 @@ class Worker:
                 exception_traceback=exception_traceback,
             )
 
-    def _on_max_retries(self, task, exception, exception_traceback, args, kwargs):
+    def _on_max_retries(
+        self,
+        task,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         '''
         '''
         self.monitor_client.increment_failure()
@@ -409,42 +487,77 @@ class Worker:
                 exception_traceback=exception_traceback,
             )
 
-    def init(self):
+    def init(
+        self,
+    ):
         '''
         '''
         pass
 
-    def work(self):
+    def work(
+        self,
+    ):
         '''
         '''
         pass
 
-    def on_success(self, returned_value, args, kwargs):
+    def on_success(
+        self,
+        returned_value,
+        args,
+        kwargs,
+    ):
         '''
         '''
         pass
 
-    def on_failure(self, exception, exception_traceback, args, kwargs):
+    def on_failure(
+        self,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         '''
         '''
         pass
 
-    def on_retry(self, exception, exception_traceback, args, kwargs):
+    def on_retry(
+        self,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         '''
         '''
         pass
 
-    def on_max_retries(self, exception, exception_traceback, args, kwargs):
+    def on_max_retries(
+        self,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         '''
         '''
         pass
 
-    def on_timeout(self, exception, exception_traceback, args, kwargs):
+    def on_timeout(
+        self,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         '''
         '''
         pass
 
-    def __getstate__(self):
+    def __getstate__(
+        self,
+    ):
         '''
         '''
         state = {
@@ -454,7 +567,10 @@ class Worker:
 
         return state
 
-    def __setstate__(self, value):
+    def __setstate__(
+        self,
+        value,
+    ):
         '''
         '''
         self.name = value['name']
@@ -466,12 +582,19 @@ class Worker:
 class SerialExecutor:
     '''
     '''
-    def __init__(self, worker):
+    def __init__(
+        self,
+        worker,
+    ):
         self.worker = worker
 
         self.tasks_to_finish = []
 
-    def sigabrt_handler(self, signal_num, frame):
+    def sigabrt_handler(
+        self,
+        signal_num,
+        frame,
+    ):
         '''
         '''
         try:
@@ -499,12 +622,18 @@ class SerialExecutor:
 
         os.kill(os.getpid(), signal.SIGTERM)
 
-    def sigint_handler(self, signal_num, frame):
+    def sigint_handler(
+        self,
+        signal_num,
+        frame,
+    ):
         '''
         '''
         raise WorkerSoftTimedout()
 
-    def begin_working(self):
+    def begin_working(
+        self,
+    ):
         '''
         '''
         if self.worker.config['timeouts']['critical_timeout'] == 0:
@@ -537,7 +666,9 @@ class SerialExecutor:
 
         self.worker.init()
 
-    def end_working(self):
+    def end_working(
+        self,
+    ):
         '''
         '''
         if self.tasks_to_finish:
@@ -551,7 +682,10 @@ class SerialExecutor:
         self.worker.heartbeater.stop()
         self.killer.stop()
 
-    def execute_tasks(self, tasks):
+    def execute_tasks(
+        self,
+        tasks,
+    ):
         '''
         '''
         self.tasks_to_finish = tasks.copy()
@@ -563,7 +697,10 @@ class SerialExecutor:
             )
             self.tasks_to_finish.remove(task)
 
-    def execute_task(self, task):
+    def execute_task(
+        self,
+        task,
+    ):
         '''
         '''
         try:
@@ -648,21 +785,31 @@ class SerialExecutor:
 class ThreadedExecutor:
     '''
     '''
-    def __init__(self, worker):
+    def __init__(
+        self,
+        worker,
+    ):
         self.worker = worker
         self.concurrency = worker.config['executor']['concurrency']
 
-    def begin_working(self):
+    def begin_working(
+        self,
+    ):
         '''
         '''
         self.worker.init()
 
-    def end_working(self):
+    def end_working(
+        self,
+    ):
         '''
         '''
         self.worker.heartbeater.stop()
 
-    def execute_tasks(self, tasks):
+    def execute_tasks(
+        self,
+        tasks,
+    ):
         '''
         '''
         future_to_task = {}
@@ -677,7 +824,10 @@ class ThreadedExecutor:
         for future in concurrent.futures.as_completed(future_to_task):
             pass
 
-    def execute_task(self, task):
+    def execute_task(
+        self,
+        task,
+    ):
         '''
         '''
         try:
@@ -762,17 +912,29 @@ class ThreadedExecutor:
             return status
 
 
-class WorkerException(Exception):
+class WorkerException(
+    Exception,
+):
     pass
 
 
-class WorkerSoftTimedout(WorkerException):
+class WorkerSoftTimedout(
+    WorkerException,
+):
     pass
 
 
-class WorkerHardTimedout(WorkerException):
+class WorkerHardTimedout(
+    WorkerException,
+):
     pass
 
 
-class WorkerRetry(WorkerException):
+class WorkerRetry(
+    WorkerException,
+):
+    pass
+
+
+class WorkerRequeue(WorkerException):
     pass

@@ -477,7 +477,14 @@ class RedisTaskQueueTestCase:
         task_one = self.test_task_queue.queue.dequeue(
             queue_name='test_task',
         )
-        self.test_task_queue.retry(task_one)
+
+        self.test_task_queue.retry(task_one, 1)
+        task_one = self.test_task_queue.queue.dequeue(
+            queue_name='test_task',
+        )
+        self.assertEqual(task_one['run_count'], 1)
+
+        self.test_task_queue.retry(task_one, 0)
         task_one = self.test_task_queue.queue.dequeue(
             queue_name='test_task',
         )

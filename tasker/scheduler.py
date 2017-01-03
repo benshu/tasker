@@ -10,7 +10,9 @@ from . import logger
 class Scheduler:
     '''
     '''
-    def __init__(self):
+    def __init__(
+        self,
+    ):
         '''
         '''
         self.logger = logger.logger.Logger(
@@ -32,7 +34,9 @@ class Scheduler:
 
         self.schedulers_threads = []
 
-    def _loop_main(self):
+    def _loop_main(
+        self,
+    ):
         '''
         '''
         while self.should_run.wait():
@@ -41,7 +45,9 @@ class Scheduler:
 
             self.event_loop.run_forever()
 
-    def clear(self):
+    def clear(
+        self,
+    ):
         '''
         '''
         self.stop()
@@ -50,14 +56,18 @@ class Scheduler:
         self.event_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.event_loop)
 
-    def start(self):
+    def start(
+        self,
+    ):
         '''
         '''
         self.should_run.set()
         while not self.event_loop.is_running():
             time.sleep(0)
 
-    def stop(self):
+    def stop(
+        self,
+    ):
         '''
         '''
         self.should_run.clear()
@@ -69,7 +79,9 @@ class Scheduler:
         while self.event_loop.is_running():
             time.sleep(0)
 
-    def terminate(self):
+    def terminate(
+        self,
+    ):
         '''
         '''
         self.stop()
@@ -80,7 +92,14 @@ class Scheduler:
         self.work_thread.join()
         self.should_run.clear()
 
-    def _enqueue_task(self, task, args, kwargs, time_delta, repeatedly):
+    def _enqueue_task(
+        self,
+        task,
+        args,
+        kwargs,
+        time_delta,
+        repeatedly,
+    ):
         '''
         '''
         task.apply_async_one(
@@ -97,7 +116,14 @@ class Scheduler:
                 repeatedly=repeatedly,
             )
 
-    def _run_in(self, task, args, kwargs, time_delta, repeatedly):
+    def _run_in(
+        self,
+        task,
+        args,
+        kwargs,
+        time_delta,
+        repeatedly,
+    ):
         '''
         '''
         self.event_loop.call_soon_threadsafe(
@@ -119,7 +145,12 @@ class Scheduler:
             )
         )
 
-    def run_now(self, task, args, kwargs):
+    def run_now(
+        self,
+        task,
+        args,
+        kwargs,
+    ):
         '''
         '''
         self._run_in(
@@ -132,7 +163,13 @@ class Scheduler:
             repeatedly=False,
         )
 
-    def run_at(self, task, args, kwargs, date_to_run_at):
+    def run_at(
+        self,
+        task,
+        args,
+        kwargs,
+        date_to_run_at,
+    ):
         '''
         '''
         time_delta = date_to_run_at - datetime.datetime.utcnow()
@@ -145,7 +182,13 @@ class Scheduler:
             repeatedly=False,
         )
 
-    def run_in(self, task, args, kwargs, time_delta):
+    def run_in(
+        self,
+        task,
+        args,
+        kwargs,
+        time_delta,
+    ):
         '''
         '''
         self._run_in(
@@ -156,7 +199,13 @@ class Scheduler:
             repeatedly=False,
         )
 
-    def run_every(self, task, args, kwargs, time_delta):
+    def run_every(
+        self,
+        task,
+        args,
+        kwargs,
+        time_delta,
+    ):
         '''
         '''
         self._run_in(
@@ -167,7 +216,9 @@ class Scheduler:
             repeatedly=True,
         )
 
-    def __del__(self):
+    def __del__(
+        self,
+    ):
         '''
         '''
         self.event_loop.stop()

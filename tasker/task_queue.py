@@ -8,13 +8,19 @@ from . import logger
 class TaskQueue:
     '''
     '''
-    def __init__(self, queue):
+    def __init__(
+        self,
+        queue,
+    ):
         self.queue = queue
         self.logger = logger.logger.Logger(
             logger_name='TaskQueue',
         )
 
-    def purge_tasks(self, task_name):
+    def purge_tasks(
+        self,
+        task_name,
+    ):
         '''
         '''
         try:
@@ -28,7 +34,10 @@ class TaskQueue:
                 )
             )
 
-    def number_of_enqueued_tasks(self, task_name):
+    def number_of_enqueued_tasks(
+        self,
+        task_name,
+    ):
         '''
         '''
         try:
@@ -44,7 +53,13 @@ class TaskQueue:
                 )
             )
 
-    def craft_task(self, task_name, args=(), kwargs={}, report_completion=False):
+    def craft_task(
+        self,
+        task_name,
+        args=(),
+        kwargs={},
+        report_completion=False,
+    ):
         '''
         '''
         if report_completion:
@@ -65,7 +80,10 @@ class TaskQueue:
 
         return task
 
-    def create_completion_key(self, task_name):
+    def create_completion_key(
+        self,
+        task_name,
+    ):
         '''
         '''
         added = False
@@ -79,7 +97,10 @@ class TaskQueue:
 
         return completion_key
 
-    def report_complete(self, task):
+    def report_complete(
+        self,
+        task,
+    ):
         '''
         '''
         completion_key = task['completion_key']
@@ -94,7 +115,11 @@ class TaskQueue:
         else:
             return True
 
-    def wait_task_finished(self, task, timeout=0):
+    def wait_task_finished(
+        self,
+        task,
+        timeout=0,
+    ):
         '''
         '''
         completion_key = task['completion_key']
@@ -119,7 +144,11 @@ class TaskQueue:
             time.sleep(0.5)
             remaining_time -= 0.5
 
-    def wait_queue_empty(self, task_name, timeout=0):
+    def wait_queue_empty(
+        self,
+        task_name,
+        timeout=0,
+    ):
         '''
         '''
         remaining_time = timeout
@@ -136,7 +165,10 @@ class TaskQueue:
             time.sleep(1.0)
             remaining_time -= 1.0
 
-    def apply_async_one(self, task):
+    def apply_async_one(
+        self,
+        task,
+    ):
         '''
         '''
         try:
@@ -155,7 +187,10 @@ class TaskQueue:
 
             return False
 
-    def apply_async_many(self, tasks):
+    def apply_async_many(
+        self,
+        tasks,
+    ):
         '''
         '''
         if len(tasks) == 0:
@@ -185,7 +220,11 @@ class TaskQueue:
 
             return False
 
-    def get_tasks(self, task_name, number_of_tasks):
+    def get_tasks(
+        self,
+        task_name,
+        number_of_tasks,
+    ):
         '''
         '''
         try:
@@ -214,10 +253,14 @@ class TaskQueue:
 
             return []
 
-    def retry(self, task):
+    def retry(
+        self,
+        task,
+        count,
+    ):
         '''
         '''
-        task['run_count'] += 1
+        task['run_count'] += count
 
         return self.apply_async_one(
             task=task,
