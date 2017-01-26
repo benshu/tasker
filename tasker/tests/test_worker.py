@@ -34,7 +34,10 @@ class EventsTestWorker(worker.Worker):
         self.failed = False
         self.timed_out = False
         self.retried = False
+        self.requeued = False
         self.max_retried = False
+
+        self.requeue_count = 0
 
         self.logger.logger.setLevel(logging.CRITICAL + 10)
 
@@ -47,6 +50,12 @@ class EventsTestWorker(worker.Worker):
             time.sleep(3)
         elif action == 'retried':
             self.retry()
+        elif action == 'requeued':
+            self.requeue_count += 1
+            if self.requeue_count > 3:
+                return
+
+            self.requeue()
         elif action == 'max_retried':
             self.retry()
         elif action == 'report_completion':
@@ -63,6 +72,9 @@ class EventsTestWorker(worker.Worker):
 
     def on_retry(self, exception, exception_traceback, args, kwargs):
         self.retried = True
+
+    def on_requeue(self, exception, exception_traceback, args, kwargs):
+        self.requeued = True
 
     def on_max_retries(self, exception, exception_traceback, args, kwargs):
         self.max_retried = True
@@ -253,6 +265,30 @@ class WorkerTestCase:
             getattr(
                 self.events_test_worker,
                 'retried',
+            )
+        )
+
+    def test_requeue_event(self):
+        self.events_test_worker.config['max_tasks_per_run'] = 3
+        self.events_test_worker.config['max_retries'] = 1
+        self.events_test_worker.purge_tasks()
+        self.events_test_worker.apply_async_one(
+            action='requeued',
+        )
+        self.assertEqual(
+            self.events_test_worker.number_of_enqueued_tasks(),
+            1,
+        )
+
+        self.events_test_worker.work_loop()
+        self.assertEqual(
+            self.events_test_worker.number_of_enqueued_tasks(),
+            1,
+        )
+        self.assertTrue(
+            getattr(
+                self.events_test_worker,
+                'requeued',
             )
         )
 

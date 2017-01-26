@@ -277,14 +277,21 @@ class Worker:
 
     def retry(
         self,
-        count=1,
     ):
         '''
         '''
         retry_exception = WorkerRetry()
-        retry_exception.count = 1
 
         raise retry_exception
+
+    def requeue(
+        self,
+    ):
+        '''
+        '''
+        requeue_exception = WorkerRequeue()
+
+        raise requeue_exception
 
     def _on_success(
         self,
@@ -370,12 +377,9 @@ class Worker:
     ):
         '''
         '''
-        count = exception.count
-
-        if count:
-            self.monitor_client.increment_retry(
-                value=count,
-            )
+        self.monitor_client.increment_retry(
+            value=1,
+        )
 
         self.logger.log_task_failure(
             failure_reason='Retry',
@@ -406,7 +410,47 @@ class Worker:
 
         self.task_queue.retry(
             task=task,
-            count=count,
+        )
+
+    def _on_requeue(
+        self,
+        task,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
+        '''
+        '''
+        self.logger.log_task_failure(
+            failure_reason='Requeue',
+            task_name=self.name,
+            args=args,
+            kwargs=kwargs,
+            exception=exception,
+            exception_traceback=exception_traceback,
+        )
+
+        try:
+            self.on_requeue(
+                exception=exception,
+                exception_traceback=exception_traceback,
+                args=args,
+                kwargs=kwargs,
+            )
+        except Exception as exception:
+            exception_traceback = traceback.format_exc()
+            self.logger.log_task_failure(
+                failure_reason='Exception during on_requeue',
+                task_name=self.name,
+                args=args,
+                kwargs=kwargs,
+                exception=exception,
+                exception_traceback=exception_traceback,
+            )
+
+        self.task_queue.requeue(
+            task=task,
         )
 
     def _on_timeout(
@@ -523,6 +567,17 @@ class Worker:
         pass
 
     def on_retry(
+        self,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
+        '''
+        '''
+        pass
+
+    def on_requeue(
         self,
         exception,
         exception_traceback,
@@ -759,6 +814,18 @@ class SerialExecutor:
                 )
 
                 status = 'retry'
+        except WorkerRequeue as exception:
+            exception_traceback = traceback.format_exc()
+
+            self.worker._on_requeue(
+                task=task,
+                exception=exception,
+                exception_traceback=exception_traceback,
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+
+            status = 'requeue'
         except Exception as exception:
             exception_traceback = traceback.format_exc()
             self.worker._on_failure(
@@ -774,7 +841,10 @@ class SerialExecutor:
             self.killer.reset()
             self.killer.stop()
 
-            if status != 'retry':
+            if status not in [
+                'retry',
+                'requeue',
+            ]:
                 self.worker.report_complete(
                     task=task,
                 )
@@ -890,6 +960,18 @@ class ThreadedExecutor:
                 )
 
                 status = 'retry'
+        except WorkerRequeue as exception:
+            exception_traceback = traceback.format_exc()
+
+            self.worker._on_requeue(
+                task=task,
+                exception=exception,
+                exception_traceback=exception_traceback,
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+
+            status = 'requeue'
         except Exception as exception:
             exception_traceback = traceback.format_exc()
             self.worker._on_failure(
@@ -904,7 +986,10 @@ class ThreadedExecutor:
         finally:
             timeout_timer.cancel()
 
-            if status != 'retry':
+            if status not in [
+                'retry',
+                'requeue',
+            ]:
                 self.worker.report_complete(
                     task=task,
                 )
@@ -936,5 +1021,7 @@ class WorkerRetry(
     pass
 
 
-class WorkerRequeue(WorkerException):
+class WorkerRequeue(
+    WorkerException,
+):
     pass

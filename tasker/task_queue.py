@@ -256,12 +256,21 @@ class TaskQueue:
     def retry(
         self,
         task,
-        count,
     ):
         '''
         '''
-        task['run_count'] += count
+        task['run_count'] += 1
 
+        return self.apply_async_one(
+            task=task,
+        )
+
+    def requeue(
+        self,
+        task,
+    ):
+        '''
+        '''
         return self.apply_async_one(
             task=task,
         )

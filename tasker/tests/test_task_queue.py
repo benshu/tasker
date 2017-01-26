@@ -478,17 +478,33 @@ class RedisTaskQueueTestCase:
             queue_name='test_task',
         )
 
-        self.test_task_queue.retry(task_one, 1)
+        self.test_task_queue.retry(task_one)
         task_one = self.test_task_queue.queue.dequeue(
             queue_name='test_task',
         )
         self.assertEqual(task_one['run_count'], 1)
 
-        self.test_task_queue.retry(task_one, 0)
+    def test_requeue(self):
+        self.test_task_queue.purge_tasks(
+            task_name='test_task',
+        )
+        task_one = self.test_task_queue.craft_task(
+            task_name='test_task',
+            args=(1,),
+            kwargs={},
+            report_completion=False,
+        )
+        self.assertEqual(task_one['run_count'], 0)
+        self.test_task_queue.apply_async_one(task_one)
         task_one = self.test_task_queue.queue.dequeue(
             queue_name='test_task',
         )
-        self.assertEqual(task_one['run_count'], 1)
+
+        self.test_task_queue.requeue(task_one)
+        task_one = self.test_task_queue.queue.dequeue(
+            queue_name='test_task',
+        )
+        self.assertEqual(task_one['run_count'], 0)
 
 
 class RedisSingleServerTaskQueueTestCase(
