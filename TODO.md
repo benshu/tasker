@@ -5,7 +5,8 @@ tasker:
 - add retry in X time, or at date. https://redislabs.com/ebook/redis-in-action/part-2-core-concepts-2/chapter-6-application-components-in-redis/6-4-task-queues/6-4-2-delayed-tasks
 - add multi tasks storage engine via the redis self.storage.set_value() self.storage.get_value()
 - apply_async task with until_success flag.
-
+- add faulthandler
+- add task a prefix/label
 monitor:
 - update the queues with multiple queues
 - fix the workers table -> sort, and improve the ui/ux
