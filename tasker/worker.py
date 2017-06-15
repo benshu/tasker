@@ -18,8 +18,6 @@ from . import task_queue
 
 
 class Worker:
-    '''
-    '''
     name = 'worker_name'
     config = {
         'encoder': {
@@ -53,8 +51,6 @@ class Worker:
         },
         'executor': {
             'type': 'serial',
-            # 'type': 'threaded',
-            # 'concurrency': 50,
         },
         'max_tasks_per_run': 10,
         'max_retries': 3,
@@ -71,6 +67,7 @@ class Worker:
         )
 
         self.worker_initialized = False
+        self.current_tasks = {}
 
     def init_worker(
         self,
@@ -118,11 +115,22 @@ class Worker:
 
         self.worker_initialized = True
 
+    @property
+    def current_task(
+        self,
+    ):
+        return self.current_tasks[threading.get_ident()]
+
+    @current_task.setter
+    def current_task(
+        self,
+        value,
+    ):
+        self.current_tasks[threading.get_ident()] = value
+
     def purge_tasks(
         self,
     ):
-        '''
-        '''
         return self.task_queue.purge_tasks(
             task_name=self.name,
         )
@@ -130,8 +138,6 @@ class Worker:
     def number_of_enqueued_tasks(
         self,
     ):
-        '''
-        '''
         return self.task_queue.number_of_enqueued_tasks(
             task_name=self.name,
         )
@@ -141,8 +147,6 @@ class Worker:
         *args,
         **kwargs
     ):
-        '''
-        '''
         task = self.task_queue.craft_task(
             task_name=self.name,
             args=args,
@@ -156,8 +160,6 @@ class Worker:
         self,
         task,
     ):
-        '''
-        '''
         return self.task_queue.report_complete(
             task=task,
         )
@@ -167,8 +169,6 @@ class Worker:
         task,
         timeout=0,
     ):
-        '''
-        '''
         self.task_queue.wait_task_finished(
             task=task,
             timeout=timeout,
@@ -179,8 +179,6 @@ class Worker:
         *args,
         **kwargs
     ):
-        '''
-        '''
         task = self.craft_task(*args, **kwargs)
 
         self.task_queue.apply_async_one(
@@ -193,8 +191,6 @@ class Worker:
         self,
         tasks,
     ):
-        '''
-        '''
         return self.task_queue.apply_async_many(
             tasks=tasks,
         )
@@ -203,8 +199,6 @@ class Worker:
         self,
         number_of_tasks,
     ):
-        '''
-        '''
         if number_of_tasks > self.config['tasks_per_transaction']:
             return self.task_queue.get_tasks(
                 task_name=self.name,
@@ -219,8 +213,6 @@ class Worker:
     def work_loop(
         self,
     ):
-        '''
-        '''
         try:
             self.init_worker()
 
@@ -278,17 +270,31 @@ class Worker:
     def retry(
         self,
     ):
-        '''
-        '''
-        retry_exception = WorkerRetry()
+        task = self.current_task
 
-        raise retry_exception
+        if self.config['max_retries'] <= task['run_count']:
+            self._on_max_retries(
+                task=task,
+                exception='',
+                exception_traceback='',
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
+            self.report_complete(
+                task=task,
+            )
+        else:
+            self._on_retry(
+                task=task,
+                exception='',
+                exception_traceback='',
+                args=task['args'],
+                kwargs=task['kwargs'],
+            )
 
     def requeue(
         self,
     ):
-        '''
-        '''
         requeue_exception = WorkerRequeue()
 
         raise requeue_exception
@@ -300,8 +306,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         self.monitor_client.increment_success()
 
         self.logger.log_task_success(
@@ -336,8 +340,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         self.monitor_client.increment_failure()
 
         self.logger.log_task_failure(
@@ -375,8 +377,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         self.monitor_client.increment_retry(
             value=1,
         )
@@ -420,8 +420,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         self.logger.log_task_failure(
             failure_reason='Requeue',
             task_name=self.name,
@@ -461,8 +459,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         self.monitor_client.increment_failure()
 
         self.logger.log_task_failure(
@@ -500,8 +496,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         self.monitor_client.increment_failure()
 
         self.logger.log_task_failure(
@@ -534,15 +528,11 @@ class Worker:
     def init(
         self,
     ):
-        '''
-        '''
         pass
 
     def work(
         self,
     ):
-        '''
-        '''
         pass
 
     def on_success(
@@ -551,8 +541,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         pass
 
     def on_failure(
@@ -562,8 +550,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         pass
 
     def on_retry(
@@ -573,8 +559,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         pass
 
     def on_requeue(
@@ -584,8 +568,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         pass
 
     def on_max_retries(
@@ -595,8 +577,6 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         pass
 
     def on_timeout(
@@ -606,15 +586,11 @@ class Worker:
         args,
         kwargs,
     ):
-        '''
-        '''
         pass
 
     def __getstate__(
         self,
     ):
-        '''
-        '''
         state = {
             'name': self.name,
             'config': self.config,
@@ -626,8 +602,6 @@ class Worker:
         self,
         value,
     ):
-        '''
-        '''
         self.name = value['name']
         self.config = value['config']
 
@@ -635,8 +609,6 @@ class Worker:
 
 
 class SerialExecutor:
-    '''
-    '''
     def __init__(
         self,
         worker,
@@ -650,8 +622,6 @@ class SerialExecutor:
         signal_num,
         frame,
     ):
-        '''
-        '''
         try:
             self.tasks_to_finish.remove(self.current_task)
 
@@ -682,15 +652,11 @@ class SerialExecutor:
         signal_num,
         frame,
     ):
-        '''
-        '''
         raise WorkerSoftTimedout()
 
     def begin_working(
         self,
     ):
-        '''
-        '''
         if self.worker.config['timeouts']['critical_timeout'] == 0:
             self.killer = devices.killer.LocalKiller(
                 pid=os.getpid(),
@@ -724,8 +690,6 @@ class SerialExecutor:
     def end_working(
         self,
     ):
-        '''
-        '''
         if self.tasks_to_finish:
             self.worker.task_queue.apply_async_many(
                 tasks=self.tasks_to_finish,
@@ -741,12 +705,9 @@ class SerialExecutor:
         self,
         tasks,
     ):
-        '''
-        '''
         self.tasks_to_finish = tasks.copy()
 
         for task in tasks:
-            self.current_task = task
             self.execute_task(
                 task=task,
             )
@@ -756,12 +717,11 @@ class SerialExecutor:
         self,
         task,
     ):
-        '''
-        '''
         try:
             self.killer.reset()
             self.killer.start()
 
+            self.worker.current_task = task
             returned_value = self.worker.work(
                 *task['args'],
                 **task['kwargs']
@@ -791,29 +751,6 @@ class SerialExecutor:
             )
 
             status = 'timeout'
-        except WorkerRetry as exception:
-            exception_traceback = traceback.format_exc()
-
-            if self.worker.config['max_retries'] <= task['run_count']:
-                self.worker._on_max_retries(
-                    task=task,
-                    exception=exception,
-                    exception_traceback=exception_traceback,
-                    args=task['args'],
-                    kwargs=task['kwargs'],
-                )
-
-                status = 'max_retries'
-            else:
-                self.worker._on_retry(
-                    task=task,
-                    exception=exception,
-                    exception_traceback=exception_traceback,
-                    args=task['args'],
-                    kwargs=task['kwargs'],
-                )
-
-                status = 'retry'
         except WorkerRequeue as exception:
             exception_traceback = traceback.format_exc()
 
@@ -842,19 +779,18 @@ class SerialExecutor:
             self.killer.stop()
 
             if status not in [
-                'retry',
                 'requeue',
             ]:
                 self.worker.report_complete(
                     task=task,
                 )
 
+            del(self.worker.current_tasks[threading.get_ident()])
+
             return status
 
 
 class ThreadedExecutor:
-    '''
-    '''
     def __init__(
         self,
         worker,
@@ -865,23 +801,17 @@ class ThreadedExecutor:
     def begin_working(
         self,
     ):
-        '''
-        '''
         self.worker.init()
 
     def end_working(
         self,
     ):
-        '''
-        '''
         self.worker.heartbeater.stop()
 
     def execute_tasks(
         self,
         tasks,
     ):
-        '''
-        '''
         future_to_task = {}
 
         with concurrent.futures.ThreadPoolExecutor(
@@ -898,8 +828,6 @@ class ThreadedExecutor:
         self,
         task,
     ):
-        '''
-        '''
         try:
             timeout_timer = threading.Timer(
                 interval=self.worker.config['timeouts']['soft_timeout'],
@@ -911,6 +839,7 @@ class ThreadedExecutor:
             )
             timeout_timer.start()
 
+            self.worker.current_task = task
             returned_value = self.worker.work(
                 *task['args'],
                 **task['kwargs']
@@ -937,29 +866,6 @@ class ThreadedExecutor:
             )
 
             status = 'timeout'
-        except WorkerRetry as exception:
-            exception_traceback = traceback.format_exc()
-
-            if self.worker.config['max_retries'] <= task['run_count']:
-                self.worker._on_max_retries(
-                    task=task,
-                    exception=exception,
-                    exception_traceback=exception_traceback,
-                    args=task['args'],
-                    kwargs=task['kwargs'],
-                )
-
-                status = 'max_retries'
-            else:
-                self.worker._on_retry(
-                    task=task,
-                    exception=exception,
-                    exception_traceback=exception_traceback,
-                    args=task['args'],
-                    kwargs=task['kwargs'],
-                )
-
-                status = 'retry'
         except WorkerRequeue as exception:
             exception_traceback = traceback.format_exc()
 
@@ -987,12 +893,13 @@ class ThreadedExecutor:
             timeout_timer.cancel()
 
             if status not in [
-                'retry',
                 'requeue',
             ]:
                 self.worker.report_complete(
                     task=task,
                 )
+
+            del(self.worker.current_tasks[threading.get_ident()])
 
             return status
 
@@ -1010,12 +917,6 @@ class WorkerSoftTimedout(
 
 
 class WorkerHardTimedout(
-    WorkerException,
-):
-    pass
-
-
-class WorkerRetry(
     WorkerException,
 ):
     pass
