@@ -1,70 +1,64 @@
-import asyncio
 import os
-import jinja2
+import asyncio
 import functools
+import aioredis
 import aiohttp
 import aiohttp.web
+import uvloop
+import argparse
 
 from . import statistics
-from . import host
-from . import worker
 from . import message
 
 
 class StatisticsUDPServer:
-    '''
-    '''
-    def __init__(self, statistics_obj):
+    def __init__(
+        self,
+        statistics_obj,
+    ):
         self.statistics_obj = statistics_obj
 
-    def connection_made(self, transport):
-        '''
-        '''
+    def connection_made(
+        self,
+        transport,
+    ):
         self.transport = transport
 
-    def datagram_received(self, data, addr):
-        '''
-        '''
+    def datagram_received(
+        self,
+        data,
+        addr,
+    ):
         message_data = data
 
         try:
-            message_obj = message.Message.unserialize(message_data)
+            message_obj = message.Message.unserialize(
+                message=message_data,
+            )
 
-            self.dispatch_message(message_obj)
-        except ValueError as exc:
-            print(str(exc))
+            self.statistics_obj.process_report(
+                message=message_obj,
+            )
+        except ValueError as exception:
+            print(str(exception))
+
             pass
-
-    def dispatch_message(self, message_obj):
-        host_obj = host.Host(
-            name=message_obj.hostname,
-        )
-
-        worker_obj = worker.Worker(
-            name=message_obj.worker_name,
-        )
-
-        self.statistics_obj.ensure_host(
-            host=host_obj,
-        )
-
-        self.statistics_obj.ensure_worker(
-            host=host_obj,
-            worker=worker_obj,
-        )
-
-        self.statistics_obj.report_worker(
-            host=host_obj,
-            worker=worker_obj,
-            message=message_obj,
-        )
 
 
 class StatisticsWebServer:
-    '''
-    '''
-    def __init__(self, event_loop, host, port, statistics_obj):
+    def __init__(
+        self,
+        event_loop,
+        host,
+        port,
+        statistics_obj,
+        redis_servers,
+    ):
         self.statistics_obj = statistics_obj
+
+        self.redis_servers = redis_servers
+        self.redis_connections = []
+
         self.event_loop = event_loop
         self.app = aiohttp.web.Application(
             loop=self.event_loop,
@@ -72,63 +66,127 @@ class StatisticsWebServer:
 
         self.app.router.add_route(
             method='GET',
-            path='/',
-            handler=self.handle_get_main,
+            path='/ws/statistics',
+            handler=self.handle_get_ws_statistics,
         )
         self.app.router.add_route(
             method='GET',
-            path='/statistics',
-            handler=self.handle_get_statistics,
+            path='/',
+            handler=self.handle_get_root,
+        )
+        self.app.router.add_static(
+            prefix='/dashboard',
+            path=os.path.join(
+                os.path.dirname(
+                    p=os.path.realpath(__file__),
+                ),
+                'public',
+            ),
         )
 
+        web_app_handler = self.app.make_handler(
+            loop=self.event_loop,
+        )
         self.server = self.event_loop.create_server(
-            protocol_factory=self.app.make_handler(),
+            protocol_factory=web_app_handler,
             host=host,
             port=port,
         )
 
-    @asyncio.coroutine
-    def handle_get_main(self, request):
-        '''
-        '''
-        statistics = self.statistics_obj.statistics
-        templates_dir = '{current_path}/interface/templates'.format(
-            current_path=os.path.dirname(os.path.realpath(__file__)),
-        )
+    async def handle_get_ws_statistics(
+        self,
+        request,
+    ):
+        websocket_obj = aiohttp.web.WebSocketResponse()
 
-        dashboard_template_html = ''
-        with open(os.path.join(templates_dir, 'dashboard.tpl')) as dashboard_template_file:
-            dashboard_template_html = dashboard_template_file.read()
+        await websocket_obj.prepare(request)
 
-        template = jinja2.Template(dashboard_template_html)
-        html = template.render(
-            statistics=statistics,
-        )
+        async for message in websocket_obj:
+            if message.type == aiohttp.WSMsgType.TEXT:
+                if message.data == 'metrics':
+                    await websocket_obj.send_json(
+                        data={
+                            'type': 'metrics',
+                            'data': self.statistics_obj.metrics,
+                        },
+                    )
+                elif message.data == 'queues':
+                    queues = {}
 
-        response = aiohttp.web.Response(
-            body=html.encode('utf-8'),
-            headers={
-                'Content-Type': 'text/html',
-            }
-        )
+                    if not self.redis_connections:
+                        for redis_server in self.redis_servers:
+                            redis_connection = await aioredis.create_redis(
+                                address=(
+                                    redis_server['host'],
+                                    redis_server['port'],
+                                ),
+                                password=redis_server['password'],
+                                db=redis_server['database'],
+                                loop=self.event_loop,
+                            )
+                            self.redis_connections.append(redis_connection)
 
-        return response
+                    for redis_connection in self.redis_connections:
+                        redis_keys = await redis_connection.keys('*')
+                        for key_name in redis_keys:
+                            key_name = key_name.decode('utf-8')
+                            key_len = await redis_connection.llen(key_name)
+                            current_key_len = queues.get(
+                                key_name,
+                                0,
+                            )
+                            current_key_len += key_len
+                            queues[key_name] = current_key_len
 
-    @asyncio.coroutine
-    def handle_get_statistics(self, request):
-        '''
-        '''
-        statistics = self.statistics_obj.statistics
+                    await websocket_obj.send_json(
+                        data={
+                            'type': 'queues',
+                            'data': queues,
+                        },
+                    )
+                elif message.data == 'workers':
+                    workers_dict = self.statistics_obj.workers
+                    workers_list = []
 
-        return aiohttp.web.json_response(
-            data=statistics,
-        )
+                    for hostname in workers_dict:
+                        for worker_name in workers_dict[hostname]:
+                            worker_metrics = workers_dict[hostname][worker_name]
+
+                            workers_list.append(
+                                {
+                                    'hostname': hostname,
+                                    'name': worker_name,
+                                    'metrics': worker_metrics,
+                                }
+                            )
+
+                    await websocket_obj.send_json(
+                        data={
+                            'type': 'workers',
+                            'data': workers_list,
+                        },
+                    )
+
+        await websocket_obj.close()
+
+        return websocket_obj
+
+    async def handle_get_root(
+        self,
+        request,
+    ):
+        return aiohttp.web.HTTPFound('/dashboard/index.html')
 
 
 class StatisticsServer:
-    '''
-    '''
-    def __init__(self, event_loop, web_server, udp_server, statistics_obj):
+    def __init__(
+        self,
+        event_loop,
+        web_server,
+        udp_server,
+        statistics_obj,
+        redis_servers,
+    ):
         self.statistics_obj = statistics_obj
         self.event_loop = event_loop
 
@@ -137,6 +195,7 @@ class StatisticsServer:
             host=web_server['host'],
             port=web_server['port'],
             statistics_obj=statistics_obj,
+            redis_servers=redis_servers,
         )
 
         self.statistics_udp_server = self.event_loop.create_datagram_endpoint(
@@ -155,25 +214,72 @@ class StatisticsServer:
         self.web_server_future = self.event_loop.run_until_complete(self.statistics_web_server.server)
         self.udp_server_future = self.event_loop.run_until_complete(self.statistics_udp_server)
 
-    def close(self):
+    def close(
+        self,
+    ):
         self.web_server_future.close()
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description='Tasker Monitor Server',
+    )
+    parser.add_argument(
+        '--redis-node',
+        help='host port password database',
+        nargs='+',
+        type=str,
+        required=True,
+        action='append',
+        dest='redis_nodes',
+    )
+    parser.add_argument(
+        '--web-server',
+        nargs=2,
+        type=str,
+        help='host port',
+        required=True,
+        dest='web_server',
+    )
+    parser.add_argument(
+        '--udp-server',
+        nargs=2,
+        type=str,
+        help='host port',
+        required=True,
+        dest='udp_server',
+    )
+
+    args = parser.parse_args()
+
+    redis_servers = []
+    for redis_server in args.redis_nodes:
+        redis_servers.append(
+            {
+                'host': redis_server[0],
+                'port': int(redis_server[1]),
+                'password': redis_server[2],
+                'database': int(redis_server[3]),
+            },
+        )
+
     statistics_obj = statistics.Statistics()
+
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     event_loop = asyncio.new_event_loop()
 
     StatisticsServer(
         event_loop=event_loop,
         web_server={
-            'host': '0.0.0.0',
-            'port': 8080,
+            'host': args.web_server[0],
+            'port': int(args.web_server[1]),
         },
         udp_server={
-            'host': '0.0.0.0',
-            'port': 9999,
+            'host': args.udp_server[0],
+            'port': int(args.udp_server[1]),
         },
         statistics_obj=statistics_obj,
+        redis_servers=redis_servers,
     )
 
     try:

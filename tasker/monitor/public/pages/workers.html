@@ -25,10 +25,10 @@
                     <tr ng-repeat="worker in workers | filter: workers_search | orderBy: workers_table_sort_by : workers_table_sort_by_reverse | limitTo: 50" ng-class="worker.status == 'online' ? 'teal lighten-2' : 'red lighten-2'">
                         <td style="font-weight: bold;">{{worker.hostname}}</td>
                         <td style="font-weight: bold;">{{worker.name}}</td>
-                        <td style="font-weight: bold;">{{worker.process}}</td>
-                        <td style="font-weight: bold;">{{worker.success}}</td>
-                        <td style="font-weight: bold;">{{worker.retry}}</td>
-                        <td style="font-weight: bold;">{{worker.failure}}</td>
+                        <td style="font-weight: bold;">{{worker.metrics.process}}</td>
+                        <td style="font-weight: bold;">{{worker.metrics.success}}</td>
+                        <td style="font-weight: bold;">{{worker.metrics.retry}}</td>
+                        <td style="font-weight: bold;">{{worker.metrics.failure}}</td>
                     </tr>
                 </tbody>
             </table>

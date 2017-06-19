@@ -7,7 +7,11 @@ var TaskerDashboard = angular.module(
 TaskerDashboard.config(
     [
         '$routeProvider',
-        function($routeProvider) {
+        '$locationProvider',
+        function($routeProvider, $locationProvider) {
+            $locationProvider
+            .hashPrefix('!');
+
             $routeProvider
             .when(
                 '/dashboard',
@@ -23,7 +27,7 @@ TaskerDashboard.config(
             )
             .otherwise(
                 {
-                    redirectTo: '/dashboard'
+                    redirectTo: 'dashboard'
                 }
             );
         }
@@ -37,7 +41,7 @@ TaskerDashboard.controller(
         '$location',
         '$interval',
         function DashboardController($scope, $location, $interval) {
-            $scope.statistics = {
+            $scope.metrics = {
                 'counter': {
                     'process': 0,
                     'success': 0,
@@ -51,43 +55,33 @@ TaskerDashboard.controller(
                     'failure': 0,
                 }
             };
-            var host = $location.host();
-            var websocket = io(
-                {
-                    'port': 8000
-                }
-            );
+            var domain = location.hostname + (location.port ? ':' + location.port: '')
+            var websocket = new WebSocket('ws://' + domain + '/ws/statistics');
 
-            websocket.on(
-                'statistics',
-                function(data) {
-                    $scope.statistics = data;
+            websocket.onopen = function(event) {
+                websocket.send('metrics');
+                websocket.send('queues');
+            };
+            websocket.onmessage = function(event) {
+                var message = JSON.parse(event.data);
+
+                if (message.type == 'metrics') {
+                    $scope.metrics = message.data;
+                } else if (message.type == 'queues') {
+                    $scope.queues = message.data;
+                    console.log(message.data);
                 }
-            );
+            };
 
             $interval(
                 function() {
-                    websocket.emit(
-                        'statistics',
-                        {}
-                    );
+                    websocket.send('metrics');
                 },
                 1000
             );
-
-            websocket.on(
-                'queues',
-                function(data) {
-                    $scope.queues = data;
-                }
-            );
-
             $interval(
                 function() {
-                    websocket.emit(
-                        'queues',
-                        {}
-                    );
+                    websocket.send('queues');
                 },
                 2000
             );
@@ -105,33 +99,23 @@ TaskerDashboard.controller(
             $scope.workers_table_sort_by = 'hostname';
             $scope.workers_table_sort_by_reverse = true;
 
-            var host = $location.host();
-            var websocket = io(
-                {
-                    'port': 8000
-                }
-            );
+            var domain = location.hostname + (location.port ? ':' + location.port: '')
+            var websocket = new WebSocket('ws://' + domain + '/ws/statistics');
 
-            websocket.on(
-                'workers',
-                function(data) {
-                    $scope.workers = data;
-                }
-            );
+            websocket.onopen = function(event) {
+                websocket.send('workers');
+            };
+            websocket.onmessage = function(event) {
+                var message = JSON.parse(event.data);
 
-            $scope.update_workers = function() {
-                websocket.emit(
-                    'workers',
-                    {}
-                );
+                if (message.type == 'workers') {
+                    $scope.workers = message.data;
+                }
             };
 
             $interval(
                 function() {
-                    websocket.emit(
-                        'workers',
-                        {}
-                    );
+                    websocket.send('workers');
                 },
                 2000
             );

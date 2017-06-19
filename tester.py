@@ -3,7 +3,9 @@ import time
 import socket
 
 
-class Worker(tasker.worker.Worker):
+class Worker(
+    tasker.worker.Worker,
+):
     name = 'test_worker'
     config = {
         'encoder': {
@@ -41,32 +43,58 @@ class Worker(tasker.worker.Worker):
             # 'concurrency': 50,
         },
         'max_tasks_per_run': 25000,
-        'tasks_per_transaction': 1000,
+        'tasks_per_transaction': 5000,
         'max_retries': 3,
         'report_completion': False,
         'heartbeat_interval': 10.0,
     }
 
-    def init(self):
-        self.a = 0
+    def init(
+        self,
+    ):
+        pass
 
-    def work(self, num):
-        self.a += num
-        if num == 4:
+    def work(
+        self,
+        type,
+    ):
+        if type == 'start':
             self.logger.error('start')
             self.logger.error(time.time())
             time.sleep(1)
-        if num == 6:
+        elif type == 'end':
             self.logger.error('end')
             self.logger.error(time.time())
 
 
 def main():
+    worker = Worker()
+    worker.init_worker()
+
+    worker.apply_async_one(
+        type='start',
+    )
+
+    tasks = []
+    for j in range(99998):
+        task_obj = worker.craft_task(
+            type='',
+        )
+        tasks.append(task_obj)
+    worker.apply_async_many(
+        tasks=tasks,
+    )
+
+    worker.apply_async_one(
+        type='end',
+    )
+
     supervisor = tasker.supervisor.Supervisor(
         worker_class=Worker,
-        concurrent_workers=2,
+        concurrent_workers=4,
     )
     supervisor.start()
+
 
 if __name__ == '__main__':
     try:

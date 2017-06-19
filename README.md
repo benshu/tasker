@@ -59,17 +59,15 @@ docker run \
     --log-driver=json-file --log-opt=max-size=10m \
     --publish=9999:9999/udp \
     --publish=8080:8080 \
-    node bash -c " \
-        git clone -b master https://github.com/wavenator/tasker.git; \
-        cd tasker/tasker/monitor/server; \
-        npm install; \
-        node server.js \
-            --redis_node=redis://:e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97@127.0.0.1:6379/0 \
-            --redis_node=redis://:e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97@127.0.0.1:6380/0 \
-            --udp_server_bind_port=9999 \
-            --udp_server_bind_host=0.0.0.0 \
-            --web_server_bind_port=8080 \
-            --web_server_bind_host=0.0.0.0 \
+    python bash -c " \
+        git clone -b improvements-monitor-server-ui https://github.com/wavenator/tasker.git; \
+        cd tasker; \
+        python setup.py install; \
+        python -m tasker.monitor.server \
+        --redis-node 127.0.0.1 6379 e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97 0 \
+        --redis-node 127.0.0.1 6380 e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97 0 \
+        --udp-server 127.0.0.1 9999 \
+        --web-server 127.0.0.1 8080 \
     "
 ```
 

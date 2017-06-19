@@ -10,9 +10,12 @@ setuptools.setup(
     zip_safe=True,
     install_requires=[
         'redis',
-        # 'hiredis',
+        'hiredis',
         'msgpack-python',
         'psutil',
+        'aiohttp',
+        'aioredis',
+        'uvloop',
     ],
     packages=setuptools.find_packages(),
     package_data={
