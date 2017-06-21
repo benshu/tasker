@@ -92,6 +92,13 @@ class Logger:
             msg=msg,
         )
 
+    def critical(self, msg):
+        '''
+        '''
+        self.logger.critical(
+            msg=msg,
+        )
+
     def log_task_failure(
         self,
         failure_reason,
