@@ -55,6 +55,20 @@ class StatisticsWebServer:
         redis_servers,
     ):
         self.statistics_obj = statistics_obj
+        self.statistics_rates = {
+            'process_per_second': 0,
+            'success_per_second': 0,
+            'retry_per_second': 0,
+            'failure_per_second': 0,
+        }
+        self.statistics_metrics = [
+            {
+                'process': 0,
+                'success': 0,
+                'retry': 0,
+                'failure': 0,
+            }
+        ] * 5
 
         self.redis_servers = redis_servers
         self.redis_connections = []
@@ -93,6 +107,55 @@ class StatisticsWebServer:
             port=port,
         )
 
+        self.event_loop.create_task(self.update_rates())
+
+    async def update_rates(
+        self,
+    ):
+        while True:
+            await asyncio.sleep(
+                delay=1.0,
+                loop=self.event_loop,
+            )
+
+            self.statistics_metrics = self.statistics_metrics[1:]
+            self.statistics_metrics.append(
+                {
+                    'process': self.statistics_obj.metrics['process'],
+                    'success': self.statistics_obj.metrics['success'],
+                    'retry': self.statistics_obj.metrics['retry'],
+                    'failure': self.statistics_obj.metrics['failure'],
+                }
+            )
+
+            metrics_differences_sums = {
+                'process': [],
+                'success': [],
+                'retry': [],
+                'failure': [],
+            }
+            for metric_name in metrics_differences_sums:
+                for metrics in self.statistics_metrics:
+                    for metric_name, metric_value in metrics.items():
+                        metrics_differences_sums[metric_name].append(metric_value)
+
+            for metric_name, matric_values in metrics_differences_sums.items():
+                metrics_differences = [
+                    j - i
+                    for i, j in zip(
+                        matric_values[:-1],
+                        matric_values[1:],
+                    )
+                ]
+                metrics_differences_sums[metric_name] = sum(metrics_differences)
+
+            self.statistics_rates = {
+                'process_per_second': metrics_differences_sums['process'] / 5,
+                'success_per_second': metrics_differences_sums['success'] / 5,
+                'retry_per_second': metrics_differences_sums['retry'] / 5,
+                'failure_per_second': metrics_differences_sums['failure'] / 5,
+            }
+
     async def handle_get_ws_statistics(
         self,
         request,
@@ -107,7 +170,10 @@ class StatisticsWebServer:
                     await websocket_obj.send_json(
                         data={
                             'type': 'metrics',
-                            'data': self.statistics_obj.metrics,
+                            'data': {
+                                'metrics': self.statistics_obj.metrics,
+                                'rates': self.statistics_rates,
+                            },
                         },
                     )
                 elif message.data == 'queues':
@@ -130,7 +196,14 @@ class StatisticsWebServer:
                         redis_keys = await redis_connection.keys('*')
                         for key_name in redis_keys:
                             key_name = key_name.decode('utf-8')
-                            key_len = await redis_connection.llen(key_name)
+
+                            if key_name.endswith('_lock'):
+                                continue
+                            elif key_name.endswith('.results'):
+                                key_len = await redis_connection.scard(key_name)
+                            else:
+                                key_len = await redis_connection.llen(key_name)
+
                             current_key_len = queues.get(
                                 key_name,
                                 0,

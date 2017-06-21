@@ -42,7 +42,16 @@ class Statistics:
         report_value = message['value']
 
         if report_hostname not in self.workers:
-            self.workers[report_hostname] = {}
+            self.workers[report_hostname] = {
+                report_worker_name: {
+                    'success': 0,
+                    'failure': 0,
+                    'retry': 0,
+                    'process': 0,
+                    'heartbeat': 0,
+                }
+            }
+        elif report_worker_name not in self.workers[report_hostname]:
             self.workers[report_hostname][report_worker_name] = {
                 'success': 0,
                 'failure': 0,

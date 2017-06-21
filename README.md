@@ -60,7 +60,7 @@ docker run \
     --publish=9999:9999/udp \
     --publish=8080:8080 \
     python bash -c " \
-        git clone -b dev https://github.com/wavenator/tasker.git; \
+        git clone -b improvements-monitor-server-ui https://github.com/wavenator/tasker.git; \
         cd tasker; \
         python setup.py install; \
         python -m tasker.monitor.server \
