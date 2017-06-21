@@ -1,4 +1,5 @@
 import sys
+import os
 import threading
 import multiprocessing
 import multiprocessing.pool
@@ -55,13 +56,22 @@ class Supervisor:
                         timeout=None,
                     )
             except Exception as exception:
-                self.logger.error(
-                    'task execution raised an exception: {exception}'.format(
+                self.logger.critical(
+                    msg='task execution raised an exception: {exception}'.format(
                         exception=exception,
                     )
                 )
             finally:
                 process.terminate()
+
+                try:
+                    os.waitpid(
+                        process.pid,
+                        0,
+                    )
+                except ChildProcessError:
+                    pass
+
                 self.workers_processes.remove(process)
 
     def start(
