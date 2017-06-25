@@ -21,9 +21,9 @@
 </head>
 
 <body>
-    <div class="container is-fluid">
+    <div class="container">
         <nav class="nav has-shadow">
-            <div class="nav-left">
+            <div class="nav-left" ng-init="selectedTab = 'dashboard'">
                 <a class="nav-item">
                     <img src="/dashboard/tasker.png">
                     Tasker
@@ -34,7 +34,7 @@
             </div>
         </nav>
     </div>
-    <div class="container is-fluid">
+    <div class="container">
         <div ng-view></div>
     </div>
 </body>

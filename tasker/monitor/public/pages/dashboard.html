@@ -3,78 +3,63 @@
         <div class="column">
         </div>
     </div>
-    <div class="columns">
-        <div class="column">
-            <p ng-if="websocket_connected" class="notification is-success"></p>
-            <p ng-if="!websocket_connected" class="notification is-danger"></p>
-        </div>
-    </div>
 
     <div class="columns">
         <div class="column">
-            <div class="panel">
-                <p class="panel-heading">
-                    Metrics
-                </p>
-                <div class="panel-block">
-                    <div class="column">
-                        <p class="title is-2 is-spaced has-text-centered">
-                            {{metrics.process.toLocaleString()}}
-                        </p>
-                        <p class="subtitle is-4 has-text-centered" style="color: #000000;">
-                            Process
-                        </p>
-                        <p class="subtitle is-5 is-spaced has-text-centered">
-                            {{rates.process_per_second.toLocaleString()}}
-                        </p>
-                        <p class="subtitle is-6 is-spaced has-text-centered" style="color: #000000;">
-                            Per Second
-                        </p>
-                    </div>
-                    <div class="column">
-                        <p class="title is-2 is-spaced has-text-centered">
-                            {{metrics.success.toLocaleString()}}
-                        </p>
-                        <p class="subtitle is-4 has-text-centered" style="color: #009688;">
-                            Success
-                        </p>
-                        <p class="subtitle is-5 is-spaced has-text-centered">
-                            {{rates.success_per_second.toLocaleString()}}
-                        </p>
-                        <p class="subtitle is-6 is-spaced has-text-centered" style="color: #009688;">
-                            Per Second
-                        </p>
-                    </div>
-                    <div class="column">
-                        <p class="title is-2 is-spaced has-text-centered">
-                            {{metrics.retry.toLocaleString()}}
-                        </p>
-                        <p class="subtitle is-4 has-text-centered" style="color: #03A9F4;">
-                            Retry
-                        </p>
-                        <p class="subtitle is-5 is-spaced has-text-centered">
-                            {{rates.retry_per_second.toLocaleString()}}
-                        </p>
-                        <p class="subtitle is-6 is-spaced has-text-centered" style="color: #03A9F4;">
-                            Per Second
-                        </p>
-                    </div>
-                    <div class="column">
-                        <p class="title is-2 is-spaced has-text-centered">
-                            {{metrics.failure.toLocaleString()}}
-                        </p>
-                        <p class="subtitle is-4 has-text-centered" style="color: #E53935;">
-                            Failure
-                        </p>
-                        <p class="subtitle is-5 is-spaced has-text-centered">
-                            {{rates.failure_per_second.toLocaleString()}}
-                        </p>
-                        <p class="subtitle is-6 is-spaced has-text-centered" style="color: #E53935;">
-                            Per Second
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <p class="title is-3 is-spaced has-text-centered">
+                {{metrics.process.toLocaleString()}}
+            </p>
+            <p class="subtitle is-4 has-text-centered" style="color: #000000;">
+                Process
+            </p>
+            <p class="subtitle is-5 is-spaced has-text-centered">
+                {{rates.process_per_second.toLocaleString()}}
+            </p>
+            <p class="subtitle is-6 is-spaced has-text-centered" style="color: #000000;">
+                Per Second
+            </p>
+        </div>
+        <div class="column">
+            <p class="title is-3 is-spaced has-text-centered">
+                {{metrics.success.toLocaleString()}}
+            </p>
+            <p class="subtitle is-4 has-text-centered" style="color: #009688;">
+                Success
+            </p>
+            <p class="subtitle is-5 is-spaced has-text-centered">
+                {{rates.success_per_second.toLocaleString()}}
+            </p>
+            <p class="subtitle is-6 is-spaced has-text-centered" style="color: #009688;">
+                Per Second
+            </p>
+        </div>
+        <div class="column">
+            <p class="title is-3 is-spaced has-text-centered">
+                {{metrics.retry.toLocaleString()}}
+            </p>
+            <p class="subtitle is-4 has-text-centered" style="color: #03A9F4;">
+                Retry
+            </p>
+            <p class="subtitle is-5 is-spaced has-text-centered">
+                {{rates.retry_per_second.toLocaleString()}}
+            </p>
+            <p class="subtitle is-6 is-spaced has-text-centered" style="color: #03A9F4;">
+                Per Second
+            </p>
+        </div>
+        <div class="column">
+            <p class="title is-3 is-spaced has-text-centered">
+                {{metrics.failure.toLocaleString()}}
+            </p>
+            <p class="subtitle is-4 has-text-centered" style="color: #E53935;">
+                Failure
+            </p>
+            <p class="subtitle is-5 is-spaced has-text-centered">
+                {{rates.failure_per_second.toLocaleString()}}
+            </p>
+            <p class="subtitle is-6 is-spaced has-text-centered" style="color: #E53935;">
+                Per Second
+            </p>
         </div>
     </div>
 
@@ -90,7 +75,7 @@
                     Queues
                 </p>
                 <div class="panel-block">
-                    <table id="queues-table" class="table is-bordered is-stripped">
+                    <table id="queues-table" class="table is-bordered is-stripped is-narrow">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -99,8 +84,8 @@
                         </thead>
                         <tbody>
                             <tr ng-repeat="(queue_name, queue_count) in queues">
-                                <td style="font-weight: bold;">{{queue_name}}</td>
-                                <td style="font-weight: bold;">{{queue_count.toLocaleString()}}</td>
+                                <td>{{queue_name}}</td>
+                                <td>{{queue_count.toLocaleString()}}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -113,7 +98,7 @@
                     Statistics
                 </p>
                 <div class="panel-block">
-                    <table id="statistics-table" class="table is-bordered is-stripped">
+                    <table id="statistics-table" class="table is-bordered is-stripped is-narrow">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -125,11 +110,11 @@
                         </thead>
                         <tbody>
                             <tr ng-repeat="(worker_name, metrics) in statistics">
-                                <td style="font-weight: bold;">{{worker_name}}</td>
-                                <td style="font-weight: bold;">{{metrics.process}}</td>
-                                <td style="font-weight: bold;">{{metrics.success}}</td>
-                                <td style="font-weight: bold;">{{metrics.retry}}</td>
-                                <td style="font-weight: bold;">{{metrics.failure}}</td>
+                                <td>{{worker_name}}</td>
+                                <td>{{metrics.process.toLocaleString()}}</td>
+                                <td>{{metrics.success.toLocaleString()}}</td>
+                                <td>{{metrics.retry.toLocaleString()}}</td>
+                                <td>{{metrics.failure.toLocaleString()}}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -147,7 +132,7 @@
                     <input placeholder="search..." id="search" type="text" class="validate input" ng-model="workers_search">
                 </div>
                 <div class="panel-block">
-                    <table id="queues-table" class="table is-bordered is-stripped">
+                    <table id="queues-table" class="table is-bordered is-stripped is-narrow">
                         <thead>
                             <tr>
                                 <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'hostname'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Hostname</th>
@@ -160,12 +145,12 @@
                         </thead>
                         <tbody>
                             <tr ng-repeat="worker in workers | filter: workers_search | orderBy: workers_table_sort_by : workers_table_sort_by_reverse | limitTo: 50">
-                                <td style="font-weight: bold;">{{worker.hostname}}</td>
-                                <td style="font-weight: bold;">{{worker.name}}</td>
-                                <td style="font-weight: bold;">{{worker.metrics.process}}</td>
-                                <td style="font-weight: bold;">{{worker.metrics.success}}</td>
-                                <td style="font-weight: bold;">{{worker.metrics.retry}}</td>
-                                <td style="font-weight: bold;">{{worker.metrics.failure}}</td>
+                                <td>{{worker.hostname}}</td>
+                                <td>{{worker.name}}</td>
+                                <td>{{worker.metrics.process.toLocaleString()}}</td>
+                                <td>{{worker.metrics.success.toLocaleString()}}</td>
+                                <td>{{worker.metrics.retry.toLocaleString()}}</td>
+                                <td>{{worker.metrics.failure.toLocaleString()}}</td>
                             </tr>
                         </tbody>
                     </table>
