@@ -5,61 +5,51 @@
     </div>
 
     <div class="columns">
-        <div class="column">
-            <p class="title is-3 is-spaced has-text-centered">
-                {{metrics.process.toLocaleString()}}
-            </p>
-            <p class="subtitle is-4 has-text-centered" style="color: #000000;">
-                Process
-            </p>
-            <p class="subtitle is-5 is-spaced has-text-centered">
-                {{rates.process_per_second.toLocaleString()}}
-            </p>
-            <p class="subtitle is-6 is-spaced has-text-centered" style="color: #000000;">
-                Per Second
-            </p>
-        </div>
-        <div class="column">
-            <p class="title is-3 is-spaced has-text-centered">
-                {{metrics.success.toLocaleString()}}
-            </p>
-            <p class="subtitle is-4 has-text-centered" style="color: #009688;">
-                Success
-            </p>
-            <p class="subtitle is-5 is-spaced has-text-centered">
-                {{rates.success_per_second.toLocaleString()}}
-            </p>
-            <p class="subtitle is-6 is-spaced has-text-centered" style="color: #009688;">
-                Per Second
-            </p>
-        </div>
-        <div class="column">
-            <p class="title is-3 is-spaced has-text-centered">
-                {{metrics.retry.toLocaleString()}}
-            </p>
-            <p class="subtitle is-4 has-text-centered" style="color: #03A9F4;">
-                Retry
-            </p>
-            <p class="subtitle is-5 is-spaced has-text-centered">
-                {{rates.retry_per_second.toLocaleString()}}
-            </p>
-            <p class="subtitle is-6 is-spaced has-text-centered" style="color: #03A9F4;">
-                Per Second
-            </p>
-        </div>
-        <div class="column">
-            <p class="title is-3 is-spaced has-text-centered">
-                {{metrics.failure.toLocaleString()}}
-            </p>
-            <p class="subtitle is-4 has-text-centered" style="color: #E53935;">
-                Failure
-            </p>
-            <p class="subtitle is-5 is-spaced has-text-centered">
-                {{rates.failure_per_second.toLocaleString()}}
-            </p>
-            <p class="subtitle is-6 is-spaced has-text-centered" style="color: #E53935;">
-                Per Second
-            </p>
+        <div class="tile">
+            <div class="tile is-parent is-3">
+                <article class="tile is-child notification">
+                    <p class="title has-text-centered">Process</p>
+                    <p class="title is-4 is-spaced has-text-centered">
+                        {{metrics.process.toLocaleString()}}
+                    </p>
+                    <p class="subtitle is-5 is-spaced">
+                        Per Second: {{rates.process_per_second.toLocaleString()}}
+                    </p>
+                </article>
+            </div>
+            <div class="tile is-parent is-3">
+                <article class="tile is-child notification is-primary">
+                    <p class="title has-text-centered">Success</p>
+                    <p class="title is-4 is-spaced has-text-centered">
+                        {{metrics.success.toLocaleString()}}
+                    </p>
+                    <p class="subtitle is-5 is-spaced">
+                        Per Second: {{rates.success_per_second.toLocaleString()}}
+                    </p>
+                </article>
+            </div>
+            <div class="tile is-parent is-3">
+                <article class="tile is-child notification is-info">
+                    <p class="title has-text-centered">Retry</p>
+                    <p class="title is-4 is-spaced has-text-centered">
+                        {{metrics.retry.toLocaleString()}}
+                    </p>
+                    <p class="subtitle is-5 is-spaced">
+                        Per Second: {{rates.retry_per_second.toLocaleString()}}
+                    </p>
+                </article>
+            </div>
+            <div class="tile is-parent is-3">
+                <article class="tile is-child notification is-danger">
+                    <p class="title has-text-centered">Failure</p>
+                    <p class="title is-4 is-spaced has-text-centered">
+                        {{metrics.failure.toLocaleString()}}
+                    </p>
+                    <p class="subtitle is-5 is-spaced">
+                        Per Second: {{rates.failure_per_second.toLocaleString()}}
+                    </p>
+                </article>
+            </div>
         </div>
     </div>
 
@@ -69,12 +59,10 @@
     </div>
 
     <div class="columns">
-        <div class="column is-one-thirds">
-            <div class="panel">
-                <p class="panel-heading">
-                    Queues
-                </p>
-                <div class="panel-block">
+        <div class="tile">
+            <div class="tile is-parent is-4">
+                <article class="tile is-child notification">
+                    <p class="title">Queues</p>
                     <table id="queues-table" class="table is-bordered is-stripped is-narrow">
                         <thead>
                             <tr>
@@ -89,15 +77,11 @@
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </article>
             </div>
-        </div>
-        <div class="column is-two-thirds">
-            <div class="panel">
-                <p class="panel-heading">
-                    Statistics
-                </p>
-                <div class="panel-block">
+            <div class="tile is-parent is-8">
+                <article class="tile is-child notification">
+                    <p class="title">Statistics</p>
                     <table id="statistics-table" class="table is-bordered is-stripped is-narrow">
                         <thead>
                             <tr>
@@ -118,20 +102,20 @@
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </article>
             </div>
         </div>
     </div>
+
     <div class="columns">
-        <div class="column">
-            <div class="panel">
-                <p class="panel-heading">
-                    Workers
-                </p>
-                <div class="panel-block">
-                    <input placeholder="search..." id="search" type="text" class="validate input" ng-model="workers_search">
-                </div>
-                <div class="panel-block">
+        <div class="tile">
+            <div class="tile is-parent is-12">
+                <article class="tile is-child notification">
+                    <p class="title">Workers</p>
+                    </br>
+                    <p class="subtitle">
+                        <input placeholder="search..." id="search" type="text" class="validate input" ng-model="workers_search">
+                    </p>
                     <table id="queues-table" class="table is-bordered is-stripped is-narrow">
                         <thead>
                             <tr>
@@ -154,7 +138,7 @@
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </article>
             </div>
         </div>
     </div>
