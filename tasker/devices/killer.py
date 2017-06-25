@@ -6,8 +6,6 @@ import psutil
 
 
 class LocalKiller:
-    '''
-    '''
     def __init__(
         self,
         pid,
@@ -41,9 +39,9 @@ class LocalKiller:
 
         self.pid_to_kill = pid
 
-    def killing_loop(self):
-        '''
-        '''
+    def killing_loop(
+        self,
+    ):
         while self.stop_event.wait():
             if not psutil.pid_exists(self.pid_to_kill):
                 return
@@ -64,9 +62,9 @@ class LocalKiller:
             time.sleep(self.sleep_interval)
             self.time_elapsed += self.sleep_interval
 
-    def start(self):
-        '''
-        '''
+    def start(
+        self,
+    ):
         if not self.created:
             killing_loop_thread = threading.Thread(
                 target=self.killing_loop,
@@ -78,25 +76,23 @@ class LocalKiller:
 
         self.stop_event.set()
 
-    def stop(self):
-        '''
-        '''
+    def stop(
+        self,
+    ):
         self.stop_event.clear()
 
-    def reset(self):
-        '''
-        '''
+    def reset(
+        self,
+    ):
         self.time_elapsed = 0.0
 
-    def __del__(self):
-        '''
-        '''
+    def __del__(
+        self,
+    ):
         self.stop()
 
 
 class RemoteKiller:
-    '''
-    '''
     def __init__(
         self,
         pid,
@@ -130,9 +126,9 @@ class RemoteKiller:
 
         self.pid_to_kill = pid
 
-    def killing_loop(self):
-        '''
-        '''
+    def killing_loop(
+        self,
+    ):
         while self.stop_event.wait():
             if not psutil.pid_exists(self.pid_to_kill):
                 return
@@ -155,9 +151,9 @@ class RemoteKiller:
 
             time.sleep(self.sleep_interval)
 
-    def start(self):
-        '''
-        '''
+    def start(
+        self,
+    ):
         if not self.created:
             killing_loop_process = multiprocessing.Process(
                 target=self.killing_loop,
@@ -169,18 +165,18 @@ class RemoteKiller:
 
         self.stop_event.set()
 
-    def stop(self):
-        '''
-        '''
+    def stop(
+        self,
+    ):
         self.stop_event.clear()
 
-    def reset(self):
-        '''
-        '''
+    def reset(
+        self,
+    ):
         with self.time_elapsed.get_lock():
             self.time_elapsed.value = 0.0
 
-    def __del__(self):
-        '''
-        '''
+    def __del__(
+        self,
+    ):
         self.stop()

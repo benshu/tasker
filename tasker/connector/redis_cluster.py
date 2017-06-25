@@ -7,11 +7,12 @@ from . import _connector
 class Connector(
     _connector.Connector,
 ):
-    '''
-    '''
     name = 'redis_cluster'
 
-    def __init__(self, nodes):
+    def __init__(
+        self,
+        nodes,
+    ):
         super().__init__()
 
         self.nodes = nodes
@@ -34,14 +35,17 @@ class Connector(
 
         random.shuffle(self.connections)
 
-    def rotate_connections(self):
-        '''
-        '''
+    def rotate_connections(
+        self,
+    ):
         self.connections = self.connections[1:] + self.connections[:1]
 
-    def key_set(self, key, value, ttl=None):
-        '''
-        '''
+    def key_set(
+        self,
+        key,
+        value,
+        ttl=None,
+    ):
         is_new = self.master_connection.set(
             name=key,
             value=value,
@@ -51,21 +55,24 @@ class Connector(
 
         return is_new is True
 
-    def key_get(self, key):
-        '''
-        '''
+    def key_get(
+        self,
+        key,
+    ):
         return self.master_connection.get(
             name=key,
         )
 
-    def key_del(self, keys):
-        '''
-        '''
+    def key_del(
+        self,
+        keys,
+    ):
         return self.master_connection.delete(*keys)
 
-    def pop(self, key):
-        '''
-        '''
+    def pop(
+        self,
+        key,
+    ):
         connections = self.connections
 
         for connection in connections:
@@ -80,9 +87,11 @@ class Connector(
 
         return None
 
-    def pop_bulk(self, key, count):
-        '''
-        '''
+    def pop_bulk(
+        self,
+        key,
+        count,
+    ):
         values = []
         connections = self.connections
         current_count = count
@@ -109,41 +118,51 @@ class Connector(
 
         return values
 
-    def push(self, key, value):
-        '''
-        '''
+    def push(
+        self,
+        key,
+        value,
+    ):
         push_returned_value = self.connections[0].rpush(key, value)
 
         self.rotate_connections()
 
         return push_returned_value
 
-    def push_bulk(self, key, values):
-        '''
-        '''
+    def push_bulk(
+        self,
+        key,
+        values,
+    ):
         push_returned_value = self.connections[0].rpush(key, *values)
 
         self.rotate_connections()
 
         return push_returned_value
 
-    def add_to_set(self, set_name, value):
-        '''
-        '''
+    def add_to_set(
+        self,
+        set_name,
+        value,
+    ):
         added = self.master_connection.sadd(set_name, value)
 
         return bool(added)
 
-    def remove_from_set(self, set_name, value):
-        '''
-        '''
+    def remove_from_set(
+        self,
+        set_name,
+        value,
+    ):
         removed = self.master_connection.srem(set_name, value)
 
         return bool(removed)
 
-    def is_member_of_set(self, set_name, value):
-        '''
-        '''
+    def is_member_of_set(
+        self,
+        set_name,
+        value,
+    ):
         is_memeber = self.master_connection.sismember(
             name=set_name,
             value=value,
@@ -151,9 +170,10 @@ class Connector(
 
         return is_memeber
 
-    def len(self, key):
-        '''
-        '''
+    def len(
+        self,
+        key,
+    ):
         total_len = 0
 
         for connection in self.connections:
@@ -163,24 +183,26 @@ class Connector(
 
         return total_len
 
-    def delete(self, key):
-        '''
-        '''
+    def delete(
+        self,
+        key,
+    ):
         for connection in self.connections:
             connection.delete(key)
 
-    def __getstate__(self):
-        '''
-        '''
+    def __getstate__(
+        self,
+    ):
         state = {
             'nodes': self.nodes,
         }
 
         return state
 
-    def __setstate__(self, value):
-        '''
-        '''
+    def __setstate__(
+        self,
+        value,
+    ):
         self.__init__(
             nodes=value['nodes'],
         )

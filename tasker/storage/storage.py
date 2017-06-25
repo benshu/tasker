@@ -4,13 +4,13 @@ from .. import logger
 
 
 class Storage:
-    '''
-    '''
     name = 'Storage'
 
-    def __init__(self, connector, encoder):
-        '''
-        '''
+    def __init__(
+        self,
+        connector,
+        encoder,
+    ):
         self.logger = logger.logger.Logger(
             logger_name=self.name,
         )
@@ -18,9 +18,12 @@ class Storage:
         self.connector = connector
         self.encoder = encoder
 
-    def acquire_lock_key(self, name, ttl=None, timeout=None):
-        '''
-        '''
+    def acquire_lock_key(
+        self,
+        name,
+        ttl=None,
+        timeout=None,
+    ):
         try:
             sleep_interval = 0.1
             lock_key_name = '_storage_{key_name}_lock'.format(
@@ -55,9 +58,10 @@ class Storage:
 
             raise exception
 
-    def release_lock_key(self, name):
-        '''
-        '''
+    def release_lock_key(
+        self,
+        name,
+    ):
         try:
             self.connector.key_del(
                 keys=[
@@ -74,9 +78,10 @@ class Storage:
 
             raise exception
 
-    def get_key(self, name):
-        '''
-        '''
+    def get_key(
+        self,
+        name,
+    ):
         try:
             value = self.connector.key_get(
                 key=name,
@@ -96,9 +101,12 @@ class Storage:
 
             raise exception
 
-    def set_key(self, name, value, ttl=None):
-        '''
-        '''
+    def set_key(
+        self,
+        name,
+        value,
+        ttl=None,
+    ):
         try:
             encoded_value = self.encoder.encode(
                 data=value,
@@ -118,9 +126,9 @@ class Storage:
 
             raise exception
 
-    def __getstate__(self):
-        '''
-        '''
+    def __getstate__(
+        self,
+    ):
         state = {
             'connector': self.connector,
             'encoder': self.encoder,
@@ -128,9 +136,10 @@ class Storage:
 
         return state
 
-    def __setstate__(self, state):
-        '''
-        '''
+    def __setstate__(
+        self,
+        state,
+    ):
         self.__init__(
             connector=state['connector'],
             encoder=state['encoder'],

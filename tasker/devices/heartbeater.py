@@ -5,9 +5,11 @@ from .. import logger
 
 
 class Heartbeater(threading.Thread):
-    '''
-    '''
-    def __init__(self, monitor_client, interval):
+    def __init__(
+        self,
+        monitor_client,
+        interval,
+    ):
         super().__init__()
 
         self.monitor_client = monitor_client
@@ -22,9 +24,9 @@ class Heartbeater(threading.Thread):
 
         self.daemon = True
 
-    def run(self):
-        '''
-        '''
+    def run(
+        self,
+    ):
         sleep_duration = 0
 
         while self._stop_event.is_set():
@@ -43,29 +45,31 @@ class Heartbeater(threading.Thread):
                     msg=exception,
                 )
 
-    def stop(self):
-        '''
-        '''
+    def stop(
+        self,
+    ):
         self._stop_event.clear()
 
-    def __del__(self):
-        '''
-        '''
+    def __del__(
+        self,
+    ):
         self.stop()
 
 
 class DummyHeartbeater:
-    '''
-    '''
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args,
+        **kwargs
+    ):
         pass
 
-    def start(self):
-        '''
-        '''
+    def start(
+        self,
+    ):
         pass
 
-    def stop(self):
-        '''
-        '''
+    def stop(
+        self,
+    ):
         pass

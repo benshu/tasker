@@ -6,8 +6,6 @@ from . import logger
 
 
 class TaskQueue:
-    '''
-    '''
     def __init__(
         self,
         queue,
@@ -21,8 +19,6 @@ class TaskQueue:
         self,
         task_name,
     ):
-        '''
-        '''
         try:
             self.queue.flush(
                 queue_name=task_name,
@@ -38,8 +34,6 @@ class TaskQueue:
         self,
         task_name,
     ):
-        '''
-        '''
         try:
             number_of_enqueued_tasks = self.queue.len(
                 queue_name=task_name,
@@ -60,8 +54,6 @@ class TaskQueue:
         kwargs={},
         report_completion=False,
     ):
-        '''
-        '''
         if report_completion:
             completion_key = self.create_completion_key(
                 task_name=task_name,
@@ -84,8 +76,6 @@ class TaskQueue:
         self,
         task_name,
     ):
-        '''
-        '''
         added = False
 
         while not added:
@@ -101,8 +91,6 @@ class TaskQueue:
         self,
         task,
     ):
-        '''
-        '''
         completion_key = task['completion_key']
 
         if completion_key:
@@ -120,8 +108,6 @@ class TaskQueue:
         task,
         timeout=0,
     ):
-        '''
-        '''
         completion_key = task['completion_key']
         remaining_time = timeout
 
@@ -149,8 +135,6 @@ class TaskQueue:
         task_name,
         timeout=0,
     ):
-        '''
-        '''
         remaining_time = timeout
 
         not_empty = True
@@ -169,8 +153,6 @@ class TaskQueue:
         self,
         task,
     ):
-        '''
-        '''
         try:
             self.queue.enqueue(
                 queue_name=task['name'],
@@ -191,8 +173,6 @@ class TaskQueue:
         self,
         tasks,
     ):
-        '''
-        '''
         if len(tasks) == 0:
             return True
 
@@ -225,8 +205,6 @@ class TaskQueue:
         task_name,
         number_of_tasks,
     ):
-        '''
-        '''
         try:
             if number_of_tasks == 1:
                 task = self.queue.dequeue(
@@ -257,8 +235,6 @@ class TaskQueue:
         self,
         task,
     ):
-        '''
-        '''
         task['run_count'] += 1
 
         return self.apply_async_one(
@@ -269,8 +245,6 @@ class TaskQueue:
         self,
         task,
     ):
-        '''
-        '''
         return self.apply_async_one(
             task=task,
         )

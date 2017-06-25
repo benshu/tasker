@@ -3,15 +3,15 @@ import pickle
 from . import _serializer
 
 
-class Serializer(_serializer.Serializer):
-    '''
-    '''
+class Serializer(
+    _serializer.Serializer,
+):
     name = 'pickle'
 
     @staticmethod
-    def serialize(data):
-        '''
-        '''
+    def serialize(
+        data,
+    ):
         serialized_object = pickle.dumps(
             obj=data,
             protocol=pickle.HIGHEST_PROTOCOL,
@@ -20,9 +20,9 @@ class Serializer(_serializer.Serializer):
         return serialized_object
 
     @staticmethod
-    def unserialize(data):
-        '''
-        '''
+    def unserialize(
+        data,
+    ):
         unserialized_object = pickle.loads(
             data=data,
             encoding='utf-8',

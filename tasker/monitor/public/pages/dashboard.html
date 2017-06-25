@@ -152,14 +152,14 @@
                             <tr>
                                 <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'hostname'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Hostname</th>
                                 <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'name'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Worker</th>
-                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'process'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Process</th>
-                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'success'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Success</th>
-                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'retry'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Retry</th>
-                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'failure'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Fail</th>
+                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'metrics.process'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Process</th>
+                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'metrics.success'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Success</th>
+                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'metrics.retry'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Retry</th>
+                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'metrics.failure'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Fail</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr ng-repeat="worker in workers | filter: workers_search | orderBy: workers_table_sort_by : workers_table_sort_by_reverse | limitTo: 50" ng-class="worker.status == 'online' ? 'teal lighten-2' : 'red lighten-2'">
+                            <tr ng-repeat="worker in workers | filter: workers_search | orderBy: workers_table_sort_by : workers_table_sort_by_reverse | limitTo: 50">
                                 <td style="font-weight: bold;">{{worker.hostname}}</td>
                                 <td style="font-weight: bold;">{{worker.name}}</td>
                                 <td style="font-weight: bold;">{{worker.metrics.process}}</td>

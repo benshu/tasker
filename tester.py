@@ -61,7 +61,6 @@ class Worker(
         if type == 'start':
             self.logger.error('start')
             self.logger.error(time.time())
-            time.sleep(1)
         elif type == 'end':
             self.logger.error('end')
             self.logger.error(time.time())

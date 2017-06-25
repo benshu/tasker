@@ -3,18 +3,21 @@ from . import serializer
 
 
 class Encoder:
-    '''
-    '''
-    def __init__(self, compressor_name, serializer_name):
+    def __init__(
+        self,
+        compressor_name,
+        serializer_name,
+    ):
         self.compressor_name = compressor_name
         self.serializer_name = serializer_name
 
         self.compressor = compressor.__compressors__[compressor_name]
         self.serializer = serializer.__serializers__[serializer_name]
 
-    def encode(self, data):
-        '''
-        '''
+    def encode(
+        self,
+        data,
+    ):
         serialized_data = self.serializer.serialize(
             data=data,
         )
@@ -24,9 +27,10 @@ class Encoder:
 
         return compressed_serialized_data
 
-    def decode(self, data):
-        '''
-        '''
+    def decode(
+        self,
+        data,
+    ):
         decompressed_data = self.compressor.decompress(
             data=data,
         )
@@ -36,9 +40,9 @@ class Encoder:
 
         return unserialized_decompressed_data
 
-    def __getstate__(self):
-        '''
-        '''
+    def __getstate__(
+        self,
+    ):
         state = {
             'compressor_name': self.compressor_name,
             'serializer_name': self.serializer_name,
@@ -46,9 +50,10 @@ class Encoder:
 
         return state
 
-    def __setstate__(self, value):
-        '''
-        '''
+    def __setstate__(
+        self,
+        value,
+    ):
         self.__init__(
             compressor_name=value['compressor_name'],
             serializer_name=value['serializer_name'],

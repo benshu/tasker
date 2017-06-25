@@ -8,13 +8,9 @@ from . import logger
 
 
 class Scheduler:
-    '''
-    '''
     def __init__(
         self,
     ):
-        '''
-        '''
         self.logger = logger.logger.Logger(
             logger_name='Scheduler',
         )
@@ -37,8 +33,6 @@ class Scheduler:
     def _loop_main(
         self,
     ):
-        '''
-        '''
         while self.should_run.wait():
             if self.should_terminate.isSet():
                 break
@@ -48,8 +42,6 @@ class Scheduler:
     def clear(
         self,
     ):
-        '''
-        '''
         self.stop()
         self.event_loop.close()
 
@@ -59,8 +51,6 @@ class Scheduler:
     def start(
         self,
     ):
-        '''
-        '''
         self.should_run.set()
         while not self.event_loop.is_running():
             time.sleep(0)
@@ -68,8 +58,6 @@ class Scheduler:
     def stop(
         self,
     ):
-        '''
-        '''
         self.should_run.clear()
         if self.event_loop.is_running():
             self.event_loop.call_soon_threadsafe(
@@ -82,8 +70,6 @@ class Scheduler:
     def terminate(
         self,
     ):
-        '''
-        '''
         self.stop()
         self.clear()
 
@@ -100,8 +86,6 @@ class Scheduler:
         time_delta,
         repeatedly,
     ):
-        '''
-        '''
         task.apply_async_one(
             *args,
             **kwargs
@@ -124,8 +108,6 @@ class Scheduler:
         time_delta,
         repeatedly,
     ):
-        '''
-        '''
         self.event_loop.call_soon_threadsafe(
             callback=functools.partial(
                 self.event_loop.call_later,
@@ -151,8 +133,6 @@ class Scheduler:
         args,
         kwargs,
     ):
-        '''
-        '''
         self._run_in(
             task=task,
             args=args,
@@ -170,8 +150,6 @@ class Scheduler:
         kwargs,
         date_to_run_at,
     ):
-        '''
-        '''
         time_delta = date_to_run_at - datetime.datetime.utcnow()
 
         self._run_in(
@@ -189,8 +167,6 @@ class Scheduler:
         kwargs,
         time_delta,
     ):
-        '''
-        '''
         self._run_in(
             task=task,
             args=args,
@@ -206,8 +182,6 @@ class Scheduler:
         kwargs,
         time_delta,
     ):
-        '''
-        '''
         self._run_in(
             task=task,
             args=args,
@@ -219,7 +193,5 @@ class Scheduler:
     def __del__(
         self,
     ):
-        '''
-        '''
         self.event_loop.stop()
         self.event_loop.close()

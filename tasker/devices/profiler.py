@@ -5,9 +5,9 @@ from .. import logger
 
 
 class Profiler:
-    '''
-    '''
-    def __init__(self):
+    def __init__(
+        self,
+    ):
         self.logger = logger.logger.Logger(
             logger_name='profiler',
         )
@@ -22,9 +22,10 @@ class Profiler:
             },
         }
 
-    def increment_total_tasks(self, number_of_tasks):
-        '''
-        '''
+    def increment_total_tasks(
+        self,
+        number_of_tasks,
+    ):
         self.statistics['tasks']['total'] += number_of_tasks
 
         current_sampling_time = datetime.datetime.now()

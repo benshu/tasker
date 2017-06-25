@@ -1,16 +1,14 @@
 class Compressor:
-    '''
-    '''
     name = ''
 
     @staticmethod
-    def compress(data):
-        '''
-        '''
+    def compress(
+        data,
+    ):
         raise NotImplemented()
 
     @staticmethod
-    def decompress(data):
-        '''
-        '''
+    def decompress(
+        data,
+    ):
         raise NotImplemented()
