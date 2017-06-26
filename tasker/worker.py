@@ -276,7 +276,7 @@ class Worker:
         if self.config['max_retries'] <= task['run_count']:
             self._on_max_retries(
                 task=task,
-                exception='',
+                exception=WorkerRetry(),
                 exception_traceback=exception_traceback,
                 args=task['args'],
                 kwargs=task['kwargs'],
@@ -287,8 +287,8 @@ class Worker:
         else:
             self._on_retry(
                 task=task,
-                exception='',
-                exception_traceback='',
+                exception=WorkerRetry(),
+                exception_traceback=exception_traceback,
                 args=task['args'],
                 kwargs=task['kwargs'],
             )
@@ -924,6 +924,12 @@ class WorkerHardTimedout(
 
 
 class WorkerRequeue(
+    WorkerException,
+):
+    pass
+
+
+class WorkerRetry(
     WorkerException,
 ):
     pass
