@@ -71,7 +71,6 @@ class StatisticsWebServer:
         ] * 5
 
         self.redis_servers = redis_servers
-        self.redis_connections = []
 
         self.event_loop = event_loop
         self.app = aiohttp.web.Application(
@@ -178,21 +177,21 @@ class StatisticsWebServer:
                     )
                 elif message.data == 'queues':
                     queues = {}
+                    redis_connections = []
 
-                    if not self.redis_connections:
-                        for redis_server in self.redis_servers:
-                            redis_connection = await aioredis.create_redis(
-                                address=(
-                                    redis_server['host'],
-                                    redis_server['port'],
-                                ),
-                                password=redis_server['password'],
-                                db=redis_server['database'],
-                                loop=self.event_loop,
-                            )
-                            self.redis_connections.append(redis_connection)
+                    for redis_server in self.redis_servers:
+                        redis_connection = await aioredis.create_redis(
+                            address=(
+                                redis_server['host'],
+                                redis_server['port'],
+                            ),
+                            password=redis_server['password'],
+                            db=redis_server['database'],
+                            loop=self.event_loop,
+                        )
+                        redis_connections.append(redis_connection)
 
-                    for redis_connection in self.redis_connections:
+                    for redis_connection in redis_connections:
                         redis_keys = await redis_connection.keys('*')
                         for key_name in redis_keys:
                             key_name = key_name.decode('utf-8')
