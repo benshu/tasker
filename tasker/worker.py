@@ -271,7 +271,7 @@ class Worker:
         self,
     ):
         task = self.current_task
-        exception_traceback = traceback.format_exc()
+        exception_traceback = ''.join(traceback.format_stack())
 
         if self.config['max_retries'] <= task['run_count']:
             self._on_max_retries(
