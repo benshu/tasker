@@ -108,7 +108,7 @@ class Supervisor:
                         msg='supervisor has thrown an exception',
                         extra={
                             'exception': {
-                                'type': str(type(process.exception['exception'])),
+                                'type': process.exception['exception'].__class__.__name__,
                                 'message': str(process.exception['exception']),
                             },
                             'traceback': process.exception['traceback'],
@@ -120,7 +120,7 @@ class Supervisor:
                     msg='supervisor has thrown an exception',
                     extra={
                         'exception': {
-                            'type': str(type(exception)),
+                            'type': exception.__class__.__name__,
                             'message': str(exception),
                         },
                         'traceback': traceback.format_exc(),
@@ -161,8 +161,6 @@ class Supervisor:
                 thread.join()
         except KeyboardInterrupt:
             pass
-        except Exception as exception:
-            print(exception)
         finally:
             self.should_work_event.clear()
             for worker_process in self.workers_processes:
