@@ -70,12 +70,12 @@ taskerDashboard.controller(
             websocket.onmessage = function(event) {
                 var message = JSON.parse(event.data);
 
-                if (message.type == "metrics") {
+                if (message.type === "metrics") {
                     $scope.metrics = message.data.metrics;
                     $scope.rates = message.data.rates;
-                } else if (message.type == "queues") {
+                } else if (message.type === "queues") {
                     $scope.queues = message.data;
-                } else if (message.type == "workers") {
+                } else if (message.type === "workers") {
                     $scope.workers = message.data;
 
                     var statistics = {};

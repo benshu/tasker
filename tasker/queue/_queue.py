@@ -42,7 +42,6 @@ class Queue:
     def _dequeue(
         self,
         queue_name,
-        timeout,
     ):
         raise NotImplementedError()
 

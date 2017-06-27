@@ -25,7 +25,6 @@ def zmq_streamer():
         print(e)
         print("bringing down zmq device")
     finally:
-        pass
         frontend.close()
         backend.close()
         context.term()
@@ -81,7 +80,6 @@ def main():
     pool.apply_async(
         func=zmq_streamer,
     )
-
 
     multiprocessing_manager = multiprocessing.Manager()
     multiprocessing_queue = multiprocessing_manager.Queue(

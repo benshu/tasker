@@ -63,8 +63,11 @@ class Logger:
         logs_dir_path,
     ):
         try:
-            os.makedirs(logs_dir_path)
-        except:
+            os.makedirs(
+                name=logs_dir_path,
+                exist_ok=True,
+            )
+        except Exception:
             pass
 
     def debug(
