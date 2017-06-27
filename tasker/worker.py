@@ -269,14 +269,18 @@ class Worker:
 
     def retry(
         self,
+        exception=None,
     ):
         task = self.current_task
         exception_traceback = ''.join(traceback.format_stack())
 
+        if not exception:
+            exception = WorkerRetry()
+
         if self.config['max_retries'] <= task['run_count']:
             self._on_max_retries(
                 task=task,
-                exception=WorkerRetry(),
+                exception=exception,
                 exception_traceback=exception_traceback,
                 args=task['args'],
                 kwargs=task['kwargs'],
@@ -287,7 +291,7 @@ class Worker:
         else:
             self._on_retry(
                 task=task,
-                exception=WorkerRetry(),
+                exception=exception,
                 exception_traceback=exception_traceback,
                 args=task['args'],
                 kwargs=task['kwargs'],
