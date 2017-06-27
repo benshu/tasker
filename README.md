@@ -1,6 +1,7 @@
 # tasker
 
-
+[![Build Status](https://travis-ci.org/wavenator/tasker.svg?branch=master)](https://travis-ci.org/wavenator/tasker)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/eae56b505e034d9785d6bce47ed04355)](https://www.codacy.com/app/wavenator/tasker?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=wavenator/tasker&amp;utm_campaign=Badge_Grade)
 ### Start redis servers
 ```shell
 docker run \
