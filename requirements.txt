@@ -1,0 +1,7 @@
+redis
+hiredis
+msgpack-python
+psutil
+aiohttp
+aioredis
+uvloop
