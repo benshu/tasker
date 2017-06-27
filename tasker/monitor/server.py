@@ -42,8 +42,6 @@ class StatisticsUDPServer:
         except ValueError as exception:
             print(str(exception))
 
-            pass
-
 
 class StatisticsWebServer:
     def __init__(

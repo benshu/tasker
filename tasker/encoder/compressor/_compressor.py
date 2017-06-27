@@ -5,10 +5,10 @@ class Compressor:
     def compress(
         data,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @staticmethod
     def decompress(
         data,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()

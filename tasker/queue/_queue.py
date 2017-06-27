@@ -44,7 +44,7 @@ class Queue:
         queue_name,
         timeout,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def dequeue_bulk(
         self,
@@ -79,7 +79,7 @@ class Queue:
         queue_name,
         count,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def enqueue(
         self,
@@ -105,9 +105,9 @@ class Queue:
     def _enqueue(
         self,
         queue_name,
-        timeout,
+        value,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def enqueue_bulk(
         self,
@@ -138,9 +138,9 @@ class Queue:
     def _enqueue_bulk(
         self,
         queue_name,
-        count,
+        values,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def add_result(
         self,
@@ -164,7 +164,7 @@ class Queue:
         queue_name,
         value,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def remove_result(
         self,
@@ -188,7 +188,7 @@ class Queue:
         queue_name,
         value,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def has_result(
         self,
@@ -212,7 +212,7 @@ class Queue:
         queue_name,
         value,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def len(
         self,
@@ -233,7 +233,7 @@ class Queue:
         self,
         queue_name,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def flush(
         self,
@@ -254,7 +254,7 @@ class Queue:
         self,
         queue_name,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def __getstate__(
         self,

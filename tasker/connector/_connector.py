@@ -17,88 +17,88 @@ class Connector:
         value,
         ttl=None,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def key_get(
         self,
         key,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def key_del(
         self,
         keys,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def pop(
         self,
         key,
         timeout=0,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def pop_bulk(
         self,
         key,
         count,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def push(
         self,
         key,
         value,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def push_bulk(
         self,
         key,
         values,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def add_to_set(
         self,
         set_name,
         value,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def remove_from_set(
         self,
         set_name,
         value,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def is_member_of_set(
         self,
         set_name,
         value,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def len(
         self,
         key,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def delete(
         self,
         key,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def __getstate__(
         self,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def __setstate__(
         self,
         value,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()

@@ -65,6 +65,7 @@ class Connector(
     def pop(
         self,
         key,
+        timeout=0,
     ):
         value = self.connection.lpop(
             name=key,

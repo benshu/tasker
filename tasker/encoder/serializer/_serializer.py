@@ -5,10 +5,10 @@ class Serializer:
     def serialize(
         data,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @staticmethod
     def unserialize(
         data,
     ):
-        raise NotImplemented()
+        raise NotImplementedError()

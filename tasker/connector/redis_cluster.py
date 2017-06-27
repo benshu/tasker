@@ -72,6 +72,7 @@ class Connector(
     def pop(
         self,
         key,
+        timeout=0,
     ):
         connections = self.connections
 

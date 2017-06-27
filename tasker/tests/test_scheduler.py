@@ -140,12 +140,12 @@ class SchedulerTestCase(unittest.TestCase):
                 first=self.worker.number_of_enqueued_tasks(),
                 second=i + 1,
             )
-        else:
-            self.scheduler.stop()
-            time.sleep(1.2)
-            self.assertEqual(
-                first=self.worker.number_of_enqueued_tasks(),
-                second=i + 1,
-            )
+
+        self.scheduler.stop()
+        time.sleep(1.2)
+        self.assertEqual(
+            first=self.worker.number_of_enqueued_tasks(),
+            second=i + 1,
+        )
 
         self.scheduler.clear()
