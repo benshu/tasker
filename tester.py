@@ -56,12 +56,12 @@ class Worker(
 
     def work(
         self,
-        type,
+        run_type,
     ):
-        if type == 'start':
+        if run_type == 'start':
             self.logger.error('start')
             self.logger.error(time.time())
-        elif type == 'end':
+        elif run_type == 'end':
             self.logger.error('end')
             self.logger.error(time.time())
 
@@ -71,13 +71,13 @@ def main():
     worker.init_worker()
 
     worker.apply_async_one(
-        type='start',
+        run_type='start',
     )
 
     tasks = []
     for j in range(99998):
         task_obj = worker.craft_task(
-            type='',
+            run_type='',
         )
         tasks.append(task_obj)
     worker.apply_async_many(
@@ -85,7 +85,7 @@ def main():
     )
 
     worker.apply_async_one(
-        type='end',
+        run_type='end',
     )
 
     supervisor = tasker.supervisor.Supervisor(

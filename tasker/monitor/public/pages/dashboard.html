@@ -1,4 +1,4 @@
-<div ng-controller="DashboardController">
+<div ng-controller="dashboardController">
     <div class="columns">
         <div class="column">
         </div>
@@ -119,16 +119,16 @@
                     <table id="queues-table" class="table is-bordered is-stripped is-narrow">
                         <thead>
                             <tr>
-                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'hostname'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Hostname</th>
-                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'name'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Worker</th>
-                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'metrics.process'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Process</th>
-                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'metrics.success'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Success</th>
-                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'metrics.retry'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Retry</th>
-                                <th style="cursor: pointer;" ng-click="workers_table_sort_by = 'metrics.failure'; workers_table_sort_by_reverse = !workers_table_sort_by_reverse;">Fail</th>
+                                <th style="cursor: pointer;" ng-click="workersTableSortBy = 'hostname'; workersTableSortByReverse = !workersTableSortByReverse;">Hostname</th>
+                                <th style="cursor: pointer;" ng-click="workersTableSortBy = 'name'; workersTableSortByReverse = !workersTableSortByReverse;">Worker</th>
+                                <th style="cursor: pointer;" ng-click="workersTableSortBy = 'metrics.process'; workersTableSortByReverse = !workersTableSortByReverse;">Process</th>
+                                <th style="cursor: pointer;" ng-click="workersTableSortBy = 'metrics.success'; workersTableSortByReverse = !workersTableSortByReverse;">Success</th>
+                                <th style="cursor: pointer;" ng-click="workersTableSortBy = 'metrics.retry'; workersTableSortByReverse = !workersTableSortByReverse;">Retry</th>
+                                <th style="cursor: pointer;" ng-click="workersTableSortBy = 'metrics.failure'; workersTableSortByReverse = !workersTableSortByReverse;">Fail</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr ng-repeat="worker in workers | filter: workers_search | orderBy: workers_table_sort_by : workers_table_sort_by_reverse | limitTo: 50">
+                            <tr ng-repeat="worker in workers | filter: workers_search | orderBy: workersTableSortBy : workersTableSortByReverse | limitTo: 50">
                                 <td>{{worker.hostname}}</td>
                                 <td>{{worker.name}}</td>
                                 <td>{{worker.metrics.process.toLocaleString()}}</td>

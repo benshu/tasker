@@ -57,8 +57,9 @@ class Logger:
 
         self.logger.setLevel(self.log_level)
 
+    @classmethod
     def create_logs_dir_path(
-        self,
+        cls,
         logs_dir_path,
     ):
         try:

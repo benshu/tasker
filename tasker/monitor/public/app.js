@@ -1,101 +1,101 @@
-var TaskerDashboard = angular.module(
-    'TaskerDashboard',
+var taskerDashboard = angular.module(
+    "taskerDashboard",
     [
-        'ngRoute',
+        "ngRoute",
     ]
 );
-TaskerDashboard.config(
+taskerDashboard.config(
     [
-        '$routeProvider',
-        '$locationProvider',
+        "$routeProvider",
+        "$locationProvider",
         function($routeProvider, $locationProvider) {
             $locationProvider
-            .hashPrefix('!');
+            .hashPrefix("!");
 
             $routeProvider
             .when(
-                '/dashboard',
+                "/dashboard",
                 {
-                    templateUrl: 'pages/dashboard.html'
+                    templateUrl: "pages/dashboard.html"
                 }
             )
             .otherwise(
                 {
-                    redirectTo: 'dashboard'
+                    redirectTo: "dashboard"
                 }
             );
         }
     ]
 );
 
-TaskerDashboard.controller(
-    'DashboardController',
+taskerDashboard.controller(
+    "dashboardController",
     [
-        '$scope',
-        '$location',
-        '$interval',
-        function DashboardController($scope, $location, $interval) {
-            var domain = location.hostname + (location.port ? ':' + location.port: '')
-            var websocket = new WebSocket('ws://' + domain + '/ws/statistics');
+        "$scope",
+        "$location",
+        "$interval",
+        function dashboardController($scope, $location, $interval) {
+            var domain = location.hostname + (location.port ? ":" + location.port: "");
+            var websocket = new WebSocket("ws://" + domain + "/ws/statistics");
 
-            $scope.websocket_connected = false;
+            $scope.websocketConnected = false;
             $scope.metrics = {
-                'process': 0,
-                'success': 0,
-                'retry': 0,
-                'failure': 0
+                "process": 0,
+                "success": 0,
+                "retry": 0,
+                "failure": 0
             };
             $scope.rates = {
-                'process_per_second': 0,
-                'success_per_second': 0,
-                'retry_per_second': 0,
-                'failure_per_second': 0
+                "process_per_second": 0,
+                "success_per_second": 0,
+                "retry_per_second": 0,
+                "failure_per_second": 0
             };
             $scope.statistics = {};
             $scope.workers = [];
             $scope.queues = {};
 
-            $scope.workers_table_sort_by = 'hostname';
-            $scope.workers_table_sort_by_reverse = true;
+            $scope.workersTableSortBy = "hostname";
+            $scope.workersTableSortByReverse = true;
 
             websocket.onclose = function(event) {
-                $scope.websocket_connected = false;
-            }
+                $scope.websocketConnected = false;
+            };
             websocket.onopen = function(event) {
-                $scope.websocket_connected = true;
-                websocket.send('metrics');
-                websocket.send('queues');
-                websocket.send('workers');
+                $scope.websocketConnected = true;
+                websocket.send("metrics");
+                websocket.send("queues");
+                websocket.send("workers");
             };
             websocket.onmessage = function(event) {
                 var message = JSON.parse(event.data);
 
-                if (message.type == 'metrics') {
+                if (message.type == "metrics") {
                     $scope.metrics = message.data.metrics;
                     $scope.rates = message.data.rates;
-                } else if (message.type == 'queues') {
+                } else if (message.type == "queues") {
                     $scope.queues = message.data;
-                } else if (message.type == 'workers') {
+                } else if (message.type == "workers") {
                     $scope.workers = message.data;
 
                     var statistics = {};
 
                     for (var i = 0; i < $scope.workers.length; i++) {
-                        var current_worker = $scope.workers[i];
+                        var currentWorker = $scope.workers[i];
 
-                        if (!(current_worker.name in statistics)) {
-                            statistics[current_worker.name] = {
-                                'process': 0,
-                                'success': 0,
-                                'retry': 0,
-                                'failure': 0
+                        if (!(currentWorker.name in statistics)) {
+                            statistics[currentWorker.name] = {
+                                "process": 0,
+                                "success": 0,
+                                "retry": 0,
+                                "failure": 0
                             };
                         }
 
-                        statistics[current_worker.name].process += current_worker.metrics.process;
-                        statistics[current_worker.name].success += current_worker.metrics.success;
-                        statistics[current_worker.name].retry += current_worker.metrics.retry;
-                        statistics[current_worker.name].failure += current_worker.metrics.failure;
+                        statistics[currentWorker.name].process += currentWorker.metrics.process;
+                        statistics[currentWorker.name].success += currentWorker.metrics.success;
+                        statistics[currentWorker.name].retry += currentWorker.metrics.retry;
+                        statistics[currentWorker.name].failure += currentWorker.metrics.failure;
                     }
 
                     $scope.statistics = statistics;
@@ -104,14 +104,14 @@ TaskerDashboard.controller(
 
             $interval(
                 function() {
-                    websocket.send('metrics');
+                    websocket.send("metrics");
                 },
                 1000
             );
             $interval(
                 function() {
-                    websocket.send('queues');
-                    websocket.send('workers');
+                    websocket.send("queues");
+                    websocket.send("workers");
                 },
                 2000
             );
