@@ -11,7 +11,7 @@ services:
 
 before_install:
 - docker pull redis
-- docker run --publish=6379:6379 redis bash -c "redis-server --maxclients 65535 --save '' --tcp-backlog 65535 --tcp-keepalive 10 --protected-mode no --bind 0.0.0.0 --requirepass e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97"
-- docker run --publish=6380:6379 redis bash -c "redis-server --maxclients 65535 --save '' --tcp-backlog 65535 --tcp-keepalive 10 --protected-mode no --bind 0.0.0.0 --requirepass e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97"
+- docker run --detach --publish=6379:6379 redis bash -c "redis-server --maxclients 65535 --save '' --tcp-backlog 65535 --tcp-keepalive 10 --protected-mode no --bind 0.0.0.0 --requirepass e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97"
+- docker run --detach --publish=6380:6379 redis bash -c "redis-server --maxclients 65535 --save '' --tcp-backlog 65535 --tcp-keepalive 10 --protected-mode no --bind 0.0.0.0 --requirepass e082ebf6c7fff3997c4bb1cb64d6bdecd0351fa270402d98d35acceef07c6b97"
 
 script: pytest
