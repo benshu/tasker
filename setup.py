@@ -16,6 +16,7 @@ setuptools.setup(
         'aiohttp',
         'aioredis',
         'uvloop',
+        'requests',
     ],
     packages=setuptools.find_packages(),
     package_data={
