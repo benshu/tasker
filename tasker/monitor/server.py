@@ -214,6 +214,9 @@ class StatisticsWebServer:
                             'data': queues,
                         },
                     )
+
+                    for redis_connection in redis_connections:
+                        redis_connection.close()
                 elif message.data == 'workers':
                     workers_dict = self.statistics_obj.workers
                     workers_list = []
