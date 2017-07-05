@@ -95,15 +95,16 @@ class StatisticsWebServer:
             ),
         )
 
-        web_app_handler = self.app.make_handler(
+        self.web_app_handler = self.app.make_handler(
             loop=self.event_loop,
         )
         self.server = self.event_loop.create_server(
-            protocol_factory=web_app_handler,
+            protocol_factory=self.web_app_handler,
             host=host,
             port=port,
         )
 
+        self.webserver_future = self.event_loop.run_until_complete(self.server)
         self.event_loop.create_task(self.update_rates())
 
     async def update_rates(
