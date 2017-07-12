@@ -94,14 +94,9 @@ class Supervisor:
 
                 self.workers_processes.append(process)
 
-                if self.task.config['timeouts']['global_timeout'] != 0.0:
-                    process.join(
-                        timeout=self.task.global_timeout,
-                    )
-                else:
-                    process.join(
-                        timeout=None,
-                    )
+                process.join(
+                    timeout=self.task.config['timeouts']['global_timeout'] or None,
+                )
 
                 if process.exception:
                     self.logger.critical(

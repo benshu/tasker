@@ -65,7 +65,7 @@ class StatisticsWebServer:
                 'success': 0,
                 'retry': 0,
                 'failure': 0,
-            }
+            },
         ] * 5
 
         self.redis_servers = redis_servers

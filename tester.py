@@ -42,6 +42,10 @@ class Worker(
             # 'type': 'threaded',
             # 'concurrency': 50,
         },
+        'profiler': {
+            'enabled': True,
+            'num_of_slowest_methods_to_log': 50,
+        },
         'max_tasks_per_run': 25000,
         'tasks_per_transaction': 5000,
         'max_retries': 3,
