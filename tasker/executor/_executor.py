@@ -137,7 +137,6 @@ class Executor:
 
             return
         else:
-            exception_traceback = traceback.format_exc()
             self.on_failure(
                 task=task,
                 exception=exception,
