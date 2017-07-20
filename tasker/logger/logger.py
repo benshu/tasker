@@ -1,6 +1,7 @@
 import tempfile
 import os
 import logging
+import json
 
 
 class Logger:
@@ -75,6 +76,9 @@ class Logger:
         msg,
         extra={},
     ):
+        self.ensure_json_serializable(
+            input_object=extra,
+        )
         self.logger.debug(
             msg=msg,
             extra=extra,
@@ -85,6 +89,9 @@ class Logger:
         msg,
         extra={},
     ):
+        self.ensure_json_serializable(
+            input_object=extra,
+        )
         self.logger.warning(
             msg=msg,
             extra=extra,
@@ -95,6 +102,9 @@ class Logger:
         msg,
         extra={},
     ):
+        self.ensure_json_serializable(
+            input_object=extra,
+        )
         self.logger.info(
             msg=msg,
             extra=extra,
@@ -105,6 +115,9 @@ class Logger:
         msg,
         extra={},
     ):
+        self.ensure_json_serializable(
+            input_object=extra,
+        )
         self.logger.error(
             msg=msg,
             extra=extra,
@@ -115,10 +128,32 @@ class Logger:
         msg,
         extra={},
     ):
+        self.ensure_json_serializable(
+            input_object=extra,
+        )
         self.logger.critical(
             msg=msg,
             extra=extra,
         )
+
+    def ensure_json_serializable(
+        self,
+        input_object,
+    ):
+        try:
+            serializable_object = json.loads(
+                s=json.dumps(
+                    obj=input_object,
+                    skipkeys=True,
+                    default=lambda x: repr(x),
+                ),
+            )
+
+            return serializable_object
+        except Exception as exception:
+            return 'JSON is not serializable: {exception}'.format(
+                exception=exception,
+            )
 
     def log_task_failure(
         self,
