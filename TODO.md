@@ -10,3 +10,5 @@ tasker:
 monitor:
 - update the queues with multiple queues
 - fix the workers table -> sort, and improve the ui/ux
+- add pyte to remote control a worker machine
+- improve angular performance with large lists

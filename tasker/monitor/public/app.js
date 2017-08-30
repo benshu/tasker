@@ -34,7 +34,8 @@ taskerDashboard.controller(
         "$scope",
         "$location",
         "$interval",
-        function dashboardController($scope, $location, $interval) {
+        "$timeout",
+        function dashboardController($scope, $location, $interval, $timeout) {
             var domain = location.hostname + (location.port ? ":" + location.port: "");
             var websocket = new WebSocket("ws://" + domain + "/ws/statistics");
 
@@ -73,8 +74,22 @@ taskerDashboard.controller(
                 if (message.type === "metrics") {
                     $scope.metrics = message.data.metrics;
                     $scope.rates = message.data.rates;
+
+                    $timeout(
+                        function() {
+                            websocket.send("metrics");
+                        },
+                        1000
+                    );
                 } else if (message.type === "queues") {
                     $scope.queues = message.data;
+
+                    $timeout(
+                        function() {
+                            websocket.send("queues");
+                        },
+                        2000
+                    );
                 } else if (message.type === "workers") {
                     $scope.workers = message.data;
 
@@ -99,22 +114,15 @@ taskerDashboard.controller(
                     }
 
                     $scope.statistics = statistics;
+
+                    $timeout(
+                        function() {
+                            websocket.send("workers");
+                        },
+                        5000
+                    );
                 }
             };
-
-            $interval(
-                function() {
-                    websocket.send("metrics");
-                },
-                1000
-            );
-            $interval(
-                function() {
-                    websocket.send("queues");
-                    websocket.send("workers");
-                },
-                2000
-            );
         }
     ]
 );
