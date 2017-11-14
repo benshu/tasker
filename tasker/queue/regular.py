@@ -35,14 +35,24 @@ class Queue(
         self,
         queue_name,
         value,
+        time_to_enqueue,
     ):
-        pushed = self.connector.push(
-            key=queue_name,
-            value=value,
-        )
+        if time_to_enqueue:
+            pushed = self.connector.add_to_zset(
+                # TODO - fix the dependency on the delayed queue name
+                set_name='delayed',
+                value=value,
+                score=time_to_enqueue,
+            )
+        else:
+            pushed = self.connector.push(
+                key=queue_name,
+                value=value,
+            )
 
         return pushed
 
+    # TODO - add support to bulk enqueue with delay
     def _enqueue_bulk(
         self,
         queue_name,

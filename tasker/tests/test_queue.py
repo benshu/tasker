@@ -2,6 +2,7 @@ import uuid
 import unittest
 import pickle
 import datetime
+import time
 
 from .. import connector
 from .. import queue
@@ -143,6 +144,28 @@ class QueueTestCase(unittest.TestCase):
             queue_name='pickle_queue',
             test_queue=test_queue,
             enqueued_value=self.enqueued_value,
+        )
+
+    def test_pickle_queue_with_delay(self):
+        test_queue = queue.regular.Queue(
+            connector=self.redis_connector,
+            encoder=encoder.encoder.Encoder(
+                compressor_name='dummy',
+                serializer_name='pickle',
+            ),
+        )
+
+        self.queue_functionality_with_delay(
+            queue_name='pickle_queue',
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+            time_to_enqueue=time.time()
+        )
+        self.queue_functionality_with_delay(
+            queue_name='pickle_queue',
+            test_queue=test_queue,
+            enqueued_value=self.enqueued_value,
+            time_to_enqueue=time.time()
         )
 
     def test_msgpack_queue(self):
@@ -356,3 +379,32 @@ class QueueTestCase(unittest.TestCase):
             value=self.test_set_value,
         )
         self.assertFalse(removed)
+
+    def queue_functionality_with_delay(
+        self,
+        queue_name,
+        test_queue,
+        enqueued_value,
+        time_to_enqueue,
+    ):
+        test_queue.flush(
+            queue_name=queue_name,
+        )
+        self.assertEqual(test_queue.len(queue_name=queue_name), 0)
+
+        test_queue.enqueue(
+            queue_name=queue_name,
+            value=enqueued_value,
+            time_to_enqueue=time.time(),
+        )
+
+        self.assertEqual(test_queue.len(queue_name=queue_name), 0)
+
+        for i in range(10):
+            test_queue.enqueue(
+                queue_name=queue_name,
+                value=enqueued_value,
+                time_to_enqueue=time.time(),
+            )
+        self.assertEqual(test_queue.len(queue_name=queue_name), 0)
+
