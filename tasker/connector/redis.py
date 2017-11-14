@@ -137,6 +137,55 @@ class Connector(
 
         return is_memeber
 
+    def add_to_zset(
+        self,
+        set_name,
+        value,
+        score,
+    ):
+        added = self.connection.zadd(
+            set_name,
+            score,
+            value,
+        )
+
+        return bool(added)
+
+    def remove_from_zset(
+        self,
+        set_name,
+        value,
+    ):
+        removed = self.connection.zrem(
+            set_name,
+            value,
+        )
+
+        return bool(removed)
+
+    def get_top_item_from_zset(
+        self,
+        set_name,
+    ):
+        item = self.connection.zrange(
+            set_name,
+            0,
+            0,
+            withscores=True,
+        )
+
+        return item
+
+    def zset_length(
+        self,
+        set_name,
+    ):
+        count = self.connection.zcard(
+            set_name,
+        )
+
+        return count
+
     def len(
         self,
         key,

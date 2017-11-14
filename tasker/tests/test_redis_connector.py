@@ -1,11 +1,16 @@
 import unittest
 import pickle
+import time
 
 from .. import connector
 
 
-class RedisConnectorTestCase(unittest.TestCase):
-    def setUp(self):
+class RedisConnectorTestCase(
+    unittest.TestCase,
+):
+    def setUp(
+        self,
+    ):
         self.redis_connector = connector.redis.Connector(
             host='127.0.0.1',
             port=6379,
@@ -14,11 +19,110 @@ class RedisConnectorTestCase(unittest.TestCase):
         )
         self.test_key = 'test_key'
         self.set_name = 'test_set'
+        self.zset_name = 'zset_name'
         self.test_value = b'test_value'
         self.test_set_value = b'test_value'
 
         self.redis_connector.delete(
             key=self.test_key,
+        )
+        self.redis_connector.delete(
+            key=self.zset_name,
+        )
+
+    def test_add_to_zset(
+        self,
+    ):
+        self.assertEqual(
+            self.redis_connector.zset_length(self.test_key),
+            0,
+        )
+        delay = 10000
+        time_in_future = time.time() + delay
+
+        self.redis_connector.add_to_zset(
+            set_name=self.zset_name,
+            value=self.test_value,
+            score=time_in_future,
+        )
+
+        self.assertEqual(
+            self.redis_connector.zset_length(
+                self.zset_name,
+            ),
+            1,
+        )
+
+    def test_remove_from_zset(
+        self,
+    ):
+        self.assertEqual(
+            self.redis_connector.zset_length(self.zset_name),
+            0,
+        )
+
+        delay = 10000
+        time_in_future = time.time() + delay
+
+        self.redis_connector.add_to_zset(
+            set_name=self.zset_name,
+            value=self.test_value,
+            score=time_in_future,
+        )
+
+        self.assertEqual(
+            self.redis_connector.zset_length(self.zset_name),
+            1,
+            msg='Expected single item in queue before testing remove_from_zset',
+        )
+
+        returned_value = self.redis_connector.remove_from_zset(
+            set_name=self.zset_name,
+            value=self.test_value,
+        )
+
+        self.assertTrue(
+            returned_value,
+        )
+        self.assertEqual(
+            self.redis_connector.zset_length(self.zset_name),
+            0,
+        )
+
+    def test_get_top_item_from_zset(
+        self,
+    ):
+        self.assertEqual(
+            self.redis_connector.zset_length(self.zset_name),
+            0,
+        )
+
+        delay = 10000
+        time_in_future = time.time() + delay
+
+        self.redis_connector.add_to_zset(
+            set_name=self.zset_name,
+            value=self.test_value,
+            score=time_in_future,
+        )
+
+        self.assertEqual(
+            self.redis_connector.zset_length(self.zset_name),
+            1,
+            msg='Expected single item in queue before testing get_top_item_from_zset',
+        )
+        returned_value = self.redis_connector.get_top_item_from_zset(
+            set_name=self.zset_name,
+        )
+
+        self.assertTrue(
+            returned_value,
+            self.test_value,
+        )
+        self.assertEqual(
+            self.redis_connector.zset_length(self.zset_name),
+            1,
+            msg='Expected single item in queue after testing get_top_item_from_zset',
         )
 
     def test_connector_functionality(self):
