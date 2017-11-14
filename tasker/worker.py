@@ -11,6 +11,7 @@ from . import monitor
 from . import queue
 from . import storage
 from . import task_queue
+from . import poller
 from . import executor
 
 
@@ -48,6 +49,9 @@ class Worker:
         },
         'executor': {
             'type': 'serial',
+        },
+        'delayed_task_poller': {
+            'enabled': 'True',
         },
         'profiler': {
             'enabled': False,
@@ -94,6 +98,12 @@ class Worker:
             connector=connector_obj,
             encoder=encoder_obj,
         )
+
+        if self.config['delayed_task_poller']['enabled']:
+            self.delayed_task_poller = poller.poller.Poller(
+                task_queue=self.task_queue,
+            )
+            self.delayed_task_poller.start()
 
         if self.config['monitoring']:
             self.monitor_client = monitor.client.StatisticsClient(
@@ -177,6 +187,7 @@ class Worker:
 
     def apply_async_one(
         self,
+        time_to_enqueue=None,
         *args,
         **kwargs
     ):
@@ -184,6 +195,7 @@ class Worker:
 
         self.task_queue.apply_async_one(
             task=task,
+            time_to_enqueue=time_to_enqueue,
         )
 
         return task

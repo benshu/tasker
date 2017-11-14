@@ -6,7 +6,9 @@ import logging
 from .. import worker
 
 
-class EventsTestWorker(worker.Worker):
+class EventsTestWorker(
+    worker.Worker,
+):
     name = 'events_test_worker'
 
     config = worker.Worker.config.copy()
@@ -29,7 +31,9 @@ class EventsTestWorker(worker.Worker):
         }
     )
 
-    def init(self):
+    def init(
+        self,
+    ):
         self.succeeded = False
         self.failed = False
         self.timed_out = False
@@ -39,9 +43,14 @@ class EventsTestWorker(worker.Worker):
 
         self.requeue_count = 0
 
-        self.logger.logger.setLevel(logging.CRITICAL + 10)
+        self.logger.logger.setLevel(
+            logging.CRITICAL + 10,
+        )
 
-    def work(self, action):
+    def work(
+        self,
+        action,
+    ):
         if action == 'succeeded':
             return 'success'
         elif action == 'failed':
@@ -61,26 +70,63 @@ class EventsTestWorker(worker.Worker):
         elif action == 'report_completion':
             time.sleep(2)
 
-    def on_success(self, returned_value, args, kwargs):
+    def on_success(
+        self,
+        returned_value,
+        args,
+        kwargs,
+    ):
         self.succeeded = True
 
-    def on_failure(self, exception, exception_traceback, args, kwargs):
+    def on_failure(
+        self,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         self.failed = True
 
-    def on_timeout(self, exception, exception_traceback, args, kwargs):
+    def on_timeout(
+        self,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         self.timed_out = True
 
-    def on_retry(self, exception, exception_traceback, args, kwargs):
+    def on_retry(
+        self,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         self.retried = True
 
-    def on_requeue(self, exception, exception_traceback, args, kwargs):
+    def on_requeue(
+        self,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         self.requeued = True
 
-    def on_max_retries(self, exception, exception_traceback, args, kwargs):
+    def on_max_retries(
+        self,
+        exception,
+        exception_traceback,
+        args,
+        kwargs,
+    ):
         self.max_retried = True
 
 
-class SingleServerEventsTestWorker(EventsTestWorker):
+class SingleServerEventsTestWorker(
+    EventsTestWorker,
+):
     name = 'events_test_worker'
 
     config = EventsTestWorker.config.copy()
@@ -99,7 +145,9 @@ class SingleServerEventsTestWorker(EventsTestWorker):
     )
 
 
-class SingleServerEventsTestWorkerWithProfiling(EventsTestWorker):
+class SingleServerEventsTestWorkerWithProfiling(
+    EventsTestWorker,
+):
     name = 'events_test_worker'
 
     config = EventsTestWorker.config.copy()
@@ -122,7 +170,9 @@ class SingleServerEventsTestWorkerWithProfiling(EventsTestWorker):
     )
 
 
-class SingleServerThreadedEventsTestWorker(EventsTestWorker):
+class SingleServerThreadedEventsTestWorker(
+    EventsTestWorker,
+):
     name = 'events_test_worker'
 
     config = EventsTestWorker.config.copy()
@@ -145,7 +195,9 @@ class SingleServerThreadedEventsTestWorker(EventsTestWorker):
     )
 
 
-class SingleServerClusterEventsTestWorker(EventsTestWorker):
+class SingleServerClusterEventsTestWorker(
+    EventsTestWorker,
+):
     name = 'events_test_worker'
 
     config = EventsTestWorker.config.copy()
@@ -168,7 +220,9 @@ class SingleServerClusterEventsTestWorker(EventsTestWorker):
     )
 
 
-class MultiServerClusterEventsTestWorker(EventsTestWorker):
+class MultiServerClusterEventsTestWorker(
+    EventsTestWorker,
+):
     name = 'events_test_worker'
 
     config = EventsTestWorker.config.copy()
@@ -198,7 +252,9 @@ class MultiServerClusterEventsTestWorker(EventsTestWorker):
 
 
 class WorkerTestCase:
-    def test_success_event(self):
+    def test_success_event(
+        self,
+    ):
         self.events_test_worker.purge_tasks()
         self.events_test_worker.apply_async_one(
             action='succeeded',
@@ -220,7 +276,9 @@ class WorkerTestCase:
             )
         )
 
-    def test_failure_event(self):
+    def test_failure_event(
+        self,
+    ):
         self.events_test_worker.purge_tasks()
         self.events_test_worker.apply_async_one(
             action='failed',
@@ -242,7 +300,9 @@ class WorkerTestCase:
             )
         )
 
-    def test_time_out_event(self):
+    def test_time_out_event(
+        self,
+    ):
         self.events_test_worker.config['soft_timeout'] = 2.0
         self.events_test_worker.config['max_tasks_per_run'] = 1
         self.events_test_worker.config['max_retries'] = 3
@@ -267,7 +327,9 @@ class WorkerTestCase:
             )
         )
 
-    def test_retry_event(self):
+    def test_retry_event(
+        self,
+    ):
         self.events_test_worker.config['max_tasks_per_run'] = 1
         self.events_test_worker.config['max_retries'] = 3
         self.events_test_worker.purge_tasks()
@@ -291,7 +353,9 @@ class WorkerTestCase:
             )
         )
 
-    def test_requeue_event(self):
+    def test_requeue_event(
+        self,
+    ):
         self.events_test_worker.config['max_tasks_per_run'] = 3
         self.events_test_worker.config['max_retries'] = 1
         self.events_test_worker.purge_tasks()
@@ -315,7 +379,9 @@ class WorkerTestCase:
             )
         )
 
-    def test_max_retries_event(self):
+    def test_max_retries_event(
+        self,
+    ):
         self.events_test_worker.config['max_tasks_per_run'] = 3
         self.events_test_worker.config['max_retries'] = 2
         self.events_test_worker.purge_tasks()
@@ -339,7 +405,9 @@ class WorkerTestCase:
             )
         )
 
-    def test_completion_report(self):
+    def test_completion_report(
+        self,
+    ):
         self.events_test_worker.purge_tasks()
         task = self.events_test_worker.apply_async_one(
             action='report_completion',
@@ -370,13 +438,17 @@ class SingleServerWorkerTestCase(
     unittest.TestCase,
 ):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(
+        self,
+    ):
         self.events_test_worker = SingleServerEventsTestWorker()
         self.events_test_worker.init_worker()
         self.events_test_worker.purge_tasks()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(
+        self,
+    ):
         self.events_test_worker.purge_tasks()
 
 
@@ -385,13 +457,17 @@ class SingleServerThreadedWorkerTestCase(
     unittest.TestCase,
 ):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(
+        self,
+    ):
         self.events_test_worker = SingleServerThreadedEventsTestWorker()
         self.events_test_worker.init_worker()
         self.events_test_worker.purge_tasks()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(
+        self,
+    ):
         self.events_test_worker.purge_tasks()
 
 
@@ -400,13 +476,17 @@ class SingleServerClusterWorkerTestCase(
     unittest.TestCase,
 ):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(
+        self,
+    ):
         self.events_test_worker = SingleServerClusterEventsTestWorker()
         self.events_test_worker.init_worker()
         self.events_test_worker.purge_tasks()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(
+        self,
+    ):
         self.events_test_worker.purge_tasks()
 
 
@@ -415,13 +495,17 @@ class MultipleServerClusterWorkerTestCase(
     unittest.TestCase,
 ):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(
+        self,
+    ):
         self.events_test_worker = MultiServerClusterEventsTestWorker()
         self.events_test_worker.init_worker()
         self.events_test_worker.purge_tasks()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(
+        self,
+    ):
         self.events_test_worker.purge_tasks()
 
 
@@ -430,11 +514,15 @@ class SingleServerWorkerWithProfilingTestCase(
     unittest.TestCase,
 ):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(
+        self,
+    ):
         self.events_test_worker = SingleServerEventsTestWorkerWithProfiling()
         self.events_test_worker.init_worker()
         self.events_test_worker.purge_tasks()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDownClass(
+        self,
+    ):
         self.events_test_worker.purge_tasks()
