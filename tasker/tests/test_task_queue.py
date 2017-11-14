@@ -12,7 +12,9 @@ from .. import encoder
 class RedisTaskQueueTestCase:
     order_matters = True
 
-    def test_purge_tasks(self):
+    def test_purge_tasks(
+        self,
+    ):
         self.test_task_queue.purge_tasks(
             task_name='test_task',
         )
@@ -25,7 +27,9 @@ class RedisTaskQueueTestCase:
         task = self.test_task_queue.craft_task(
             task_name='test_task',
         )
-        self.test_task_queue.apply_async_one(task)
+        self.test_task_queue.apply_async_one(
+            task,
+        )
         self.assertEqual(
             self.test_task_queue.number_of_enqueued_tasks(
                 task_name='test_task',
@@ -42,7 +46,9 @@ class RedisTaskQueueTestCase:
             0,
         )
 
-    def test_number_of_enqueued_tasks(self):
+    def test_number_of_enqueued_tasks(
+        self,
+    ):
         self.test_task_queue.purge_tasks(
             task_name='test_task',
         )
@@ -55,7 +61,9 @@ class RedisTaskQueueTestCase:
         task = self.test_task_queue.craft_task(
             task_name='test_task',
         )
-        self.test_task_queue.apply_async_one(task)
+        self.test_task_queue.apply_async_one(
+            task,
+        )
         self.assertEqual(
             self.test_task_queue.number_of_enqueued_tasks(
                 task_name='test_task',
@@ -72,14 +80,18 @@ class RedisTaskQueueTestCase:
             0,
         )
 
-        self.test_task_queue.apply_async_many([task] * 100)
+        self.test_task_queue.apply_async_many(
+            [task] * 100,
+        )
         self.assertEqual(
             self.test_task_queue.number_of_enqueued_tasks(
                 task_name='test_task',
             ),
             100,
         )
-        self.test_task_queue.apply_async_many([task] * 1000)
+        self.test_task_queue.apply_async_many(
+            [task] * 1000,
+        )
         self.assertEqual(
             self.test_task_queue.number_of_enqueued_tasks(
                 task_name='test_task',
@@ -96,7 +108,9 @@ class RedisTaskQueueTestCase:
             0,
         )
 
-    def test_craft_task(self):
+    def test_craft_task(
+        self,
+    ):
         task = self.test_task_queue.craft_task(
             task_name='test_task',
             args=(),
@@ -104,7 +118,9 @@ class RedisTaskQueueTestCase:
             report_completion=False,
         )
         current_date = datetime.datetime.utcnow().timestamp()
-        date = task.pop('date')
+        date = task.pop(
+            'date',
+        )
         self.assertAlmostEqual(
             date / (10 ** 8),
             current_date / (10 ** 8),
@@ -122,7 +138,11 @@ class RedisTaskQueueTestCase:
 
         task = self.test_task_queue.craft_task(
             task_name='test_task',
-            args=(1, 2, 3),
+            args=(
+                1,
+                2,
+                3,
+            ),
             kwargs={
                 'a': 1,
                 'b': 2,
@@ -130,18 +150,29 @@ class RedisTaskQueueTestCase:
             report_completion=True,
         )
         current_date = datetime.datetime.utcnow().timestamp()
-        date = task.pop('date')
+        date = task.pop(
+            'date',
+        )
         self.assertAlmostEqual(
             date / (10 ** 8),
             current_date / (10 ** 8),
         )
-        completion_key = task.pop('completion_key')
-        self.assertNotEqual(completion_key, None)
+        completion_key = task.pop(
+            'completion_key',
+        )
+        self.assertNotEqual(
+            completion_key,
+            None,
+        )
         self.assertEqual(
             task,
             {
                 'name': 'test_task',
-                'args': (1, 2, 3),
+                'args': (
+                    1,
+                    2,
+                    3,
+                ),
                 'kwargs': {
                     'a': 1,
                     'b': 2,
@@ -150,7 +181,9 @@ class RedisTaskQueueTestCase:
             }
         )
 
-    def test_report_complete(self):
+    def test_report_complete(
+        self,
+    ):
         self.test_task_queue.purge_tasks(
             task_name='test_task',
         )
@@ -177,7 +210,9 @@ class RedisTaskQueueTestCase:
             )
         )
 
-    def test_wait_task_finished(self):
+    def test_wait_task_finished(
+        self,
+    ):
         self.test_task_queue.purge_tasks(
             task_name='test_task',
         )
@@ -190,7 +225,9 @@ class RedisTaskQueueTestCase:
         report_complete_timer = threading.Timer(
             interval=2.0,
             function=self.test_task_queue.report_complete,
-            args=(task,),
+            args=(
+                task,
+            ),
         )
         report_complete_timer.start()
 
@@ -199,9 +236,13 @@ class RedisTaskQueueTestCase:
             task=task,
         )
         after = time.time()
-        self.assertTrue(3.0 > after - before > 2.0)
+        self.assertTrue(
+            3.0 > after - before > 2.0,
+        )
 
-    def test_wait_queue_empty(self):
+    def test_wait_queue_empty(
+        self,
+    ):
         self.test_task_queue.purge_tasks(
             task_name='test_task',
         )
@@ -211,11 +252,15 @@ class RedisTaskQueueTestCase:
             kwargs={},
             report_completion=True,
         )
-        self.test_task_queue.apply_async_one(task)
+        self.test_task_queue.apply_async_one(
+            task,
+        )
         purge_tasks_timer = threading.Timer(
             interval=2.0,
             function=self.test_task_queue.purge_tasks,
-            args=('test_task',),
+            args=(
+                'test_task',
+            ),
         )
         purge_tasks_timer.start()
 
@@ -224,15 +269,21 @@ class RedisTaskQueueTestCase:
             task_name='test_task',
         )
         after = time.time()
-        self.assertTrue(3.5 > after - before > 3.0)
+        self.assertTrue(
+            3.5 > after - before > 3.0,
+        )
 
-    def test_apply_async_one(self):
+    def test_apply_async_one(
+        self,
+    ):
         self.test_task_queue.purge_tasks(
             task_name='test_task',
         )
         task_one = self.test_task_queue.craft_task(
             task_name='test_task',
-            args=(1,),
+            args=(
+                1,
+            ),
             kwargs={},
             report_completion=False,
         )
@@ -250,9 +301,15 @@ class RedisTaskQueueTestCase:
             kwargs={},
             report_completion=True,
         )
-        self.test_task_queue.apply_async_one(task_one)
-        self.test_task_queue.apply_async_one(task_two)
-        self.test_task_queue.apply_async_one(task_three)
+        self.test_task_queue.apply_async_one(
+            task_one,
+        )
+        self.test_task_queue.apply_async_one(
+            task_two,
+        )
+        self.test_task_queue.apply_async_one(
+            task_three,
+        )
         task_one_test = self.test_task_queue.queue.dequeue(
             queue_name='test_task',
         )
@@ -263,9 +320,18 @@ class RedisTaskQueueTestCase:
             queue_name='test_task',
         )
         if self.order_matters:
-            self.assertEqual(task_one, task_one_test)
-            self.assertEqual(task_two, task_two_test)
-            self.assertEqual(task_three, task_three_test)
+            self.assertEqual(
+                task_one,
+                task_one_test,
+            )
+            self.assertEqual(
+                task_two,
+                task_two_test,
+            )
+            self.assertEqual(
+                task_three,
+                task_three_test,
+            )
         else:
             self.assertIn(
                 task_one,
@@ -300,7 +366,12 @@ class RedisTaskQueueTestCase:
                 if task_to_wait['completion_key'] is not None
             ]
 
-            self.assertEqual(len(tasks_to_wait), 2)
+            self.assertEqual(
+                len(
+                    tasks_to_wait,
+                ),
+                2,
+            )
 
             for task_to_wait in tasks_to_wait:
                 self.assertTrue(
@@ -310,7 +381,58 @@ class RedisTaskQueueTestCase:
                     )
                 )
 
-    def test_apply_async_many(self):
+    def test_apply_async_one_with_delay(
+        self,
+    ):
+        self.test_task_queue.purge_tasks(
+            task_name='test_task',
+        )
+        task_one = self.test_task_queue.craft_task(
+            task_name='test_task',
+            args=(
+                1,
+            ),
+            kwargs={},
+            report_completion=False,
+        )
+        task_two = self.test_task_queue.craft_task(
+            task_name='test_task',
+            args=(),
+            kwargs={
+                'a': 1,
+            },
+            report_completion=True,
+        )
+        task_three = self.test_task_queue.craft_task(
+            task_name='test_task',
+            args=(),
+            kwargs={},
+            report_completion=True,
+        )
+        future_time = time.time() + 60000
+        self.test_task_queue.apply_async_one(
+            task_one,
+            time_to_enqueue=future_time,
+        )
+        self.test_task_queue.apply_async_one(
+            task_two,
+            time_to_enqueue=future_time,
+        )
+        self.test_task_queue.apply_async_one(
+            task_three,
+            time_to_enqueue=future_time,
+        )
+
+        self.assertEqual(
+            self.test_task_queue.number_of_enqueued_tasks(
+                task_name='test_task',
+            ),
+            0,
+        )
+
+    def test_apply_async_many(
+        self,
+    ):
         self.test_task_queue.purge_tasks(
             task_name='test_task_one',
         )
@@ -319,7 +441,9 @@ class RedisTaskQueueTestCase:
         )
         task_one = self.test_task_queue.craft_task(
             task_name='test_task_one',
-            args=(1,),
+            args=(
+                1,
+            ),
             kwargs={},
             report_completion=False,
         )
@@ -355,9 +479,18 @@ class RedisTaskQueueTestCase:
         )
 
         if self.order_matters:
-            self.assertEqual(task_one, task_one_test)
-            self.assertEqual(task_two, task_two_test)
-            self.assertEqual(task_three, task_three_test)
+            self.assertEqual(
+                task_one,
+                task_one_test,
+            )
+            self.assertEqual(
+                task_two,
+                task_two_test,
+            )
+            self.assertEqual(
+                task_three,
+                task_three_test,
+            )
         else:
             self.assertIn(
                 task_one,
@@ -367,7 +500,10 @@ class RedisTaskQueueTestCase:
                 task_two,
                 [task_one_test, task_two_test],
             )
-            self.assertEqual(task_three, task_three_test)
+            self.assertEqual(
+                task_three,
+                task_three_test,
+            )
 
         if self.order_matters:
             self.assertTrue(
@@ -389,7 +525,12 @@ class RedisTaskQueueTestCase:
                 if task_to_wait['completion_key'] is not None
             ]
 
-            self.assertEqual(len(tasks_to_wait), 2)
+            self.assertEqual(
+                len(
+                    tasks_to_wait,
+                ),
+                2,
+            )
 
             for task_to_wait in tasks_to_wait:
                 self.assertTrue(
@@ -399,9 +540,18 @@ class RedisTaskQueueTestCase:
                     )
                 )
 
-        self.assertEqual(task_one, task_one_test)
-        self.assertEqual(task_two, task_two_test)
-        self.assertEqual(task_three, task_three_test)
+        self.assertEqual(
+            task_one,
+            task_one_test,
+        )
+        self.assertEqual(
+            task_two,
+            task_two_test,
+        )
+        self.assertEqual(
+            task_three,
+            task_three_test,
+        )
 
         self.assertTrue(
             self.test_task_queue.queue.has_result(
@@ -416,7 +566,9 @@ class RedisTaskQueueTestCase:
             )
         )
 
-    def test_get_tasks(self):
+    def test_get_tasks(
+        self,
+    ):
         self.test_task_queue.purge_tasks(
             task_name='test_task_one',
         )
@@ -425,7 +577,9 @@ class RedisTaskQueueTestCase:
         )
         task_one = self.test_task_queue.craft_task(
             task_name='test_task_one',
-            args=(1,),
+            args=(
+                1,
+            ),
             kwargs={},
             report_completion=False,
         )
@@ -458,53 +612,87 @@ class RedisTaskQueueTestCase:
             task_name='test_task_two',
             number_of_tasks=1,
         )
-        self.assertTrue(task_one in tasks_one)
-        self.assertTrue(task_two in tasks_one)
-        self.assertTrue(task_three in tasks_two)
+        self.assertTrue(
+            task_one in tasks_one,
+        )
+        self.assertTrue(
+            task_two in tasks_one,
+        )
+        self.assertTrue(
+            task_three in tasks_two,
+        )
 
-    def test_retry(self):
+    def test_retry(
+        self,
+    ):
         self.test_task_queue.purge_tasks(
             task_name='test_task',
         )
         task_one = self.test_task_queue.craft_task(
             task_name='test_task',
-            args=(1,),
+            args=(
+                1,
+            ),
             kwargs={},
             report_completion=False,
         )
-        self.assertEqual(task_one['run_count'], 0)
-        self.test_task_queue.apply_async_one(task_one)
+        self.assertEqual(
+            task_one['run_count'],
+            0,
+        )
+        self.test_task_queue.apply_async_one(
+            task_one,
+        )
         task_one = self.test_task_queue.queue.dequeue(
             queue_name='test_task',
         )
 
-        self.test_task_queue.retry(task_one)
+        self.test_task_queue.retry(
+            task_one,
+        )
         task_one = self.test_task_queue.queue.dequeue(
             queue_name='test_task',
         )
-        self.assertEqual(task_one['run_count'], 1)
+        self.assertEqual(
+            task_one['run_count'],
+            1,
+        )
 
-    def test_requeue(self):
+    def test_requeue(
+        self,
+    ):
         self.test_task_queue.purge_tasks(
             task_name='test_task',
         )
         task_one = self.test_task_queue.craft_task(
             task_name='test_task',
-            args=(1,),
+            args=(
+                1,
+            ),
             kwargs={},
             report_completion=False,
         )
-        self.assertEqual(task_one['run_count'], 0)
-        self.test_task_queue.apply_async_one(task_one)
+        self.assertEqual(
+            task_one['run_count'],
+            0,
+        )
+        self.test_task_queue.apply_async_one(
+            task_one,
+        )
         task_one = self.test_task_queue.queue.dequeue(
             queue_name='test_task',
         )
 
-        self.test_task_queue.requeue(task_one)
+        self.test_task_queue.requeue(
+            task_one,
+        )
         task_one = self.test_task_queue.queue.dequeue(
             queue_name='test_task',
         )
-        self.assertEqual(task_one['run_count'], 0)
+        self.assertEqual(
+            task_one['run_count'],
+            0,
+        )
 
 
 class RedisSingleServerTaskQueueTestCase(
@@ -513,7 +701,9 @@ class RedisSingleServerTaskQueueTestCase(
 ):
     order_matters = True
 
-    def setUp(self):
+    def setUp(
+        self,
+    ):
         redis_cluster_connector = connector.redis_cluster.Connector(
             nodes=[
                 {
@@ -543,7 +733,9 @@ class RedisClusterSingleServerTaskQueueTestCase(
 ):
     order_matters = True
 
-    def setUp(self):
+    def setUp(
+        self,
+    ):
         redis_cluster_connector = connector.redis_cluster.Connector(
             nodes=[
                 {
@@ -573,7 +765,9 @@ class RedisClusterMultipleServerTaskQueueTestCase(
 ):
     order_matters = False
 
-    def setUp(self):
+    def setUp(
+        self,
+    ):
         redis_cluster_connector = connector.redis_cluster.Connector(
             nodes=[
                 {

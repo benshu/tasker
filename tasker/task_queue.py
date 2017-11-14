@@ -152,11 +152,13 @@ class TaskQueue:
     def apply_async_one(
         self,
         task,
+        time_to_enqueue=None,
     ):
         try:
             self.queue.enqueue(
                 queue_name=task['name'],
                 value=task,
+                time_to_enqueue=time_to_enqueue,
             )
 
             return True
