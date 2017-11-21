@@ -48,7 +48,7 @@ class RedisConnectorTestCase(
 
         self.assertEqual(
             self.redis_connector.zset_length(
-                self.zset_name,
+                set_name=self.zset_name,
             ),
             1,
         )

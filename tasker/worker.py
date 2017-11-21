@@ -51,6 +51,7 @@ class Worker:
             'type': 'serial',
         },
         'delayed_task_poller': {
+            'delayed_set_name': 'delayed',
             'enabled': 'True',
         },
         'profiler': {
@@ -101,6 +102,7 @@ class Worker:
 
         if self.config['delayed_task_poller']['enabled']:
             self.delayed_task_poller = poller.poller.Poller(
+                delayed_set_name=self.config['delayed_task_poller']['delayed_set_name'],
                 task_queue=self.task_queue,
             )
             self.delayed_task_poller.start()

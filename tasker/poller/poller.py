@@ -10,7 +10,6 @@ class Poller(
     name = 'Poller'
 
     config = {
-        'delayed_set_name': 'delayed',
         'connector': {
             'type': 'redis',
             'params': {
@@ -25,13 +24,14 @@ class Poller(
     def __init__(
         self,
         task_queue,
+        delayed_set_name,
         interval=2,
     ):
         super().__init__()
 
         self.task_queue = task_queue
         self.interval = interval
-        self.delayed_set_name = self.config['delayed_set_name']
+        self.delayed_set_name = delayed_set_name
 
         self._stop_event = threading.Event()
         self._stop_event.clear()
@@ -46,7 +46,6 @@ class Poller(
         self,
     ):
         sleep_duration = 0
-        import ipdb; ipdb.set_trace()
 
         while not self._stop_event.is_set():
             if sleep_duration < self.interval:
@@ -79,9 +78,11 @@ class Poller(
         item = self.task_queue.queue.connector.get_top_item_from_zset(
             set_name=self.delayed_set_name,
         )
+        if not item:
+            return
 
         task_data, task_time = item[0]
-        if not item or task_time > time.time():
+        if task_time > time.time():
             return
 
         decoded_task = self.task_queue.queue.encoder.decode(

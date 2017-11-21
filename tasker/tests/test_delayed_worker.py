@@ -5,10 +5,10 @@ import logging
 from .. import worker
 
 
-class EventsTestWorker(
+class TestWorker(
     worker.Worker,
 ):
-    name = 'events_test_worker'
+    name = 'test_worker'
 
     config = worker.Worker.config.copy()
     config.update(
@@ -129,9 +129,19 @@ class DelayedWorkerTestCase(
     def setUp(
         self,
     ):
-        self.worker = EventsTestWorker()
+        self.worker = TestWorker()
         self.worker.init()
+        self.worker = TestWorker()
         self.worker.init_worker()
+        self.delayed_set_name = self.worker.config['delayed_task_poller']['delayed_set_name']
+
+    def tearDown(
+        self,
+    ):
+        self.worker.purge_tasks()
+        self.worker.task_queue.queue.connector.delete(
+            key=self.delayed_set_name,
+        )
 
     def test_delayed_task_push(
         self,
@@ -142,4 +152,17 @@ class DelayedWorkerTestCase(
                 'action': 'success',
             },
         )
-        time.sleep(10)
+
+        number_of_enqueued_tasks = self.worker.number_of_enqueued_tasks()
+        self.assertEqual(
+            first=number_of_enqueued_tasks,
+            second=0,
+        )
+
+        number_of_delayed_tasks_in_set = self.worker.task_queue.queue.connector.zset_length(
+            set_name=self.delayed_set_name,
+        )
+        self.assertEqual(
+            first=number_of_delayed_tasks_in_set,
+            second=1,
+        )

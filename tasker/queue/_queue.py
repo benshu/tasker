@@ -84,7 +84,7 @@ class Queue:
         self,
         queue_name,
         value,
-        time_to_enqueue=None,
+        score=None,
     ):
         try:
             encoded_value = self.encoder.encode(
@@ -94,7 +94,7 @@ class Queue:
             self._enqueue(
                 queue_name=queue_name,
                 value=encoded_value,
-                time_to_enqueue=time_to_enqueue,
+                score=score,
             )
         except Exception as exception:
             self.logger.error(
@@ -107,6 +107,7 @@ class Queue:
         self,
         queue_name,
         value,
+        score,
     ):
         raise NotImplementedError()
 

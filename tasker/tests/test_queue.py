@@ -182,13 +182,13 @@ class QueueTestCase(
             queue_name='pickle_queue',
             test_queue=test_queue,
             enqueued_value=self.enqueued_value,
-            time_to_enqueue=time.time()
+            score=time.time()
         )
         self.queue_functionality_with_delay(
             queue_name='pickle_queue',
             test_queue=test_queue,
             enqueued_value=self.enqueued_value,
-            time_to_enqueue=time.time()
+            score=time.time()
         )
 
     def test_msgpack_queue(
@@ -424,7 +424,7 @@ class QueueTestCase(
         queue_name,
         test_queue,
         enqueued_value,
-        time_to_enqueue,
+        score,
     ):
         test_queue.flush(
             queue_name=queue_name,
@@ -434,7 +434,7 @@ class QueueTestCase(
         test_queue.enqueue(
             queue_name=queue_name,
             value=enqueued_value,
-            time_to_enqueue=time.time(),
+            score=time.time(),
         )
 
         self.assertEqual(test_queue.len(queue_name=queue_name), 0)
@@ -443,6 +443,6 @@ class QueueTestCase(
             test_queue.enqueue(
                 queue_name=queue_name,
                 value=enqueued_value,
-                time_to_enqueue=time.time(),
+                score=time.time(),
             )
         self.assertEqual(test_queue.len(queue_name=queue_name), 0)

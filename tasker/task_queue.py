@@ -155,10 +155,15 @@ class TaskQueue:
         time_to_enqueue=None,
     ):
         try:
+            if time_to_enqueue:
+                queue_name = 'delayed'
+            else:
+                queue_name = task['name']
+
             self.queue.enqueue(
-                queue_name=task['name'],
+                queue_name=queue_name,
                 value=task,
-                time_to_enqueue=time_to_enqueue,
+                score=time_to_enqueue,
             )
 
             return True
